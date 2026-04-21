@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>BDE CERI - Contact &amp; Donate</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&amp;family=Manrope:wght@400;600&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#c6c6cd",
+                        "surface-container-low": "#151b2d",
+                        "on-primary": "#263143",
+                        "secondary-fixed": "#e0e3e5",
+                        "inverse-primary": "#545f73",
+                        "error-container": "#93000a",
+                        "surface-container-high": "#23293c",
+                        "surface": "#0c1324",
+                        "secondary": "#c4c7c9",
+                        "on-tertiary": "#00354a",
+                        "on-surface": "#dce1fb",
+                        "on-secondary-fixed-variant": "#444749",
+                        "primary-fixed": "#d8e3fb",
+                        "on-primary-container": "#768197",
+                        "on-primary-fixed": "#111c2d",
+                        "surface-variant": "#2e3447",
+                        "outline-variant": "#45464d",
+                        "surface-tint": "#bcc7de",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "surface-container-highest": "#2e3447",
+                        "surface-container": "#191f31",
+                        "secondary-container": "#464a4b",
+                        "on-secondary-fixed": "#191c1e",
+                        "inverse-surface": "#dce1fb",
+                        "on-error": "#690005",
+                        "on-secondary-container": "#b6b9bb",
+                        "surface-bright": "#33394c",
+                        "on-primary-fixed-variant": "#3c475a",
+                        "tertiary": "#7bd0ff",
+                        "on-tertiary-fixed": "#001e2c",
+                        "surface-dim": "#0c1324",
+                        "tertiary-container": "#001a27",
+                        "error": "#ffb4ab",
+                        "inverse-on-surface": "#2a3043",
+                        "primary-container": "#0c1829",
+                        "tertiary-fixed": "#c4e7ff",
+                        "primary": "#bcc7de",
+                        "surface-container-lowest": "#070d1f",
+                        "on-tertiary-container": "#008abb",
+                        "on-background": "#dce1fb",
+                        "primary-fixed-dim": "#bcc7de",
+                        "secondary-fixed-dim": "#c4c7c9",
+                        "outline": "#909097",
+                        "on-secondary": "#2d3133",
+                        "background": "#0c1324",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#7bd0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Space Grotesk", "sans-serif"],
+                        "body": ["Manrope", "sans-serif"],
+                        "label": ["Manrope", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #0c1324;
+            color: #dce1fb;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        .font-headline {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .glass-panel {
+            background: rgba(46, 52, 71, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #bcc7de, #0c1829);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface min-h-screen flex flex-col pt-24">
+    <!-- TopNavBar -->
+    <nav
+        class="fixed top-0 w-full z-50 bg-[#0c1324]/40 backdrop-blur-xl shadow-2xl shadow-black/50 transition-all duration-300 hover:backdrop-blur-3xl">
+        <div class="flex justify-between items-center px-8 h-20 max-w-7xl mx-auto border-b-0 border-transparent">
+            <div class="text-2xl font-bold tracking-tighter text-[#bcc7de] font-headline">BDE CERI</div>
+            <div class="hidden md:flex space-x-8 items-center font-['Space_Grotesk'] tracking-tight text-sm uppercase">
+                <a class="text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                    href="#">Home</a>
+                <a class="text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                    href="#">Events</a>
+                <a class="text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                    href="#">Team</a>
+                <a class="text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                    href="#">Tavern</a>
+                <a class="text-[#7bd0ff] font-bold border-b-2 border-[#7bd0ff] pb-1 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out scale-[1.02]"
+                    href="#">Contact</a>
+                <a class="text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                    href="#">Donate</a>
+            </div>
+            <div class="flex items-center text-blue-200">
+                <button
+                    class="text-[#dce1fb] opacity-80 hover:opacity-100 transition-all duration-300 hover:text-[#7bd0ff]">
+                    <span class="material-symbols-outlined">dark_mode</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col items-center w-full px-4 md:px-8 pb-24">
+        <div class="w-full max-w-7xl mx-auto space-y-24 mt-12">
+            <!-- Header Section -->
+            <section class="text-center space-y-6">
+                <h1 class="font-headline text-5xl md:text-7xl font-bold tracking-tight text-primary">Connect &amp;
+                    Support</h1>
+                <p class="font-body text-lg text-on-surface-variant max-w-2xl mx-auto">Reach out to the BDE team or
+                    contribute to making our campus life unforgettable.</p>
+            </section>
+            <!-- Bento Grid Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
+                <!-- Contact Form (Spans 7 cols) -->
+                <div
+                    class="lg:col-span-7 surface-container-low rounded-xl p-8 relative overflow-hidden group hover:shadow-[0_20px_40px_rgba(7,13,31,0.5)] transition-all duration-500">
+                    <div
+                        class="absolute inset-0 bg-surface-container-high opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10 blur-xl">
+                    </div>
+                    <div class="space-y-6">
+                        <h2 class="font-headline text-3xl font-bold text-primary flex items-center gap-3">
+                            <span class="material-symbols-outlined text-tertiary">mail</span>
+                            Send a Message
+                        </h2>
+                        <form class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label
+                                        class="font-label text-sm uppercase tracking-wider text-on-surface-variant">Name</label>
+                                    <input
+                                        class="w-full bg-surface-container-lowest border-0 border-b border-outline-variant/15 text-on-surface focus:ring-0 focus:border-tertiary focus:bg-surface-container-low transition-colors px-4 py-3 rounded-t-lg"
+                                        placeholder="Your name" type="text" />
+                                </div>
+                                <div class="space-y-2">
+                                    <label
+                                        class="font-label text-sm uppercase tracking-wider text-on-surface-variant">Email</label>
+                                    <input
+                                        class="w-full bg-surface-container-lowest border-0 border-b border-outline-variant/15 text-on-surface focus:ring-0 focus:border-tertiary focus:bg-surface-container-low transition-colors px-4 py-3 rounded-t-lg"
+                                        placeholder="student@univ.fr" type="email" />
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label
+                                    class="font-label text-sm uppercase tracking-wider text-on-surface-variant">Subject</label>
+                                <input
+                                    class="w-full bg-surface-container-lowest border-0 border-b border-outline-variant/15 text-on-surface focus:ring-0 focus:border-tertiary focus:bg-surface-container-low transition-colors px-4 py-3 rounded-t-lg"
+                                    placeholder="How can we help?" type="text" />
+                            </div>
+                            <div class="space-y-2">
+                                <label
+                                    class="font-label text-sm uppercase tracking-wider text-on-surface-variant">Message</label>
+                                <textarea
+                                    class="w-full bg-surface-container-lowest border-0 border-b border-outline-variant/15 text-on-surface focus:ring-0 focus:border-tertiary focus:bg-surface-container-low transition-colors px-4 py-3 rounded-t-lg resize-none"
+                                    placeholder="Your message here..." rows="4"></textarea>
+                            </div>
+                            <button
+                                class="bg-primary text-on-primary font-bold py-3 px-8 rounded-lg hover:shadow-[0_0_20px_rgba(188,199,222,0.2)] transition-shadow w-full md:w-auto"
+                                type="submit">
+                                Send Message
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <!-- Donate & App Section (Spans 5 cols) -->
+                <div class="lg:col-span-5 space-y-8 flex flex-col">
+                    <!-- Donate Card -->
+                    <div
+                        class="flex-grow glass-panel rounded-xl p-8 flex flex-col justify-between relative overflow-hidden group border border-outline-variant/15">
+                        <div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-50 z-0">
+                        </div>
+                        <div class="relative z-10 space-y-6">
+                            <div class="flex justify-between items-start">
+                                <h2 class="font-headline text-3xl font-bold text-primary">Support Us</h2>
+                                <span class="material-symbols-outlined text-4xl text-tertiary"
+                                    style="font-variation-settings: 'FILL' 1;">favorite</span>
+                            </div>
+                            <p class="font-body text-on-surface-variant">Your donations fuel our events, projects, and
+                                campus life. Every contribution makes a difference.</p>
+                            <div
+                                class="bg-surface-container-lowest p-4 rounded-lg flex items-center justify-between border border-outline-variant/15">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-primary">verified_user</span>
+                                    <span class="font-label text-sm text-on-surface-variant">Secure via HelloAsso</span>
+                                </div>
+                                <img alt="HelloAsso Logo placeholder" class="h-6 opacity-80"
+                                    data-alt="Small minimal generic payment security icon or text layout signifying safe transaction on dark background"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgcx56WTpfsvZZbLvSzrFK5IThuNEv0_dC617AfFdSduSkJfnMghHi9-sRd8mjqm9e7QQ-vmL8CzAojAHBb8Y5Bo9yHQS3r7SJ7Cor-em-yGL8bvWlKeC2v5kdOpy6G5DzeqDqBtdZAk7_qg4ibySeoyDBVQa3aMH4PyKecnUY0DVV_RHaLjNnrfN4luiDkLO7ak86NLWVOvK62gGTocIRZF1L7YXcpn0voAlx25EshBXTTPndJKv5_Xtqdr4xAVpiZvfV4B_lOXTS" />
+                            </div>
+                            <button
+                                class="w-full bg-tertiary text-on-tertiary font-headline font-bold text-lg py-4 rounded-lg hover:shadow-[0_0_30px_rgba(123,208,255,0.3)] transition-all hover:-translate-y-1">
+                                Make a Donation
+                            </button>
+                        </div>
+                    </div>
+                    <!-- App Download Card -->
+                    <div
+                        class="bg-surface-container-lowest rounded-xl p-6 flex items-center gap-6 border border-outline-variant/15">
+                        <div
+                            class="w-24 h-24 bg-surface-container-high rounded-lg flex-shrink-0 flex items-center justify-center p-2 relative overflow-hidden">
+                            <img alt="QR Code" class="w-full h-full object-cover rounded"
+                                data-alt="Abstract futuristic glowing QR code on dark background"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQZxEDiqCVSLYD-mcQhdl9APydbhAS_MBtZoJinD5JcyjkjRXr-fXRMPIteDgJG27RA15ccZcENhH1f89P8kQfknGsLnF8jHZjTPzlA0biKhCMdrHMpaNYB3E2k9XU_0Q1xRPrzjKaCwLpTiECV1cW_9bLgUBZkCADb5tJZj7NrBkP6xyNJ2Xtof0YuhcMqaIeMEyXOLtN00FObOnJ_ArN8DBzQM53Lg3r9Fhr-JlC9AyWoOKL2qhawlVGmJLT05X0gGazm0nEL2Ub" />
+                            <div class="absolute inset-0 bg-primary/10 mix-blend-overlay"></div>
+                        </div>
+                        <div class="space-y-2">
+                            <h3 class="font-headline font-bold text-lg text-primary">Get the App</h3>
+                            <p class="font-body text-sm text-on-surface-variant">Stay updated with events and exclusive
+                                tavern perks.</p>
+                            <div class="flex gap-2 pt-2">
+                                <button
+                                    class="text-xs font-bold uppercase tracking-wider text-tertiary hover:text-white transition-colors flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-base">ios</span> iOS
+                                </button>
+                                <span class="text-outline-variant">|</span>
+                                <button
+                                    class="text-xs font-bold uppercase tracking-wider text-tertiary hover:text-white transition-colors flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-base">android</span> Android
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Map Section -->
+            <div class="w-full h-64 md:h-96 rounded-xl overflow-hidden relative border border-outline-variant/15 group">
+                <img alt="Map Location"
+                    class="w-full h-full object-cover opacity-60 mix-blend-luminosity group-hover:mix-blend-normal transition-all duration-700"
+                    data-alt="Top down aerial view of a dark moody city map with subtle glowing blue street lights indicating a location"
+                    data-location="Avignon"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpF1F6ktNMq4betJ-Sw1baT8fpVgr6f8pMGV5HWJQjb63JFFI2rlSqNBc53KaKDDBOdDtKK1ggcmdftN2VW3T2nf2bUyTeh6856T-0xhoWQHVDP43N6cbHWy9a3Ps6J0wZ6fX6ov4qYl9NhexNdFE-_sN1gSOzuE6A_5El-bwBGZbBIH6SvNF6WOGsMxLYuuJXusf6z9p5XEVxXFrXm0YGzcK_bXgKIy9boM_pm7OidRqU9rCrtJnbq0Kx77v0lh8Wcq9x3MIlxhd2" />
+                <div class="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-transparent"></div>
+                <div
+                    class="absolute bottom-8 left-8 flex items-center gap-4 bg-surface/80 backdrop-blur-md p-4 rounded-lg border border-outline-variant/15">
+                    <span class="material-symbols-outlined text-tertiary text-3xl"
+                        style="font-variation-settings: 'FILL' 1;">location_on</span>
+                    <div>
+                        <h4 class="font-headline font-bold text-primary">Campus CERI</h4>
+                        <p class="font-body text-sm text-on-surface-variant">Avignon, France</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Footer -->
+    <footer class="w-full py-12 bg-[#070d1f] transition-all duration-300 relative z-10 border-t border-white/5">
+        <div
+            class="grid grid-cols-1 md:grid-cols-3 gap-8 px-8 max-w-7xl mx-auto font-['Manrope'] text-xs tracking-wide">
+            <div class="flex flex-col space-y-2">
+                <span class="text-lg font-bold text-[#bcc7de] font-headline">BDE CERI</span>
+                <span class="text-[#dce1fb]/60">© 2024 BDE CERI. Crafted in the moonlight.</span>
+            </div>
+            <div class="flex flex-col space-y-4 md:col-span-2">
+                <div class="flex space-x-6 uppercase tracking-widest text-[#dce1fb]/60">
+                    <a class="opacity-80 hover:opacity-100 hover:text-white transition-colors" href="#">Facebook</a>
+                    <a class="opacity-80 hover:opacity-100 hover:text-white transition-colors" href="#">Instagram</a>
+                    <a class="opacity-80 hover:opacity-100 hover:text-white transition-colors" href="#">LinkedIn</a>
+                    <a class="opacity-80 hover:opacity-100 hover:text-white transition-colors" href="#">Download App</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

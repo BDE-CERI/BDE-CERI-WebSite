@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>BDE CERI - Events</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Manrope:wght@200..800&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#c6c6cd",
+                        "surface-container-low": "#151b2d",
+                        "on-primary": "#263143",
+                        "secondary-fixed": "#e0e3e5",
+                        "inverse-primary": "#545f73",
+                        "error-container": "#93000a",
+                        "surface-container-high": "#23293c",
+                        "surface": "#0c1324",
+                        "secondary": "#c4c7c9",
+                        "on-tertiary": "#00354a",
+                        "on-surface": "#dce1fb",
+                        "on-secondary-fixed-variant": "#444749",
+                        "primary-fixed": "#d8e3fb",
+                        "on-primary-container": "#768197",
+                        "on-primary-fixed": "#111c2d",
+                        "surface-variant": "#2e3447",
+                        "outline-variant": "#45464d",
+                        "surface-tint": "#bcc7de",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "surface-container-highest": "#2e3447",
+                        "surface-container": "#191f31",
+                        "secondary-container": "#464a4b",
+                        "on-secondary-fixed": "#191c1e",
+                        "inverse-surface": "#dce1fb",
+                        "on-error": "#690005",
+                        "on-secondary-container": "#b6b9bb",
+                        "surface-bright": "#33394c",
+                        "on-primary-fixed-variant": "#3c475a",
+                        "tertiary": "#7bd0ff",
+                        "on-tertiary-fixed": "#001e2c",
+                        "surface-dim": "#0c1324",
+                        "tertiary-container": "#001a27",
+                        "error": "#ffb4ab",
+                        "inverse-on-surface": "#2a3043",
+                        "primary-container": "#0c1829",
+                        "tertiary-fixed": "#c4e7ff",
+                        "primary": "#bcc7de",
+                        "surface-container-lowest": "#070d1f",
+                        "on-tertiary-container": "#008abb",
+                        "on-background": "#dce1fb",
+                        "primary-fixed-dim": "#bcc7de",
+                        "secondary-fixed-dim": "#c4c7c9",
+                        "outline": "#909097",
+                        "on-secondary": "#2d3133",
+                        "background": "#0c1324",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#7bd0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": [
+                            "Space Grotesk"
+                        ],
+                        "body": [
+                            "Manrope"
+                        ],
+                        "label": [
+                            "Manrope"
+                        ]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0c1324;
+            color: #dce1fb;
+            font-family: 'Manrope', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Typography System */
+        .headline-display {
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: -0.02em;
+        }
+
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background-color: rgba(46, 52, 71, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .glass-modal {
+            background-color: rgba(46, 52, 71, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 0.75rem;
+        }
+
+        /* Mysterious Reveal Hover */
+        .mysterious-card {
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mysterious-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(188, 199, 222, 0.1) 0%, rgba(12, 24, 41, 0.5) 100%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .mysterious-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(7, 13, 31, 0.5);
+            background-color: rgba(35, 41, 60, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .mysterious-card:hover::before {
+            opacity: 1;
+        }
+
+        .mysterious-card-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Custom Scrollbar for a premium feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #070d1f;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #23293c;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #45464d;
+        }
+
+        /* Subtle Gradient Text */
+        .text-gradient {
+            background: linear-gradient(135deg, #bcc7de 0%, #7bd0ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col">
+    <!-- TopNavBar Component -->
+    <nav
+        class="fixed top-0 w-full z-50 bg-[#0c1324]/40 backdrop-blur-xl shadow-2xl shadow-black/50 transition-all duration-300">
+        <div class="flex justify-between items-center px-8 h-20 max-w-7xl mx-auto">
+            <!-- Brand -->
+            <a class="text-2xl font-bold tracking-tighter text-[#bcc7de] headline-display" href="#">BDE CERI</a>
+            <!-- Navigation Links (Hidden on Mobile, Flex on MD) -->
+            <ul class="hidden md:flex space-x-8 font-['Space_Grotesk'] tracking-tight text-sm uppercase">
+                <li><a class="text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                        href="#">Home</a></li>
+                <li><a class="text-[#7bd0ff] font-bold border-b-2 border-[#7bd0ff] pb-1 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                        href="#">Events</a></li>
+                <li><a class="text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                        href="#">Team</a></li>
+                <li><a class="text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                        href="#">Tavern</a></li>
+                <li><a class="text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                        href="#">Contact</a></li>
+                <li><a class="text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                        href="#">Donate</a></li>
+            </ul>
+            <!-- Trailing Actions -->
+            <div class="flex items-center space-x-4">
+                <button
+                    class="text-blue-200 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out hover:scale-[1.02]">
+                    <span class="material-symbols-outlined" data-icon="dark_mode" data-weight="fill"
+                        style="font-variation-settings: 'FILL' 1;">dark_mode</span>
+                </button>
+                <!-- Mobile Menu Toggle (Visible only on small screens) -->
+                <button class="md:hidden text-blue-200">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <!-- Main Content Canvas -->
+    <main class="flex-grow pt-32 pb-24 px-4 sm:px-8 max-w-7xl mx-auto w-full flex flex-col gap-24">
+        <!-- Hero Section: The Invitation -->
+        <header
+            class="relative w-full rounded-xl overflow-hidden glass-panel border-b border-outline-variant/15 p-12 md:p-24 flex flex-col items-center justify-center text-center">
+            <div
+                class="absolute inset-0 bg-gradient-to-br from-surface-container-low to-surface-container-lowest opacity-80 -z-10">
+            </div>
+            <!-- Decorative Background Element -->
+            <div
+                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-tertiary/5 rounded-full blur-[100px] -z-10">
+            </div>
+            <p class="font-label text-on-surface-variant tracking-[0.1em] uppercase text-sm mb-4">Discover the Night</p>
+            <h1 class="headline-display text-5xl md:text-7xl font-bold mb-6 text-gradient">Upcoming Events</h1>
+            <p class="font-body text-lg text-on-surface/80 max-w-2xl mx-auto leading-relaxed">
+                Step into the shadows and uncover the experiences curated for the BDE CERI community. A collection of
+                nights to remember, hidden in plain sight.
+            </p>
+        </header>
+        <!-- Events Grid (Bento/Asymmetric Style) -->
+        <section class="grid grid-cols-1 md:grid-cols-12 gap-8 auto-rows-[minmax(300px,auto)]">
+            <!-- Featured Event Card (Spans more columns) -->
+            <article
+                class="md:col-span-8 mysterious-card bg-surface-container-high rounded-xl p-8 flex flex-col justify-end min-h-[400px] border-b border-outline-variant/15 relative group cursor-pointer">
+                <!-- Background Image Layer -->
+                <div class="absolute inset-0 bg-cover bg-center opacity-40 group-hover:opacity-30 transition-opacity duration-500 rounded-xl"
+                    data-alt="crowd at a dark, neon-lit concert or party, energetic mysterious atmosphere"
+                    style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuClPSWoAulGFZ_7m6ZPvZfK3UnVn4VCEWKQwSx0X4345VyVxFQVv37MjXTmq6nMUUAkEFmktJ-k2-YDzHFDSUlUMrdX1Zsv_s-hqKS2wrig057BnDK4-mqL6BQJ4QC01pGQGsa9r3aB38mb5ND5dAugDLdQksYB3lJ8yfGessRzZLNuL68kUSQPR-zfcu1kP-6DQ_jh4MUKu_rqq7ddRm_q5LEWInOtUEupWisiUKf6Q1kMR1u-RpvC5oJw_ea2fARO6WeZipML3mk5');">
+                </div>
+                <div
+                    class="absolute inset-0 bg-gradient-to-t from-surface-container-highest via-surface-container-high/80 to-transparent rounded-xl">
+                </div>
+                <div class="mysterious-card-content">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span
+                            class="bg-tertiary/20 text-tertiary px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">Featured</span>
+                        <span class="text-on-surface-variant text-sm font-label flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[16px]">calendar_month</span> Oct 31, 2024
+                        </span>
+                    </div>
+                    <h2
+                        class="headline-display text-3xl md:text-4xl font-bold text-on-surface mb-2 group-hover:text-tertiary transition-colors">
+                        The Midnight Gala</h2>
+                    <p class="font-body text-on-surface-variant mb-6 max-w-lg">An exclusive masquerade event blending
+                        mystery with modern elegance. Secure your invitation before they vanish.</p>
+                    <button
+                        class="bg-tertiary text-on-tertiary px-6 py-3 rounded-lg font-bold flex items-center gap-2 w-max hover:shadow-[0_0_20px_rgba(123,208,255,0.3)] transition-all">
+                        Reveal Details
+                        <span class="material-symbols-outlined">arrow_forward</span>
+                    </button>
+                </div>
+            </article>
+            <!-- Secondary Event Card -->
+            <article
+                class="md:col-span-4 mysterious-card bg-surface-container-low rounded-xl p-8 flex flex-col min-h-[400px] border-b border-outline-variant/15 relative cursor-pointer">
+                <div class="flex justify-between items-start mb-auto mysterious-card-content">
+                    <span
+                        class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">Workshop</span>
+                    <span class="material-symbols-outlined text-outline">code</span>
+                </div>
+                <div class="mysterious-card-content mt-8">
+                    <span class="text-on-surface-variant text-sm font-label flex items-center gap-1 mb-2">
+                        <span class="material-symbols-outlined text-[16px]">schedule</span> Nov 05, 18:00
+                    </span>
+                    <h3 class="headline-display text-2xl font-bold text-on-surface mb-2">Cybersecurity Basics</h3>
+                    <p class="font-body text-on-surface-variant text-sm mb-6">Learn to defend in the digital shadows. A
+                        hands-on session for initiates.</p>
+                    <a class="text-primary hover:text-white font-medium flex items-center gap-1 text-sm transition-colors"
+                        href="#">
+                        Join Session <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                    </a>
+                </div>
+            </article>
+            <!-- Tertiary Event Card -->
+            <article
+                class="md:col-span-4 mysterious-card bg-surface-container-low rounded-xl p-8 flex flex-col min-h-[350px] border-b border-outline-variant/15 cursor-pointer relative">
+                <div class="flex justify-between items-start mb-auto mysterious-card-content">
+                    <span
+                        class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">Social</span>
+                    <span class="material-symbols-outlined text-outline">local_cafe</span>
+                </div>
+                <div class="mysterious-card-content mt-8">
+                    <span class="text-on-surface-variant text-sm font-label flex items-center gap-1 mb-2">
+                        <span class="material-symbols-outlined text-[16px]">location_on</span> The Tavern
+                    </span>
+                    <h3 class="headline-display text-xl font-bold text-on-surface mb-2">After-Hours Meetup</h3>
+                    <p class="font-body text-on-surface-variant text-sm mb-6">Casual networking and drinks to decompress
+                        after a long week of code.</p>
+                </div>
+            </article>
+            <!-- Quaternary Event Card (Image focused) -->
+            <article
+                class="md:col-span-8 mysterious-card bg-surface-container-high rounded-xl p-8 flex flex-col justify-end min-h-[350px] border-b border-outline-variant/15 relative group cursor-pointer">
+                <div class="absolute inset-0 bg-cover bg-center opacity-30 group-hover:opacity-40 transition-opacity duration-500 rounded-xl"
+                    data-alt="abstract dark gaming setup with glowing blue keyboards and monitors"
+                    style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDWPmPVsvvVdmLm0Q26NDFVmgvax6eO3KQEO9t11lDCt6lu5EY8Y7Qh5IG2UF528sTSTszqeiq_GjIkQUKd2C2DhwdioTG-_inCC1TRn-WABrWfw5BPvVNXZZbvV_iOKiQB9knYE5ews899wsrFuE9QVChZ4UCowQb-cqs5u3shl4c5OLy03E116YOCl5iAll5Lt99XB_9kTE4SIwifJ433y3fsnDDZ90EuCqg2Pf0wR7SBDWoTO4gnPT8f_gCkQXsVF041dkv9D1qG');">
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-surface-container-highest to-transparent rounded-xl">
+                </div>
+                <div class="mysterious-card-content flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div>
+                        <span
+                            class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase mb-4 inline-block">Tournament</span>
+                        <h3 class="headline-display text-2xl md:text-3xl font-bold text-on-surface mb-2">Winter LAN
+                            Party</h3>
+                        <p class="font-body text-on-surface-variant max-w-md">48 hours of uninterrupted gaming,
+                            caffeine, and competition in the campus crypt.</p>
+                    </div>
+                    <div class="flex-shrink-0 text-right">
+                        <div class="text-3xl font-bold text-tertiary font-headline mb-1">Dec 12</div>
+                        <div class="text-sm text-on-surface-variant">Registration Open</div>
+                    </div>
+                </div>
+            </article>
+        </section>
+        <!-- Archive/Past Events Teaser (Glass Modal style inline) -->
+        <section
+            class="glass-modal p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 border border-outline-variant/15 relative overflow-hidden">
+            <!-- Ambient light effect -->
+            <div
+                class="absolute -right-20 -bottom-20 w-64 h-64 bg-primary/10 rounded-full blur-[80px] pointer-events-none">
+            </div>
+            <div class="relative z-10 max-w-xl">
+                <h2 class="headline-display text-2xl font-bold text-on-surface mb-3 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">history</span>
+                    The Archives
+                </h2>
+                <p class="font-body text-on-surface-variant">
+                    Legends of past nights. Browse the gallery of previous events, access old workshop materials, and
+                    see what you missed in the shadows.
+                </p>
+            </div>
+            <button
+                class="relative z-10 bg-surface-container-highest text-primary border-b border-outline-variant/30 hover:border-primary px-6 py-3 rounded-lg font-medium transition-all hover:bg-surface-container-high whitespace-nowrap">
+                Open Archives
+            </button>
+        </section>
+    </main>
+    <!-- Footer Component -->
+    <footer class="w-full py-12 border-t border-white/5 bg-[#070d1f] transition-all duration-300">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-8 max-w-7xl mx-auto">
+            <!-- Brand & Copyright -->
+            <div class="flex flex-col space-y-4">
+                <span class="text-lg font-bold text-[#bcc7de] headline-display">BDE CERI</span>
+                <p class="font-['Manrope'] text-xs tracking-wide text-[#dce1fb]/60">
+                    © 2024 BDE CERI. Crafted in the moonlight.
+                </p>
+            </div>
+            <!-- Links Column 1 -->
+            <div class="flex flex-col space-y-3">
+                <h4 class="font-label text-xs uppercase tracking-widest text-[#bcc7de] mb-2">Connect</h4>
+                <a class="font-['Manrope'] text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors opacity-80 hover:opacity-100"
+                    href="#">Facebook</a>
+                <a class="font-['Manrope'] text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors opacity-80 hover:opacity-100"
+                    href="#">Instagram</a>
+                <a class="font-['Manrope'] text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors opacity-80 hover:opacity-100"
+                    href="#">LinkedIn</a>
+            </div>
+            <!-- Links Column 2 -->
+            <div class="flex flex-col space-y-3">
+                <h4 class="font-label text-xs uppercase tracking-widest text-[#bcc7de] mb-2">Resources</h4>
+                <a class="font-['Manrope'] text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors opacity-80 hover:opacity-100 flex items-center gap-1"
+                    href="#">
+                    Download App <span class="material-symbols-outlined text-[14px]">download</span>
+                </a>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

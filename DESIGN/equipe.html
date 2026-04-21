@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>BDE CERI - Team</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Material Symbols -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Tailwind Configuration -->
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#c6c6cd",
+                        "surface-container-low": "#151b2d",
+                        "on-primary": "#263143",
+                        "secondary-fixed": "#e0e3e5",
+                        "inverse-primary": "#545f73",
+                        "error-container": "#93000a",
+                        "surface-container-high": "#23293c",
+                        "surface": "#0c1324",
+                        "secondary": "#c4c7c9",
+                        "on-tertiary": "#00354a",
+                        "on-surface": "#dce1fb",
+                        "on-secondary-fixed-variant": "#444749",
+                        "primary-fixed": "#d8e3fb",
+                        "on-primary-container": "#768197",
+                        "on-primary-fixed": "#111c2d",
+                        "surface-variant": "#2e3447",
+                        "outline-variant": "#45464d",
+                        "surface-tint": "#bcc7de",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "surface-container-highest": "#2e3447",
+                        "surface-container": "#191f31",
+                        "secondary-container": "#464a4b",
+                        "on-secondary-fixed": "#191c1e",
+                        "inverse-surface": "#dce1fb",
+                        "on-error": "#690005",
+                        "on-secondary-container": "#b6b9bb",
+                        "surface-bright": "#33394c",
+                        "on-primary-fixed-variant": "#3c475a",
+                        "tertiary": "#7bd0ff",
+                        "on-tertiary-fixed": "#001e2c",
+                        "surface-dim": "#0c1324",
+                        "tertiary-container": "#001a27",
+                        "error": "#ffb4ab",
+                        "inverse-on-surface": "#2a3043",
+                        "primary-container": "#0c1829",
+                        "tertiary-fixed": "#c4e7ff",
+                        "primary": "#bcc7de",
+                        "surface-container-lowest": "#070d1f",
+                        "on-tertiary-container": "#008abb",
+                        "on-background": "#dce1fb",
+                        "primary-fixed-dim": "#bcc7de",
+                        "secondary-fixed-dim": "#c4c7c9",
+                        "outline": "#909097",
+                        "on-secondary": "#2d3133",
+                        "background": "#0c1324",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#7bd0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": [
+                            "Space Grotesk"
+                        ],
+                        "body": [
+                            "Manrope"
+                        ],
+                        "label": [
+                            "Manrope"
+                        ]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            background-color: theme('colors.surface');
+            color: theme('colors.on-surface');
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+
+<body class="antialiased min-h-screen flex flex-col font-body selection:bg-tertiary selection:text-on-tertiary">
+    <!-- TopNavBar (Generated from JSON) -->
+    <nav
+        class="fixed top-0 w-full z-50 bg-[#0c1324]/40 backdrop-blur-xl shadow-2xl shadow-black/50 transition-all duration-300">
+        <div class="flex justify-between items-center px-8 h-20 max-w-7xl mx-auto hover:backdrop-blur-3xl scale-[1.02]">
+            <div class="text-2xl font-bold tracking-tighter text-[#bcc7de]">
+                BDE CERI
+            </div>
+            <div class="hidden md:flex gap-8 font-['Space_Grotesk'] tracking-tight text-sm uppercase items-center">
+                <a class="text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                    href="#">Home</a>
+                <a class="text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                    href="#">Events</a>
+                <!-- Active Tab -->
+                <a class="text-[#7bd0ff] font-bold border-b-2 border-[#7bd0ff] pb-1 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                    href="#">Team</a>
+                <a class="text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                    href="#">Tavern</a>
+                <a class="text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                    href="#">Contact</a>
+                <a class="text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out"
+                    href="#">Donate</a>
+            </div>
+            <div class="flex items-center text-blue-200">
+                <button aria-label="Toggle Dark Mode"
+                    class="hover:text-[#7bd0ff] transition-all duration-300 ease-in-out flex items-center justify-center">
+                    <span class="material-symbols-outlined text-2xl">dark_mode</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <!-- Main Content Canvas -->
+    <main class="flex-grow pt-32 pb-24 relative overflow-hidden">
+        <!-- Ambient background glow -->
+        <div
+            class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary-container/30 rounded-full blur-[120px] pointer-events-none -z-10">
+        </div>
+        <div class="max-w-7xl mx-auto px-8 relative z-10">
+            <!-- Hero Header -->
+            <div class="mb-20 max-w-2xl">
+                <p class="font-label text-sm uppercase tracking-[0.2em] text-primary mb-4">The Nocturnal Invitation</p>
+                <h1
+                    class="font-headline text-5xl md:text-6xl font-bold tracking-tight text-on-surface leading-tight mb-6">
+                    Meet the Minds Behind the <span
+                        class="text-transparent bg-clip-text bg-gradient-to-br from-primary to-primary-container">Midnight</span>.
+                </h1>
+                <p class="font-body text-lg text-on-surface-variant max-w-xl">
+                    A collective of visionaries orchestrating the academic and festive harmony of CERI.
+                </p>
+            </div>
+            <!-- Bento Grid layout for Team Members -->
+            <div class="grid grid-cols-1 md:grid-cols-4 auto-rows-[340px] gap-6">
+                <!-- Member 1: President (Featured Large Card) -->
+                <div
+                    class="md:col-span-2 md:row-span-2 group relative w-full h-full rounded-xl overflow-hidden bg-surface-container-high shadow-lg outline outline-1 outline-outline-variant/15 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(7,13,31,0.5)]">
+                    <img alt="Portrait of President"
+                        class="absolute inset-0 w-full h-full object-cover object-center z-0 transition-transform duration-700 group-hover:scale-105"
+                        data-alt="dramatic low key portrait of a young man with intense gaze, moody cinematic lighting against dark background"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBI3WY4TEapgFAVHln9TwyfroFn44tFdfUoczArTvQV_g0ML-cC9VW7AFLEc3NXL4zVlE7r0yaaRn4ygIfdgfimkTHz7B8MfVis8NUu6-bIXUmHIT4dfYrFNT88drRjYJUaSkourx6THa0SotvlEtqyLNg6oMpU07qODR3n7lta3dVFiUqEnLJ4v168bNr-9IvHrRi6Btu4lpI6ZX5dwduZ2rlay0X9NSI7xEh9kcQlbRhXG9kmIFl4V94INau0kNXzdkZxv9m8IFYW" />
+                    <!-- The "Frost" Layer -->
+                    <div
+                        class="absolute inset-0 z-10 bg-surface-container-high/90 transition-all duration-500 group-hover:bg-surface-variant/40 group-hover:backdrop-blur-[20px]">
+                    </div>
+                    <!-- Content Reveal Layer -->
+                    <div class="absolute inset-0 z-20 p-8 flex flex-col justify-end">
+                        <div class="transform transition-transform duration-500 group-hover:-translate-y-4">
+                            <h3 class="font-headline text-3xl font-bold text-on-surface mb-1">Alexandre Dubois</h3>
+                            <p class="font-body text-sm uppercase tracking-wider text-tertiary">President</p>
+                        </div>
+                        <div
+                            class="grid grid-rows-[0fr] opacity-0 transition-all duration-500 ease-in-out group-hover:grid-rows-[1fr] group-hover:opacity-100">
+                            <div class="overflow-hidden">
+                                <p
+                                    class="font-body text-base text-on-surface-variant pt-4 border-t border-outline-variant/20 mt-4">
+                                    Architect of the association's vision. Navigating the delicate balance between
+                                    academic excellence and unforgettable nights.
+                                </p>
+                                <div class="flex gap-4 mt-6">
+                                    <button
+                                        class="bg-primary/10 hover:bg-primary/20 text-primary p-2 rounded-lg transition-colors flex items-center justify-center backdrop-blur-md outline outline-1 outline-primary/20">
+                                        <span class="material-symbols-outlined text-sm">mail</span>
+                                    </button>
+                                    <button
+                                        class="bg-primary/10 hover:bg-primary/20 text-primary p-2 rounded-lg transition-colors flex items-center justify-center backdrop-blur-md outline outline-1 outline-primary/20">
+                                        <span class="material-symbols-outlined text-sm">public</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Member 2: Vice President -->
+                <div
+                    class="md:col-span-2 md:row-span-1 group relative w-full h-full rounded-xl overflow-hidden bg-surface-container-high shadow-lg outline outline-1 outline-outline-variant/15 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(7,13,31,0.5)]">
+                    <img alt="Portrait of VP"
+                        class="absolute inset-0 w-full h-full object-cover object-top z-0 transition-transform duration-700 group-hover:scale-105"
+                        data-alt="elegant portrait of a young woman bathed in soft cool moonlight, dark background, ethereal aesthetic"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCd1n82jq0cqy39qT-RsIAWklu4zWVLtLEozbIad5CrA3sr8j8SXohrEwirmnSxgrB-NCpDHt404dEuDRPisb9shyFoU5y5aMkAcarsyGoTv3qhCiRvWmHG21tV3TAwdf4Pe6fFY9IlIa9R9lO9RtMlY6JbNAtwC2BKKkZaSr2JOL3ChBNws_J-nbu83Mnf6okn1kGFdVTCIGfQJDGaZcM8I1BjXU7dytUNnvjUEWF8YbuzhIvPPBWJrSMRd3XGz5BqjZi4bt1iotmk" />
+                    <!-- The "Frost" Layer -->
+                    <div
+                        class="absolute inset-0 z-10 bg-surface-container-high/90 transition-all duration-500 group-hover:bg-surface-variant/40 group-hover:backdrop-blur-[20px]">
+                    </div>
+                    <!-- Content Reveal Layer -->
+                    <div class="absolute inset-0 z-20 p-6 flex flex-col justify-end">
+                        <div class="transform transition-transform duration-500 group-hover:-translate-y-2">
+                            <h3 class="font-headline text-2xl font-bold text-on-surface mb-1">Clara Lemaire</h3>
+                            <p class="font-body text-xs uppercase tracking-wider text-primary">Vice President</p>
+                        </div>
+                        <div
+                            class="grid grid-rows-[0fr] opacity-0 transition-all duration-500 ease-in-out group-hover:grid-rows-[1fr] group-hover:opacity-100">
+                            <div class="overflow-hidden">
+                                <p
+                                    class="font-body text-sm text-on-surface-variant pt-3 mt-3 border-t border-outline-variant/20">
+                                    The tactical mind turning grand visions into flawless execution.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Member 3: Treasurer -->
+                <div
+                    class="md:col-span-2 md:row-span-1 group relative w-full h-full rounded-xl overflow-hidden bg-surface-container-high shadow-lg outline outline-1 outline-outline-variant/15 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(7,13,31,0.5)]">
+                    <img alt="Portrait of Treasurer"
+                        class="absolute inset-0 w-full h-full object-cover object-center z-0 transition-transform duration-700 group-hover:scale-105"
+                        data-alt="stoic portrait of a man in subtle rim lighting, deep shadows, professional yet mysterious mood"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTI6Syj-RC3VpCfkmottMSmMMubEiz6pgbbTa23VA7TfE7GGQr2kCHY8UAWQviVJO0G4U5-B_hUHiYjbg6A6ooX4335RMewufnnYcy8cD5SXgZtJcQ_ZGfSdvYxexpBhjIrQam5bhHYE5jvw6dXHV5tx8MFXGpM7g2HgRBAOTt_l4xnYZ3baH4Sr5yKY5kPAAaehH5nRdIh1TEzB4cOShMfBZESbmhoyJ8Ys5lktM6eBU4YPGi-GzBQutEQK8aPiG6klfJwoArupck" />
+                    <!-- The "Frost" Layer -->
+                    <div
+                        class="absolute inset-0 z-10 bg-surface-container-high/90 transition-all duration-500 group-hover:bg-surface-variant/40 group-hover:backdrop-blur-[20px]">
+                    </div>
+                    <!-- Content Reveal Layer -->
+                    <div class="absolute inset-0 z-20 p-6 flex flex-col justify-end">
+                        <div class="transform transition-transform duration-500 group-hover:-translate-y-2">
+                            <h3 class="font-headline text-2xl font-bold text-on-surface mb-1">Mathieu Blanc</h3>
+                            <p class="font-body text-xs uppercase tracking-wider text-primary">Treasurer</p>
+                        </div>
+                        <div
+                            class="grid grid-rows-[0fr] opacity-0 transition-all duration-500 ease-in-out group-hover:grid-rows-[1fr] group-hover:opacity-100">
+                            <div class="overflow-hidden">
+                                <p
+                                    class="font-body text-sm text-on-surface-variant pt-3 mt-3 border-t border-outline-variant/20">
+                                    Guardian of the vault. Ensuring every event is spectacular and sustainable.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Member 4: Events -->
+                <div
+                    class="md:col-span-1 md:row-span-1 group relative w-full h-full rounded-xl overflow-hidden bg-surface-container-high shadow-lg outline outline-1 outline-outline-variant/15 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(7,13,31,0.5)]">
+                    <div class="absolute inset-0 bg-gradient-to-br from-surface-container-highest to-surface z-0"></div>
+                    <!-- The "Frost" Layer -->
+                    <div
+                        class="absolute inset-0 z-10 bg-surface-container-high/80 transition-all duration-500 group-hover:bg-surface-variant/40 group-hover:backdrop-blur-[20px]">
+                    </div>
+                    <!-- Content Reveal Layer -->
+                    <div class="absolute inset-0 z-20 p-6 flex flex-col justify-end">
+                        <span
+                            class="material-symbols-outlined text-primary mb-auto opacity-50 text-4xl group-hover:scale-110 transition-transform">celebration</span>
+                        <div class="transform transition-transform duration-500 group-hover:-translate-y-1">
+                            <h3 class="font-headline text-xl font-bold text-on-surface mb-1">Sophie</h3>
+                            <p class="font-body text-xs uppercase tracking-wider text-primary">Head of Events</p>
+                        </div>
+                        <div
+                            class="grid grid-rows-[0fr] opacity-0 transition-all duration-500 ease-in-out group-hover:grid-rows-[1fr] group-hover:opacity-100">
+                            <div class="overflow-hidden flex gap-2 pt-3 mt-2">
+                                <span
+                                    class="material-symbols-outlined text-tertiary text-sm cursor-pointer hover:text-white transition-colors">alternate_email</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Member 5: Comms -->
+                <div
+                    class="md:col-span-1 md:row-span-1 group relative w-full h-full rounded-xl overflow-hidden bg-surface-container-high shadow-lg outline outline-1 outline-outline-variant/15 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(7,13,31,0.5)]">
+                    <div class="absolute inset-0 bg-gradient-to-br from-surface-container-highest to-surface z-0"></div>
+                    <!-- The "Frost" Layer -->
+                    <div
+                        class="absolute inset-0 z-10 bg-surface-container-high/80 transition-all duration-500 group-hover:bg-surface-variant/40 group-hover:backdrop-blur-[20px]">
+                    </div>
+                    <!-- Content Reveal Layer -->
+                    <div class="absolute inset-0 z-20 p-6 flex flex-col justify-end">
+                        <span
+                            class="material-symbols-outlined text-primary mb-auto opacity-50 text-4xl group-hover:scale-110 transition-transform">campaign</span>
+                        <div class="transform transition-transform duration-500 group-hover:-translate-y-1">
+                            <h3 class="font-headline text-xl font-bold text-on-surface mb-1">Lucas</h3>
+                            <p class="font-body text-xs uppercase tracking-wider text-primary">Communications</p>
+                        </div>
+                        <div
+                            class="grid grid-rows-[0fr] opacity-0 transition-all duration-500 ease-in-out group-hover:grid-rows-[1fr] group-hover:opacity-100">
+                            <div class="overflow-hidden flex gap-2 pt-3 mt-2">
+                                <span
+                                    class="material-symbols-outlined text-tertiary text-sm cursor-pointer hover:text-white transition-colors">alternate_email</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Member 6: Sponsoring -->
+                <div
+                    class="md:col-span-1 md:row-span-1 group relative w-full h-full rounded-xl overflow-hidden bg-surface-container-high shadow-lg outline outline-1 outline-outline-variant/15 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(7,13,31,0.5)]">
+                    <div class="absolute inset-0 bg-gradient-to-br from-surface-container-highest to-surface z-0"></div>
+                    <!-- The "Frost" Layer -->
+                    <div
+                        class="absolute inset-0 z-10 bg-surface-container-high/80 transition-all duration-500 group-hover:bg-surface-variant/40 group-hover:backdrop-blur-[20px]">
+                    </div>
+                    <!-- Content Reveal Layer -->
+                    <div class="absolute inset-0 z-20 p-6 flex flex-col justify-end">
+                        <span
+                            class="material-symbols-outlined text-primary mb-auto opacity-50 text-4xl group-hover:scale-110 transition-transform">handshake</span>
+                        <div class="transform transition-transform duration-500 group-hover:-translate-y-1">
+                            <h3 class="font-headline text-xl font-bold text-on-surface mb-1">Emma</h3>
+                            <p class="font-body text-xs uppercase tracking-wider text-primary">Partnerships</p>
+                        </div>
+                        <div
+                            class="grid grid-rows-[0fr] opacity-0 transition-all duration-500 ease-in-out group-hover:grid-rows-[1fr] group-hover:opacity-100">
+                            <div class="overflow-hidden flex gap-2 pt-3 mt-2">
+                                <span
+                                    class="material-symbols-outlined text-tertiary text-sm cursor-pointer hover:text-white transition-colors">alternate_email</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Member 7: Tavern -->
+                <div
+                    class="md:col-span-1 md:row-span-1 group relative w-full h-full rounded-xl overflow-hidden bg-surface-container-high shadow-lg outline outline-1 outline-outline-variant/15 transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(7,13,31,0.5)]">
+                    <div class="absolute inset-0 bg-gradient-to-br from-surface-container-highest to-surface z-0"></div>
+                    <!-- The "Frost" Layer -->
+                    <div
+                        class="absolute inset-0 z-10 bg-surface-container-high/80 transition-all duration-500 group-hover:bg-surface-variant/40 group-hover:backdrop-blur-[20px]">
+                    </div>
+                    <!-- Content Reveal Layer -->
+                    <div class="absolute inset-0 z-20 p-6 flex flex-col justify-end">
+                        <span
+                            class="material-symbols-outlined text-primary mb-auto opacity-50 text-4xl group-hover:scale-110 transition-transform">sports_bar</span>
+                        <div class="transform transition-transform duration-500 group-hover:-translate-y-1">
+                            <h3 class="font-headline text-xl font-bold text-on-surface mb-1">Hugo</h3>
+                            <p class="font-body text-xs uppercase tracking-wider text-primary">Tavern Master</p>
+                        </div>
+                        <div
+                            class="grid grid-rows-[0fr] opacity-0 transition-all duration-500 ease-in-out group-hover:grid-rows-[1fr] group-hover:opacity-100">
+                            <div class="overflow-hidden flex gap-2 pt-3 mt-2">
+                                <span
+                                    class="material-symbols-outlined text-tertiary text-sm cursor-pointer hover:text-white transition-colors">alternate_email</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Footer (Generated from JSON) -->
+    <footer class="w-full py-12 border-t border-white/5 bg-[#070d1f] mt-auto">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-8 max-w-7xl mx-auto items-center">
+            <div class="text-lg font-bold text-[#bcc7de]">
+                BDE CERI
+            </div>
+            <div class="font-['Manrope'] text-xs tracking-wide text-[#dce1fb]/60 text-center md:text-left">
+                © 2024 BDE CERI. Crafted in the moonlight.
+            </div>
+            <div class="flex flex-wrap gap-6 md:justify-end">
+                <a class="font-['Manrope'] text-xs tracking-wide text-[#dce1fb]/60 opacity-80 hover:opacity-100 hover:text-white transition-colors"
+                    href="#">Facebook</a>
+                <a class="font-['Manrope'] text-xs tracking-wide text-[#dce1fb]/60 opacity-80 hover:opacity-100 hover:text-white transition-colors"
+                    href="#">Instagram</a>
+                <a class="font-['Manrope'] text-xs tracking-wide text-[#dce1fb]/60 opacity-80 hover:opacity-100 hover:text-white transition-colors"
+                    href="#">LinkedIn</a>
+                <a class="font-['Manrope'] text-xs tracking-wide text-[#dce1fb]/60 opacity-80 hover:opacity-100 hover:text-white transition-colors"
+                    href="#">Download App</a>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

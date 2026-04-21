@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="fr">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Taverne BDE CERI</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Manrope:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#c6c6cd",
+                        "surface-container-low": "#151b2d",
+                        "on-primary": "#263143",
+                        "secondary-fixed": "#e0e3e5",
+                        "inverse-primary": "#545f73",
+                        "error-container": "#93000a",
+                        "surface-container-high": "#23293c",
+                        "surface": "#0c1324",
+                        "secondary": "#c4c7c9",
+                        "on-tertiary": "#00354a",
+                        "on-surface": "#dce1fb",
+                        "on-secondary-fixed-variant": "#444749",
+                        "primary-fixed": "#d8e3fb",
+                        "on-primary-container": "#768197",
+                        "on-primary-fixed": "#111c2d",
+                        "surface-variant": "#2e3447",
+                        "outline-variant": "#45464d",
+                        "surface-tint": "#bcc7de",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "surface-container-highest": "#2e3447",
+                        "surface-container": "#191f31",
+                        "secondary-container": "#464a4b",
+                        "on-secondary-fixed": "#191c1e",
+                        "inverse-surface": "#dce1fb",
+                        "on-error": "#690005",
+                        "on-secondary-container": "#b6b9bb",
+                        "surface-bright": "#33394c",
+                        "on-primary-fixed-variant": "#3c475a",
+                        "tertiary": "#7bd0ff",
+                        "on-tertiary-fixed": "#001e2c",
+                        "surface-dim": "#0c1324",
+                        "tertiary-container": "#001a27",
+                        "error": "#ffb4ab",
+                        "inverse-on-surface": "#2a3043",
+                        "primary-container": "#0c1829",
+                        "tertiary-fixed": "#c4e7ff",
+                        "primary": "#bcc7de",
+                        "surface-container-lowest": "#070d1f",
+                        "on-tertiary-container": "#008abb",
+                        "on-background": "#dce1fb",
+                        "primary-fixed-dim": "#bcc7de",
+                        "secondary-fixed-dim": "#c4c7c9",
+                        "outline": "#909097",
+                        "on-secondary": "#2d3133",
+                        "background": "#0c1324",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#7bd0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": [
+                            "Space Grotesk"
+                        ],
+                        "body": [
+                            "Manrope"
+                        ],
+                        "label": [
+                            "Manrope"
+                        ]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .glass-panel {
+            background: rgba(46, 52, 71, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .glass-card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .glass-card-hover:hover {
+            background: rgba(46, 52, 71, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(7, 13, 31, 0.5);
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #bcc7de 0%, #0c1829 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .ghost-border {
+            border: 1px solid rgba(69, 70, 77, 0.15);
+        }
+
+        .ambient-shadow {
+            box-shadow: 0 20px 40px rgba(7, 13, 31, 0.5);
+        }
+    </style>
+</head>
+
+<body class="bg-surface text-on-surface font-body antialiased selection:bg-tertiary selection:text-on-tertiary">
+    <!-- TopNavBar -->
+    <nav aria-label="Main Navigation"
+        class="fixed top-0 w-full z-50 bg-[#0c1324]/40 backdrop-blur-xl shadow-2xl shadow-black/50">
+        <div class="flex justify-between items-center px-8 h-20 max-w-7xl mx-auto">
+            <a class="text-2xl font-bold tracking-tighter text-[#bcc7de] font-headline" href="#">BDE CERI</a>
+            <div class="hidden md:flex space-x-8 items-center">
+                <a class="font-['Space_Grotesk'] tracking-tight text-sm uppercase text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out hover:backdrop-blur-3xl scale-[1.02]"
+                    href="#">Home</a>
+                <a class="font-['Space_Grotesk'] tracking-tight text-sm uppercase text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out hover:backdrop-blur-3xl scale-[1.02]"
+                    href="#">Events</a>
+                <a class="font-['Space_Grotesk'] tracking-tight text-sm uppercase text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out hover:backdrop-blur-3xl scale-[1.02]"
+                    href="#">Team</a>
+                <a aria-current="page"
+                    class="font-['Space_Grotesk'] tracking-tight text-sm uppercase text-[#7bd0ff] font-bold border-b-2 border-[#7bd0ff] pb-1 hover:backdrop-blur-3xl scale-[1.02]"
+                    href="#">Tavern</a>
+                <a class="font-['Space_Grotesk'] tracking-tight text-sm uppercase text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out hover:backdrop-blur-3xl scale-[1.02]"
+                    href="#">Contact</a>
+                <a class="font-['Space_Grotesk'] tracking-tight text-sm uppercase text-[#dce1fb] opacity-80 hover:opacity-100 hover:text-[#7bd0ff] transition-all duration-300 ease-in-out hover:backdrop-blur-3xl scale-[1.02]"
+                    href="#">Donate</a>
+            </div>
+            <button aria-label="Toggle Dark Mode" class="text-primary hover:text-tertiary transition-colors">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">dark_mode</span>
+            </button>
+        </div>
+    </nav>
+    <main class="pt-32 pb-24 px-6 md:px-12 max-w-7xl mx-auto min-h-screen">
+        <!-- Hero Section -->
+        <header class="mb-20 text-center relative">
+            <div class="absolute inset-0 -z-10 flex items-center justify-center opacity-20 pointer-events-none">
+                <div class="w-96 h-96 bg-primary-container rounded-full blur-[120px]"></div>
+            </div>
+            <h1 class="font-headline text-5xl md:text-7xl font-bold tracking-tighter mb-6 text-gradient">La Taverne
+                Nocturne</h1>
+            <p class="font-body text-xl text-on-surface-variant max-w-2xl mx-auto">Discover our curated selection of
+                refreshments and bites. A mystical enclave for the discerning student.</p>
+        </header>
+        <!-- Payment Info Banner -->
+        <section
+            class="mb-16 glass-panel rounded-xl p-6 ghost-border ambient-shadow max-w-3xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+                <span class="material-symbols-outlined text-tertiary text-3xl"
+                    style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+                <div>
+                    <h3 class="font-headline font-bold text-lg text-primary">Payment Methods</h3>
+                    <p class="text-sm text-on-surface-variant">Secure your provisions seamlessly.</p>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <div class="flex items-center gap-2 bg-surface-container-lowest px-4 py-2 rounded-lg ghost-border">
+                    <span class="material-symbols-outlined text-sm text-secondary"
+                        style="font-variation-settings: 'FILL' 0;">credit_card</span>
+                    <span class="text-sm font-medium">Card On-site</span>
+                </div>
+                <div class="flex items-center gap-2 bg-surface-container-lowest px-4 py-2 rounded-lg ghost-border">
+                    <span class="material-symbols-outlined text-sm text-secondary"
+                        style="font-variation-settings: 'FILL' 0;">public</span>
+                    <span class="text-sm font-medium">HelloAsso Online</span>
+                </div>
+            </div>
+        </section>
+        <!-- Menu Section: Bento Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+            <!-- Category: Elixirs (Drinks) - Large Span -->
+            <div class="md:col-span-8 space-y-8">
+                <div class="flex items-center gap-4 mb-6">
+                    <h2 class="font-headline text-3xl font-bold text-primary tracking-tight">Elixirs</h2>
+                    <div class="h-px bg-outline-variant/30 flex-grow"></div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <!-- Drink Item 1 -->
+                    <div
+                        class="bg-surface-container-high rounded-xl p-6 ghost-border glass-card-hover relative group overflow-hidden">
+                        <div
+                            class="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <button aria-label="Info"
+                                class="bg-surface-container-lowest text-primary p-2 rounded-full hover:text-tertiary transition-colors">
+                                <span class="material-symbols-outlined text-sm"
+                                    style="font-variation-settings: 'FILL' 0;">info</span>
+                            </button>
+                        </div>
+                        <div class="h-40 w-full mb-6 rounded-lg bg-surface-container-lowest overflow-hidden">
+                            <img alt="Iced coffee beverage"
+                                class="w-full h-full object-cover opacity-80 mix-blend-luminosity hover:mix-blend-normal transition-all duration-500"
+                                data-alt="Close up of a dark iced coffee drink in a tall glass with condensation, moody low key lighting against a dark textured background"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxYEi9KIQUtGHoxHKtgqhwBaF1TKuovaIUeEHX9sfUjXQm5L040gVYgvyiR1U_HSN4eqb09H288l8dQB-zAoI-lu_-7uHmo5tLmKA4UO0C4smjGvGcWl1lNemD89-xQwU3OX2IpydmUKBL1EPcfQnhtkLXSJOyQbv_-5q9M1EgGji2Dyk1vPj1ijk1sBtUFKCYyzLxEN3fk7FfDKBy_an6YJgecKTi9971zMAoFWHUo6M9RyAGQjqot5RLiiiRhHdKvvkg-bnU7aLE" />
+                        </div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-headline font-semibold text-xl text-primary">Midnight Brew</h3>
+                            <span class="font-headline font-bold text-tertiary">2.50€</span>
+                        </div>
+                        <p class="text-sm text-on-surface-variant mb-4 line-clamp-2">Cold-brewed espresso infused with
+                            subtle hints of vanilla and a touch of dark cacao.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span
+                                class="px-2 py-1 bg-surface-container-lowest text-xs rounded text-on-secondary-container ghost-border">Caffeine</span>
+                            <span
+                                class="px-2 py-1 bg-surface-container-lowest text-xs rounded text-on-secondary-container ghost-border">Cold</span>
+                        </div>
+                    </div>
+                    <!-- Drink Item 2 -->
+                    <div
+                        class="bg-surface-container-high rounded-xl p-6 ghost-border glass-card-hover relative group overflow-hidden">
+                        <div
+                            class="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                            <button aria-label="Info"
+                                class="bg-surface-container-lowest text-primary p-2 rounded-full hover:text-tertiary transition-colors">
+                                <span class="material-symbols-outlined text-sm"
+                                    style="font-variation-settings: 'FILL' 0;">info</span>
+                            </button>
+                        </div>
+                        <div class="h-40 w-full mb-6 rounded-lg bg-surface-container-lowest overflow-hidden">
+                            <img alt="Sparkling blue drink"
+                                class="w-full h-full object-cover opacity-80 mix-blend-luminosity hover:mix-blend-normal transition-all duration-500"
+                                data-alt="A vibrant blue sparkling cocktail in a modern glass with a sprig of mint, dramatically lit against a deep navy background"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbon-L8s2hW20fIzln38aMYCkBZL__5p2eDjKzMwhfJfGqOeh1_iWF_HeaS5z1WtbB9bLOLwtXkgTFdMDGkoKWmtB9PaPVmGe6AQ2rHo5yO4zQ8gswi64ozuNdKADph0LbsYlNreGOBF1J3eOn47Oc74PJazTkId-fA-dmA-SK_2b4DdBIXeTSSsaI53XUGwJiYLoiw9218xTf09OybOi8JV5hCWQmCYTeQuWL4Us9nZivVWUOIG3lAIQz0z92qGF9k716qrskPd_5" />
+                        </div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-headline font-semibold text-xl text-primary">Azure Fizz</h3>
+                            <span class="font-headline font-bold text-tertiary">1.80€</span>
+                        </div>
+                        <p class="text-sm text-on-surface-variant mb-4 line-clamp-2">A refreshing sparkling tonic with
+                            blue raspberry essence and a citrus twist.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span
+                                class="px-2 py-1 bg-surface-container-lowest text-xs rounded text-on-secondary-container ghost-border">Sparkling</span>
+                            <span
+                                class="px-2 py-1 bg-surface-container-lowest text-xs rounded text-on-secondary-container ghost-border">Sweet</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Category: Sustenance (Snacks) - Sidebar Span -->
+            <div class="md:col-span-4 space-y-8">
+                <div class="flex items-center gap-4 mb-6">
+                    <h2 class="font-headline text-3xl font-bold text-primary tracking-tight">Sustenance</h2>
+                    <div class="h-px bg-outline-variant/30 flex-grow"></div>
+                </div>
+                <div class="flex flex-col gap-6">
+                    <!-- Snack Item 1 -->
+                    <div
+                        class="bg-surface-container-low rounded-xl p-5 ghost-border hover:bg-surface-container-highest transition-colors relative group">
+                        <div class="absolute top-4 right-4 z-10">
+                            <button aria-label="Info" class="text-secondary hover:text-tertiary transition-colors">
+                                <span class="material-symbols-outlined text-sm"
+                                    style="font-variation-settings: 'FILL' 0;">info</span>
+                            </button>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="w-20 h-20 rounded-lg bg-surface-container-lowest flex-shrink-0 overflow-hidden">
+                                <img alt="Artisan cookie" class="w-full h-full object-cover opacity-70"
+                                    data-alt="A rustic dark chocolate chunk cookie resting on a dark slate surface, moody lighting highlighting its texture"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBURBW5QbHcYjWR6tURglUgoDcCW_JDmMNP7mXc3DU1STfsnvAmFhdjE20Z2w9M5RSGSd96U_6s_Ls0QyZ6KkopyZPD8xlFz2amJzQY4L-kWjYl90qVvk1IOCGNkIRH72PmFHtVYiIOAlBwiTDWdJdTFf6nZQGncnFt5du6ct6H2QajlD1vDcrsZ7ZsjgNOjWIhru_4dQ3WqvA4RvBFExGD5A6WCjBFiSQFOXTJOT-Jy0PU7Zzt17FL9cvD7q0cG7t3nvB93Q7yMC4K" />
+                            </div>
+                            <div class="flex flex-col justify-center">
+                                <h3 class="font-headline font-semibold text-lg text-primary">Obsidian Cookie</h3>
+                                <span class="font-headline font-bold text-tertiary mb-1">1.20€</span>
+                                <p class="text-xs text-on-surface-variant line-clamp-1">Double dark chocolate chunk with
+                                    sea salt.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Snack Item 2 -->
+                    <div
+                        class="bg-surface-container-low rounded-xl p-5 ghost-border hover:bg-surface-container-highest transition-colors relative group">
+                        <div class="absolute top-4 right-4 z-10">
+                            <button aria-label="Info" class="text-secondary hover:text-tertiary transition-colors">
+                                <span class="material-symbols-outlined text-sm"
+                                    style="font-variation-settings: 'FILL' 0;">info</span>
+                            </button>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="w-20 h-20 rounded-lg bg-surface-container-lowest flex-shrink-0 overflow-hidden">
+                                <img alt="Trail mix" class="w-full h-full object-cover opacity-70"
+                                    data-alt="A small bowl of mixed nuts and dark chocolate pieces on a dark wooden table, dramatic overhead lighting"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsCJ0PRghGFPxnIfITPjJljKIjELrJst3qgNU3T0Lk7LCVVpX4WN28BzxPRRy2KHqH8n40M269mWq4ptMCI_UdYz57LClVDsm3d2J1ogwGgJis_5a1kj91qsPaBr9r1FmVqbD_KBNFG3irdR7G__yfA-rwRJ_XeJZHBLSYvXMQgd7XRPZPCIe5hKqxj_Vnfa2Nl8O9PSS6fKVJh4Ln_tZR3qKTbf1UJ-HP6orQcorxbLPcauPq8NBJ4em53BxxvDbXFq-xpEmRfZ5E" />
+                            </div>
+                            <div class="flex flex-col justify-center">
+                                <h3 class="font-headline font-semibold text-lg text-primary">Scholar's Mix</h3>
+                                <span class="font-headline font-bold text-tertiary mb-1">2.00€</span>
+                                <p class="text-xs text-on-surface-variant line-clamp-1">Premium roasted nuts and dried
+                                    dark berries.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Footer -->
+    <footer
+        class="bg-[#070d1f] w-full py-12 border-t border-white/5 tonal shift from surface to surface-container-lowest flat">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-8 max-w-7xl mx-auto">
+            <div>
+                <span class="text-lg font-bold text-[#bcc7de]">BDE CERI</span>
+                <p class="font-['Manrope'] text-xs tracking-wide text-[#dce1fb]/60 mt-2">© 2024 BDE CERI. Crafted in the
+                    moonlight.</p>
+            </div>
+            <div class="flex flex-col space-y-2">
+                <a class="font-['Manrope'] text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors opacity-80 hover:opacity-100"
+                    href="#">Facebook</a>
+                <a class="font-['Manrope'] text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors opacity-80 hover:opacity-100"
+                    href="#">Instagram</a>
+                <a class="font-['Manrope'] text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors opacity-80 hover:opacity-100"
+                    href="#">LinkedIn</a>
+                <a class="font-['Manrope'] text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors opacity-80 hover:opacity-100"
+                    href="#">Download App</a>
+            </div>
+            <div class="flex justify-end items-start">
+                <!-- Decorative element or additional info could go here -->
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>
