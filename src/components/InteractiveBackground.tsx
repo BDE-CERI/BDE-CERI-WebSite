@@ -103,6 +103,8 @@ const InteractiveBackground: React.FC = () => {
     };
 
     const animate = () => {
+      if (document.hidden) return;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       for (let i = 0; i < particles.length; i++) {
         particles[i].update();
@@ -147,9 +149,18 @@ const InteractiveBackground: React.FC = () => {
       mouse.y = -1000;
     };
 
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        animate();
+      } else {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+
     window.addEventListener("resize", handleResize);
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseleave", handleMouseLeave);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     
     handleResize();
     animate();
@@ -158,6 +169,7 @@ const InteractiveBackground: React.FC = () => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseleave", handleMouseLeave);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       cancelAnimationFrame(animationFrameId);
     };
   }, [theme]);

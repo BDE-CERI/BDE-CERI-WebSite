@@ -63,50 +63,105 @@ export default async function Contact() {
                </div>
             </div>
 
-            {/* Contact Form */}
-            <div className="glass-panel p-10 rounded-3xl border border-outline-variant/10 shadow-xl">
-               <h2 className="text-2xl font-headline font-bold mb-8">Envoyer un Message</h2>
-               <form className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Nom / Prénom</label>
-                    <input
-                      className="w-full bg-surface-container-high border-0 border-b border-outline-variant/15 text-on-surface focus:ring-0 focus:border-tertiary transition-all px-4 py-4 rounded-xl"
-                      placeholder="Jean Dupont"
-                      type="text"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Email universitaire</label>
-                    <input
-                      className="w-full bg-surface-container-high border-0 border-b border-outline-variant/15 text-on-surface focus:ring-0 focus:border-tertiary transition-all px-4 py-4 rounded-xl"
-                      placeholder="jeandupont@univ-avignon.fr"
-                      type="email"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Sujet</label>
-                  <input
-                    className="w-full bg-surface-container-high border-0 border-b border-outline-variant/15 text-on-surface focus:ring-0 focus:border-tertiary transition-all px-4 py-4 rounded-xl"
-                    placeholder="Objet de votre demande"
-                    type="text"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Message</label>
-                  <textarea
-                    className="w-full bg-surface-container-high border-0 border-b border-outline-variant/15 text-on-surface focus:ring-0 focus:border-tertiary transition-all px-4 py-4 rounded-xl min-h-[150px] resize-none"
-                    placeholder="Votre message ici..."
-                  ></textarea>
-                </div>
-                <button
-                  className="bg-tertiary text-on-tertiary font-bold py-4 px-10 rounded-2xl hover:shadow-[0_0_20px_rgba(123,208,255,0.4)] transition-all hover:scale-[1.02] active:scale-95 w-full md:w-auto"
-                  type="submit"
-                >
-                  Envoyer le message
-                </button>
-              </form>
+            {/* Canaux Officiels */}
+            <div className="glass-panel p-10 rounded-3xl border border-outline-variant/10 shadow-xl space-y-8">
+               <div>
+                 <h2 className="text-2xl font-headline font-bold mb-2">Canaux Officiels & Réseaux Sociaux</h2>
+                 <p className="text-sm text-on-surface-variant leading-relaxed">
+                   Rejoignez nos communautés pour suivre nos événements en direct, échanger avec les autres étudiants et contacter le bureau.
+                 </p>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 {/* Discord Invitation Card */}
+                 <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-low hover:bg-surface-container-high transition-all flex flex-col justify-between group/card relative overflow-hidden">
+                   <div className="absolute top-0 right-0 w-32 h-32 bg-[#5865F2]/5 rounded-full blur-2xl group-hover/card:bg-[#5865F2]/10 transition-all"></div>
+                   <div>
+                     <div className="w-12 h-12 rounded-xl bg-[#5865F2]/10 flex items-center justify-center text-[#5865F2] mb-4">
+                       <span className="material-symbols-outlined text-2xl font-bold">forum</span>
+                     </div>
+                     <h3 className="text-lg font-headline font-bold mb-2 text-on-surface">Discord Communautaire</h3>
+                     <p className="text-xs text-on-surface-variant leading-relaxed mb-6">
+                       Le cœur de la vie étudiante du CERI. Annonces importantes, entraide sur les projets de dev, gaming et chill.
+                     </p>
+                   </div>
+                   <a 
+                     href="https://discord.gg/bde-ceri" 
+                     target="_blank" 
+                     rel="noopener noreferrer"
+                     className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[#5865F2] text-white font-bold hover:shadow-[0_0_15px_rgba(88,101,242,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
+                   >
+                     <span>Rejoindre le Serveur</span>
+                     <span className="material-symbols-outlined text-sm">north_east</span>
+                   </a>
+                 </div>
+
+                 {/* Instagram Card */}
+                 <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-low hover:bg-surface-container-high transition-all flex flex-col justify-between group/card relative overflow-hidden">
+                   <div className="absolute top-0 right-0 w-32 h-32 bg-tertiary/5 rounded-full blur-2xl group-hover/card:bg-tertiary/10 transition-all"></div>
+                   <div>
+                     <div className="w-12 h-12 rounded-xl bg-tertiary/10 flex items-center justify-center text-tertiary mb-4">
+                       <span className="material-symbols-outlined text-2xl font-bold">photo_camera</span>
+                     </div>
+                     <h3 className="text-lg font-headline font-bold mb-2 text-on-surface">Instagram Officiel</h3>
+                     <p className="text-xs text-on-surface-variant leading-relaxed mb-6">
+                       Suivez toutes nos actualités en images, les stories de nos soirées, les rappels d'événements et concours.
+                     </p>
+                   </div>
+                   <a 
+                     href={instagramUrl} 
+                     target="_blank" 
+                     rel="noopener noreferrer"
+                     className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gradient-to-tr from-primary via-tertiary to-secondary text-on-tertiary font-bold hover:shadow-[0_0_15px_rgba(123,208,255,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
+                   >
+                     <span>Suivre @bde_ceri</span>
+                     <span className="material-symbols-outlined text-sm">north_east</span>
+                   </a>
+                 </div>
+
+                 {/* Email Card */}
+                 <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-low hover:bg-surface-container-high transition-all flex flex-col justify-between group/card relative overflow-hidden">
+                   <div>
+                     <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4">
+                       <span className="material-symbols-outlined text-2xl font-bold">mail</span>
+                     </div>
+                     <h3 className="text-lg font-headline font-bold mb-2 text-on-surface">Email de l'Association</h3>
+                     <p className="text-xs text-on-surface-variant leading-relaxed mb-6">
+                       Pour toute question officielle, demandes d'informations, propositions de partenariats ou démarches administratives.
+                     </p>
+                   </div>
+                   <a 
+                     href="mailto:bde-ceri@univ-avignon.fr"
+                     className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant/10 text-on-surface font-bold hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
+                   >
+                     <span>bde-ceri@univ-avignon.fr</span>
+                     <span className="material-symbols-outlined text-sm">mail</span>
+                   </a>
+                 </div>
+
+                 {/* LinkedIn Card */}
+                 <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-low hover:bg-surface-container-high transition-all flex flex-col justify-between group/card relative overflow-hidden">
+                   <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover/card:bg-primary/10 transition-all"></div>
+                   <div>
+                     <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center text-[#0A66C2] mb-4">
+                       <span className="material-symbols-outlined text-2xl font-bold">work</span>
+                     </div>
+                     <h3 className="text-lg font-headline font-bold mb-2 text-on-surface">LinkedIn Professionnel</h3>
+                     <p className="text-xs text-on-surface-variant leading-relaxed mb-6">
+                       Restez connecté avec les alumni du CERI, découvrez nos partenaires professionnels et facilitez votre insertion.
+                     </p>
+                   </div>
+                   <a 
+                     href="https://linkedin.com/company/bde-ceri" 
+                     target="_blank" 
+                     rel="noopener noreferrer"
+                     className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant/10 text-on-surface font-bold hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
+                   >
+                     <span>Réseau Pro / Alumni</span>
+                     <span className="material-symbols-outlined text-sm">north_east</span>
+                   </a>
+                 </div>
+               </div>
             </div>
           </div>
 
@@ -151,22 +206,6 @@ export default async function Contact() {
                <p className="mt-6 text-[10px] text-on-surface-variant leading-relaxed italic border-t border-outline-variant/10 pt-4">
                   * Les horaires peuvent varier en fonction de la disponibilité des membres du bureau.
                </p>
-            </div>
-
-            {/* Follow Us Card */}
-            <div className="glass-panel p-8 rounded-3xl border border-outline-variant/10 shadow-xl">
-               <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-tertiary">public</span>
-                  Social Media
-               </h2>
-               <div className="flex gap-4">
-                  <a href={instagramUrl} target="_blank" className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center hover:bg-tertiary hover:text-on-tertiary transition-all">
-                     <span className="material-symbols-outlined">photo_camera</span>
-                  </a>
-                  <a href="#" className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center hover:bg-primary hover:text-on-primary transition-all">
-                     <span className="material-symbols-outlined">account_balance</span>
-                  </a>
-               </div>
             </div>
 
           </div>

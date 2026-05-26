@@ -38,6 +38,7 @@ export default function Header({
   const links = [
     { href: "/", label: dict.header.home },
     { href: "/poles", label: dict.header.poles },
+    { href: "/esport", label: "eSport" },
     { href: "/evenement", label: dict.header.events },
     { href: "/equipe", label: dict.header.team },
     { href: "/boutique", label: dict.header.tavern },
@@ -55,6 +56,7 @@ export default function Header({
             width={40}
             height={40}
             className="w-10 h-10 object-contain group-hover:scale-110 transition-transform"
+            suppressHydrationWarning
           />
           <span className="hidden sm:block">BDE CERI</span>
         </Link>
@@ -111,10 +113,13 @@ export default function Header({
               title={`${member.first_name} ${member.last_name}`}
             >
               {member.photo_url ? (
-                <img
+                <Image
                   src={member.photo_url}
                   alt={member.first_name}
+                  width={36}
+                  height={36}
                   className="w-9 h-9 rounded-full object-cover border-2 border-tertiary/40 group-hover:border-tertiary transition-colors"
+                  suppressHydrationWarning
                 />
               ) : (
                 <div className="w-9 h-9 rounded-full bg-primary/20 border-2 border-tertiary/40 group-hover:border-tertiary transition-colors flex items-center justify-center">

@@ -1,7 +1,11 @@
 import { getDictionary } from "@/locales/dictionaries";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
+import Image from "next/image";
 import SharkWallpaper from "@/components/SharkWallpaper";
+import PolesTree from "@/components/PolesTree";
+
+export const dynamic = "force-dynamic";
 
 export default async function Poles() {
   const dict = await getDictionary();
@@ -12,16 +16,16 @@ export default async function Poles() {
     .select("*")
     .order("order_index", { ascending: true });
 
-  // Fetch all VPs to match with poles
-  const { data: primaryVps } = await supabase
+  // Fetch all visible members
+  const { data: allMembers } = await supabase
     .from("members")
-    .select("id, first_name, last_name, photo_url, pole_id")
-    .eq("role", "vice_president_pole");
+    .select("id, first_name, last_name, role, role_label, photo_url, pole_id")
+    .eq("is_visible", true);
 
-  const { data: secondaryVps } = await supabase
+  // Fetch all assignments with member details
+  const { data: assignmentsData } = await supabase
     .from("member_assignments")
-    .select("role, is_vp, pole_id, members(id, first_name, last_name, photo_url)")
-    .eq("is_vp", true);
+    .select("role, is_vp, pole_id, members(id, first_name, last_name, photo_url, role_label, is_visible)");
 
   const defaultPoles = [
     {
@@ -40,6 +44,61 @@ export default async function Poles() {
 
   const polesList = polesData && polesData.length > 0 ? polesData : defaultPoles;
 
+  // Build the hierarchical tree data
+  const polesTreeData = polesList.map((pole) => {
+    // 1. Members directly assigned via pole_id
+    const primary = allMembers?.filter(m => m.pole_id === pole.id) || [];
+    
+    // 2. Members assigned via member_assignments
+    const assigned = assignmentsData
+      ?.filter(a => a.pole_id === pole.id && a.members && (a.members as any).is_visible)
+      .map(a => ({
+        id: (a.members as any).id,
+        first_name: (a.members as any).first_name,
+        last_name: (a.members as any).last_name,
+        photo_url: (a.members as any).photo_url,
+        role_label: a.role || (a.members as any).role_label || "Membre",
+        is_vp: a.is_vp || false,
+      })) || [];
+
+    const memberMap = new Map();
+
+    primary.forEach(m => {
+      memberMap.set(m.id, {
+        id: m.id,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        photo_url: m.photo_url,
+        role_label: m.role_label || "Membre du Pôle",
+        is_vp: m.role === "vice_president_pole",
+      });
+    });
+
+    assigned.forEach(m => {
+      const existing = memberMap.get(m.id);
+      if (!existing || m.is_vp) {
+        memberMap.set(m.id, {
+          id: m.id,
+          first_name: m.first_name,
+          last_name: m.last_name,
+          photo_url: m.photo_url,
+          role_label: m.role_label,
+          is_vp: m.is_vp,
+        });
+      }
+    });
+
+    const list = Array.from(memberMap.values());
+    const vp = list.find(m => m.is_vp) || null;
+    const members = list.filter(m => !m.is_vp);
+
+    return {
+      ...pole,
+      vp,
+      members,
+    };
+  });
+
   return (
     <div className="relative overflow-hidden w-full bg-surface">
       <SharkWallpaper />
@@ -56,78 +115,8 @@ export default async function Poles() {
         </p>
       </section>
 
-      <section className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {polesList.map((pole) => {
-            // Check direct member VP
-            let vp = primaryVps?.find(v => v.pole_id === pole.id);
-            
-            // If not found, check assignments
-            if (!vp) {
-              const secondary = secondaryVps?.find(s => s.pole_id === pole.id);
-              if (secondary && secondary.members) {
-                 vp = {
-                   id: (secondary.members as any).id,
-                   first_name: (secondary.members as any).first_name,
-                   last_name: (secondary.members as any).last_name,
-                   photo_url: (secondary.members as any).photo_url,
-                   pole_id: pole.id
-                 };
-              }
-            }
-            return (
-              <div key={pole.id} className="reveal-card p-1 rounded-2xl bg-surface-container-high/40 hover:bg-surface-container-high transition-all duration-500 group">
-                <div className="p-8 rounded-2xl h-full flex flex-col relative overflow-hidden">
-                  {/* LED Effect Glow */}
-                  <div 
-                    className="absolute -top-12 -right-12 w-32 h-32 blur-[80px] opacity-20 group-hover:opacity-40 transition-opacity duration-700" 
-                    style={{ backgroundColor: pole.color || '#7BD0FF' }}
-                  ></div>
-                  
-                  <div className="relative z-10 flex flex-col h-full">
-                    <div className="flex justify-between items-start mb-8">
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-outline-variant/15 bg-surface-container-low" style={{ boxShadow: `0 0 15px ${pole.color}20` }}>
-                         <span className="material-symbols-outlined" style={{ color: pole.color || '#7BD0FF' }}>
-                            {pole.name === 'Événementiel' ? 'star' : pole.name === 'Communication' ? 'campaign' : 'groups'}
-                         </span>
-                      </div>
-                    </div>
-                    
-                    <h3 className="text-2xl font-bold mb-4 text-on-surface font-headline">{pole.name}</h3>
-                    <p className="text-on-surface-variant mb-auto text-sm leading-relaxed font-body italic opacity-80 group-hover:opacity-100 transition-opacity">
-                      "{pole.description}"
-                    </p>
-                    
-                    <div className="mt-10 pt-6 border-t border-outline-variant/10 flex items-center justify-between">
-                      {vp ? (
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full overflow-hidden border border-tertiary/30 ring-2 ring-tertiary/5">
-                                <img src={vp.photo_url || "https://images.unsplash.com/photo-1544005313-94ddf0286df2"} alt={vp.first_name} className="w-full h-full object-cover" />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider">Vice-Président</span>
-                                <span className="text-xs font-medium text-on-surface">{vp.first_name} {vp.last_name}</span>
-                            </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-outline text-xs">?</div>
-                            <span className="text-[10px] text-on-surface-variant uppercase tracking-wider">VP non assigné</span>
-                        </div>
-                      )}
-                      
-                      <Link href={`/poles/${pole.id}`}>
-                        <button className="w-10 h-10 rounded-full bg-surface-container-lowest flex items-center justify-center text-on-surface hover:bg-tertiary hover:text-on-tertiary transition-all hover:scale-110 shadow-lg">
-                          <span className="material-symbols-outlined text-sm">north_east</span>
-                        </button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      <section className="max-w-5xl mx-auto px-6">
+        <PolesTree poles={polesTreeData} />
       </section>
 
       <section className="max-w-7xl mx-auto px-6 mt-32 mb-20">
@@ -145,10 +134,12 @@ export default async function Poles() {
           </div>
           <div className="w-full md:w-1/2 relative aspect-video">
             <div className="absolute inset-0 bg-tertiary/10 rounded-2xl animate-pulse"></div>
-            <img
+            <Image
               alt="Collaboration"
-              className="w-full h-full object-cover rounded-2xl opacity-40 mix-blend-luminosity border border-tertiary/20"
+              className="object-cover rounded-2xl opacity-40 mix-blend-luminosity border border-tertiary/20"
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOt7bBqZtSFJ43qj63UphQTW8OUYNqopsBkpG9Vws5AazbobXkjZwjRwol5oVHwhe38cRGdXzJAgCJnTqcXHDqb7ltYt_QoVfJsr0NIdutXdgVX-NkfMo3R_NR20x3bONCMGHzuyWgnqFWYi2UzZ34HjOHQssObwkvZPDzqYrYOltJyaGtrHvS1_Y1dRtubqXa6FMPzZoHQMvpeDJdfHh0LoJU8Pr4vRDoRDwxXbBCv92rtWZ62f6-IHljNPAL6OYGaxGZJyVfERlH"
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
             />
           </div>
         </div>

@@ -4,6 +4,32 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
+import type { Metadata } from "next";
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: event } = await supabase.from("events").select("title, description, image_url").eq("id", id).single();
+  
+  if (!event) return { title: "Événement introuvable - BDE CERI" };
+  
+  return {
+    title: `${event.title} - BDE CERI`,
+    description: event.description || "Détails de l'événement BDE CERI.",
+    openGraph: {
+      title: event.title,
+      description: event.description,
+      images: event.image_url ? [{ url: event.image_url }] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: event.title,
+      description: event.description,
+      images: event.image_url ? [event.image_url] : [],
+    }
+  };
+}
+
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
   const { id } = await params;
   const dict = await getDictionary();
@@ -34,10 +60,13 @@ export default async function EventDetailPage({ params }: { params: { id: string
       <section className="relative h-[60vh] min-h-[500px] flex items-end">
         <div className="absolute inset-0 -z-10">
           {event.image_url ? (
-            <img 
+            <Image 
               src={event.image_url} 
               alt={event.title} 
-              className="w-full h-full object-cover"
+              fill
+              priority
+              className="object-cover"
+              sizes="100vw"
             />
           ) : (
             <div className="w-full h-full bg-surface-container-highest" />
@@ -99,8 +128,8 @@ export default async function EventDetailPage({ params }: { params: { id: string
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {event.gallery_urls.map((url: string, i: number) => (
-                  <div key={i} className="aspect-video rounded-2xl overflow-hidden ghost-border group">
-                    <img src={url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                  <div key={i} className="aspect-video rounded-2xl overflow-hidden ghost-border group relative">
+                    <Image src={url} alt={`Gallery image ${i + 1}`} fill className="object-cover group-hover:scale-105 transition-transform duration-700" sizes="(max-width: 768px) 100vw, 50vw" />
                   </div>
                 ))}
               </div>

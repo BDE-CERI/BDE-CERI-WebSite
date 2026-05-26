@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { getPastBoards, getPastBoardMembers } from "./actions";
 
 interface PastBoard {
@@ -105,9 +106,9 @@ export default function PastBoards({ dict }: { dict: any }) {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                           {boardMembers[board.id]?.map((m) => (
                             <div key={m.id} className="flex items-center gap-4 group/member">
-                              <div className="w-12 h-12 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/20 flex-shrink-0">
+                              <div className="w-12 h-12 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/20 flex-shrink-0 transition-all duration-500 group-hover/member:border-primary/40">
                                 {m.photo_url ? (
-                                  <img src={m.photo_url} alt={m.first_name} className="w-full h-full object-cover" />
+                                  <Image src={m.photo_url} alt={m.first_name} width={48} height={48} className="w-full h-full object-cover transition-all duration-500 filter grayscale group-hover/member:grayscale-0 group-hover/member:scale-105" />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center">
                                     <span className="material-symbols-outlined text-xs opacity-50">person</span>

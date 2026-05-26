@@ -1,6 +1,7 @@
 import { getDictionary } from "@/locales/dictionaries";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
+import Image from "next/image";
 import TaverneInteractivity from "./TaverneInteractivity";
 import SharkWallpaper from "@/components/SharkWallpaper";
 
@@ -87,7 +88,7 @@ export default async function Boutique() {
                            </span>
                         </div>
                        {item.image_url ? (
-                         <img src={item.image_url} alt={item.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                         <Image src={item.image_url} alt={item.name} fill className="object-cover transition-transform duration-700 group-hover:scale-110" sizes="(max-width: 768px) 100vw, 25vw" />
                        ) : (
                          <span className="material-symbols-outlined text-6xl text-outline opacity-20">checkroom</span>
                        )}

@@ -160,7 +160,7 @@ export default async function ProfilPage(props: { searchParams: Promise<{ [key: 
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Settings Column */}
-        <div className="lg:col-span-1 space-y-8">
+        <div className="lg:col-span-1 space-y-8 relative z-30">
           <section className="glass-panel p-6 rounded-2xl ghost-border overflow-hidden relative">
             <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
               <span className="material-symbols-outlined text-6xl">settings</span>
@@ -186,7 +186,7 @@ export default async function ProfilPage(props: { searchParams: Promise<{ [key: 
                   {editMemberId && <input type="hidden" name="target_member_id" value={editMemberId} />}
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Photo de profil</label>
-                    <ImageUpload name="photo" />
+                    <ImageUpload name="photo" aspectRatio={1} circular />
                   </div>
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">{dict.profil.email}</label>
@@ -328,7 +328,7 @@ export default async function ProfilPage(props: { searchParams: Promise<{ [key: 
         </div>
 
         {/* Dashboard Column */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-8 relative z-10">
           {isBR ? (
             <>
               <section className="glass-panel p-6 md:p-8 rounded-2xl ghost-border space-y-6">

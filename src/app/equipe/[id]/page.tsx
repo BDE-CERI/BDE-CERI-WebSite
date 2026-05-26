@@ -2,6 +2,36 @@ import { getDictionary } from "@/locales/dictionaries";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import Image from "next/image";
+import type { Metadata } from "next";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: member } = await supabase.from("members").select("first_name, last_name, role_label, photo_url, bio").eq("id", id).single();
+  
+  if (!member) return { title: "Membre introuvable - BDE CERI" };
+  
+  const fullName = `${member.first_name} ${member.last_name}`;
+  const title = `${fullName} | ${member.role_label} - BDE CERI`;
+  const desc = member.bio || `Découvrez le profil de ${fullName}, ${member.role_label} au BDE CERI.`;
+  
+  return {
+    title,
+    description: desc,
+    openGraph: {
+      title,
+      description: desc,
+      images: member.photo_url ? [{ url: member.photo_url }] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: desc,
+      images: member.photo_url ? [member.photo_url] : [],
+    }
+  };
+}
 
 export default async function MemberProfile({ params }: { params: Promise<{ id: string }> }) {
   const dict = await getDictionary();
@@ -58,12 +88,15 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
           <div className="lg:col-span-4 space-y-8">
             <div className="reveal-card p-2 rounded-3xl bg-surface-container-high shadow-2xl">
               <div className="aspect-[4/5] rounded-2xl overflow-hidden relative group">
-                <img 
+                <Image 
                   src={member.photo_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=800"} 
                   alt={`${member.first_name} ${member.last_name}`}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  fill
+                  priority
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  sizes="(max-width: 1024px) 100vw, 33vw"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-surface-container-highest/80 via-transparent to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-surface-container-highest/80 via-transparent to-transparent z-10"></div>
               </div>
             </div>
 

@@ -134,10 +134,14 @@ export default async function Home() {
                 <div className="w-full max-w-md transform rotate-2 hover:rotate-0 transition-transform duration-700">
                     <div className="glass-panel rounded-2xl overflow-hidden shadow-2xl border border-outline-variant/20">
                          <div className="h-[400px] relative">
-                             <img 
+                             <Image 
                                 src={upcomingEvents[0]?.image_url || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=1000"} 
                                 alt="Event" 
-                                className="w-full h-full object-cover opacity-60"
+                                fill
+                                priority
+                                className="object-cover opacity-60"
+                                sizes="(max-width: 768px) 100vw, 400px"
+                                suppressHydrationWarning
                              />
                              <div className="absolute inset-0 bg-gradient-to-t from-surface-container-highest to-transparent"></div>
                              <div className="absolute bottom-6 left-6 right-6">

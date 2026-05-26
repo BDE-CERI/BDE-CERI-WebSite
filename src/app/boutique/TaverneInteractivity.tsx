@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react";
+import Image from "next/image";
+import { buyItem } from "./actions";
 
 interface TaverneItem {
   id: string;
@@ -17,6 +19,25 @@ const formatPrice = (cents: number) => {
 
 export default function TaverneInteractivity({ item }: { item: TaverneItem }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+
+  const handleBuy = () => {
+    startTransition(async () => {
+      setMessage(null);
+      const res = await buyItem(item.id, true);
+      if (res.error) {
+        setMessage({ type: 'error', text: res.error });
+      } else {
+        setMessage({ type: 'success', text: "Achat confirmé ! Profitez bien." });
+        // After 2 seconds, optionally close or clear message
+        setTimeout(() => {
+          setIsOpen(false);
+          setMessage(null);
+        }, 2000);
+      }
+    });
+  };
 
   return (
     <>
@@ -26,7 +47,7 @@ export default function TaverneInteractivity({ item }: { item: TaverneItem }) {
       >
         <div className="w-14 h-14 rounded-xl bg-surface-container-highest flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
           {item.image_url ? (
-            <img src={item.image_url} alt={item.name} className="w-full h-full object-cover rounded-xl" />
+            <Image src={item.image_url} alt={item.name} width={56} height={56} className="w-full h-full object-cover rounded-xl" />
           ) : (
             <span className="material-symbols-outlined">
               {item.category === "boisson" ? "local_drink" : "fastfood"}
@@ -80,12 +101,34 @@ export default function TaverneInteractivity({ item }: { item: TaverneItem }) {
                <span className="text-sm font-bold uppercase tracking-widest text-on-surface-variant">Prix</span>
                <span className="text-3xl font-headline font-bold text-primary">{formatPrice(item.price)}</span>
             </div>
-            <button 
-              onClick={() => setIsOpen(false)}
-              className="w-full mt-8 py-4 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary/90 transition-all shadow-lg"
-            >
-              Fermer
-            </button>
+            {message && (
+              <div className={`p-3 mb-6 rounded-xl text-center text-xs font-bold uppercase tracking-widest ${message.type === 'success' ? 'bg-success/20 text-success border border-success/30' : 'bg-error/20 text-error border border-error/30'}`}>
+                {message.text}
+              </div>
+            )}
+            
+            <div className="flex gap-4 mt-8">
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="flex-1 py-4 bg-surface-container-high text-on-surface rounded-xl font-bold hover:bg-surface-container-highest transition-all"
+              >
+                Fermer
+              </button>
+              <button 
+                onClick={handleBuy}
+                disabled={isPending || item.stock === 0}
+                className="flex-[2] py-4 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
+              >
+                {isPending ? (
+                  <span className="material-symbols-outlined animate-spin">sync</span>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined">shopping_bag</span>
+                    {item.stock === 0 ? "Épuisé" : "Acheter"}
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

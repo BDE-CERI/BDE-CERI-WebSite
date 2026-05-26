@@ -1,8 +1,44 @@
 import { getDictionary } from "@/locales/dictionaries";
 import { createClient } from "@/utils/supabase/server";
-import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import SizePicker from "./SizePicker";
+import BuyButton from "../BuyButton";
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  
+  // Try products then taverne_items
+  let { data: product } = await supabase.from("products").select("name, description, image_url").eq("id", id).single();
+  if (!product) {
+    const { data: taverneItem } = await supabase.from("taverne_items").select("name, description, image_url").eq("id", id).single();
+    product = taverneItem;
+  }
+  
+  if (!product) return { title: "Article introuvable - Boutique BDE CERI" };
+  
+  const title = `${product.name} | Boutique BDE CERI`;
+  const desc = product.description || "Achetez cet article sur la boutique officielle du BDE CERI.";
+  
+  return {
+    title,
+    description: desc,
+    openGraph: {
+      title,
+      description: desc,
+      images: product.image_url ? [{ url: product.image_url }] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: desc,
+      images: product.image_url ? [product.image_url] : [],
+    }
+  };
+}
 
 export default async function ProductDetailPage({ params }: { params: { id: string } }) {
   const { id } = await params;
@@ -48,10 +84,13 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
         <div className="lg:col-span-7 space-y-4">
           <div className="aspect-square bg-surface-container-high rounded-[2rem] overflow-hidden ghost-border relative group">
             {product.image_url ? (
-              <img 
+              <Image 
                 src={product.image_url} 
                 alt={product.name} 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                fill
+                priority
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+                sizes="(max-width: 1024px) 100vw, 50vw"
               />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center opacity-20">
@@ -70,8 +109,8 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
           {product.gallery_urls && product.gallery_urls.length > 0 && (
             <div className="grid grid-cols-4 gap-4">
               {product.gallery_urls.map((url: string, i: number) => (
-                <div key={i} className="aspect-square rounded-2xl overflow-hidden ghost-border cursor-pointer hover:opacity-80 transition-opacity">
-                  <img src={url} alt="" className="w-full h-full object-cover" />
+                <div key={i} className="aspect-square rounded-2xl overflow-hidden ghost-border cursor-pointer hover:opacity-80 transition-opacity relative">
+                  <Image src={url} alt={`Gallery image ${i + 1}`} fill className="object-cover" sizes="(max-width: 768px) 25vw, 15vw" />
                 </div>
               ))}
             </div>
@@ -134,15 +173,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
             </section>
           </div>
 
-          <div className="mt-12">
-            <button 
-              disabled={product.stock === 0}
-              className="w-full bg-tertiary text-on-tertiary font-bold py-5 rounded-3xl shadow-xl shadow-tertiary/20 flex items-center justify-center gap-2 hover:scale-105 transition-all disabled:opacity-30 disabled:hover:scale-100 disabled:grayscale"
-            >
-              Commander sur HelloAsso
-              <span className="material-symbols-outlined">open_in_new</span>
-            </button>
-          </div>
+          <BuyButton productId={product.id} stock={product.stock} />
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Event {
   id: string;
@@ -35,11 +36,14 @@ export default function EventCarousel({ events, dict }: { events: any[], dict: a
   return (
     <div className="md:col-span-2 reveal-card rounded-xl p-8 relative overflow-hidden group flex flex-col justify-end min-h-[400px] transition-all duration-700">
       <div className="absolute inset-0 z-0">
-        <img
+        <Image
           alt={mainEvent.title}
           className="w-full h-full object-cover animate-fade-in opacity-40 group-hover:scale-105 transition-transform duration-1000"
           key={mainEvent.image_url} // Force animation on image change
           src={mainEvent.image_url || "https://images.unsplash.com/photo-1514525253361-bee8a187499b?auto=format&fit=crop&q=80&w=1000"}
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          suppressHydrationWarning
         />
         <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/80 to-transparent"></div>
       </div>

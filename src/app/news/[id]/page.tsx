@@ -2,6 +2,35 @@ import { getDictionary } from "@/locales/dictionaries";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import Image from "next/image";
+import type { Metadata } from "next";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  const { data: newsItem } = await supabase.from("news").select("title, content, image_url").eq("id", id).single();
+  
+  if (!newsItem) return { title: "Actualité introuvable - BDE CERI" };
+  
+  // Create a short description from content
+  const desc = newsItem.content?.substring(0, 160) + "..." || "Découvrez cette actualité sur le site du BDE CERI.";
+  
+  return {
+    title: `${newsItem.title} - BDE CERI`,
+    description: desc,
+    openGraph: {
+      title: newsItem.title,
+      description: desc,
+      images: newsItem.image_url ? [{ url: newsItem.image_url }] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: newsItem.title,
+      description: desc,
+      images: newsItem.image_url ? [newsItem.image_url] : [],
+    }
+  };
+}
 
 export default async function NewsDetail({ params }: { params: Promise<{ id: string }> }) {
   // const dict = await getDictionary(); // Currently unused on this page
@@ -28,12 +57,15 @@ export default async function NewsDetail({ params }: { params: Promise<{ id: str
     <div className="min-h-screen bg-surface">
       <section className="relative h-[50vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img 
+          <Image 
             src={newsItem.image_url || "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&q=80&w=1000"} 
             alt={newsItem.title}
-            className="w-full h-full object-cover opacity-30"
+            fill
+            priority
+            className="object-cover opacity-30"
+            sizes="100vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/80 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/80 to-transparent z-10"></div>
         </div>
         
         <div className="relative z-10 max-w-4xl mx-auto px-6 text-center pt-24">

@@ -8,8 +8,38 @@ import { EditModeProvider } from "@/context/EditModeContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 
 export const metadata: Metadata = {
-  title: "BDE CERI - The Nocturnal Invitation",
-  description: "Découvrez le site officiel du BDE CERI, l'association étudiante du département informatique de l'université d'Avignon.",
+  metadataBase: new URL("https://bdeceri.fr"),
+  title: "BDE CERI - L'Élite Étudiante de l'Informatique en Avignon",
+  description: "Site officiel du Bureau des Étudiants du CERI (Centre d'Enseignement et de Recherche en Informatique) de l'Université d'Avignon. Événements, vie étudiante, boutique et plus.",
+  keywords: ["BDE", "CERI", "Avignon", "Informatique", "Université", "Étudiant", "Asso", "Bureau des Etudiants"],
+  authors: [{ name: "BDE CERI" }],
+  creator: "BDE CERI",
+  openGraph: {
+    title: "BDE CERI - Hub Digital",
+    description: "Rejoignez l'élite étudiante du CERI en Avignon.",
+    url: "https://bdeceri.fr",
+    siteName: "BDE CERI",
+    images: [
+      {
+        url: "/logos/requin.png",
+        width: 1200,
+        height: 630,
+        alt: "Logo BDE CERI",
+      },
+    ],
+    locale: "fr_FR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BDE CERI - Hub Digital",
+    description: "Rejoignez l'élite étudiante du CERI en Avignon.",
+    images: ["/logos/requin.png"],
+  },
+  icons: {
+    icon: "/logos/requin.png",
+    apple: "/logos/requin.png",
+  },
 };
 
 export default async function RootLayout({
@@ -46,6 +76,19 @@ export default async function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                  console.log('SW registered:', reg.scope);
+                }).catch(function(err) {
+                  console.log('SW registration failed:', err);
+                });
+              });
+            }
+          `
+        }} />
       </head>
       <body className="antialiased min-h-[1024px] flex flex-col selection:bg-tertiary/30 selection:text-tertiary bg-surface text-on-surface">
         <ThemeProvider>

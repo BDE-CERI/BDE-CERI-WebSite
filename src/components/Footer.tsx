@@ -13,6 +13,7 @@ export default function Footer({ dict }: { dict: any }) {
               width={32} 
               height={32} 
               className="w-8 h-8 object-contain" 
+              suppressHydrationWarning
             />
             <span className="text-lg font-bold text-[#bcc7de] font-headline">BDE CERI</span>
           </div>
