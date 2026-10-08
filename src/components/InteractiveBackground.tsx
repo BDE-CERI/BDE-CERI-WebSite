@@ -14,8 +14,14 @@ const InteractiveBackground: React.FC = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let animationFrameId: number;
+    let animationFrameId = 0;
     let particles: Particle[] = [];
+    let isIntersecting = true;
+    let lastFrameTime = 0;
+    let logicalWidth = 0;
+    let logicalHeight = 0;
+    let pixelRatio = 1;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const mouse = { x: -1000, y: -1000, radius: 180 };
     const isDark = theme === "dark";
     const baseAlpha = isDark ? 0.25 : 0.4;
@@ -54,8 +60,8 @@ const InteractiveBackground: React.FC = () => {
         let dx = mouse.x - this.x;
         let dy = mouse.y - this.y;
         let distance = Math.sqrt(dx * dx + dy * dy);
-        let forceDirectionX = dx / distance;
-        let forceDirectionY = dy / distance;
+        let forceDirectionX = distance === 0 ? 0 : dx / distance;
+        let forceDirectionY = distance === 0 ? 0 : dy / distance;
         let maxDistance = mouse.radius;
         let force = (maxDistance - distance) / maxDistance;
         let directionX = forceDirectionX * force * this.density;
@@ -89,9 +95,9 @@ const InteractiveBackground: React.FC = () => {
 
     const init = () => {
       particles = [];
-      const spacing = 35;
-      const cols = Math.floor(canvas.width / (window.devicePixelRatio || 1) / spacing) + 1;
-      const rows = Math.floor(canvas.height / (window.devicePixelRatio || 1) / spacing) + 1;
+      const spacing = 48;
+      const cols = Math.floor(logicalWidth / spacing) + 1;
+      const rows = Math.floor(logicalHeight / spacing) + 1;
 
       for (let i = 0; i < rows; i++) {
         for (let j = 0; j < cols; j++) {
@@ -102,14 +108,17 @@ const InteractiveBackground: React.FC = () => {
       }
     };
 
-    const animate = () => {
-      if (document.hidden) return;
+    const animate = (timestamp: number) => {
+      animationFrameId = 0;
+      if (document.hidden || !isIntersecting || reducedMotion.matches) return;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (let i = 0; i < particles.length; i++) {
-        particles[i].update();
-        particles[i].draw();
-      }
+      if (timestamp - lastFrameTime >= 1000 / 30) {
+        lastFrameTime = timestamp;
+        ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+        for (let i = 0; i < particles.length; i++) {
+          particles[i].update();
+          particles[i].draw();
+        }
       
       // Force Field Circle
       if (mouse.x > 0 && mouse.y > 0) {
@@ -124,18 +133,28 @@ const InteractiveBackground: React.FC = () => {
         ctx.stroke();
         ctx.closePath();
       }
-      
+      }
+
       animationFrameId = requestAnimationFrame(animate);
     };
 
+    const startAnimation = () => {
+      if (!animationFrameId && !document.hidden && isIntersecting && !reducedMotion.matches) {
+        animationFrameId = requestAnimationFrame(animate);
+      }
+    };
+
     const handleResize = () => {
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
+      pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+      logicalWidth = window.innerWidth;
+      logicalHeight = window.innerHeight;
+      canvas.width = logicalWidth * pixelRatio;
+      canvas.height = logicalHeight * pixelRatio;
       canvas.style.width = `${window.innerWidth}px`;
       canvas.style.height = `${window.innerHeight}px`;
-      ctx.scale(dpr, dpr);
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
       init();
+      startAnimation();
     };
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -151,25 +170,46 @@ const InteractiveBackground: React.FC = () => {
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        animate();
+        startAnimation();
       } else {
         cancelAnimationFrame(animationFrameId);
+        animationFrameId = 0;
       }
+    };
+
+    const observer = new IntersectionObserver(([entry]) => {
+      isIntersecting = entry.isIntersecting;
+      if (isIntersecting) startAnimation();
+      else {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = 0;
+      }
+    }, { rootMargin: "100px" });
+    observer.observe(canvas);
+    const handleMotionPreference = () => {
+      if (reducedMotion.matches) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = 0;
+        ctx.clearRect(0, 0, logicalWidth, logicalHeight);
+      } else startAnimation();
     };
 
     window.addEventListener("resize", handleResize);
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseleave", handleMouseLeave);
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    reducedMotion.addEventListener("change", handleMotionPreference);
     
     handleResize();
-    animate();
+    startAnimation();
 
     return () => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseleave", handleMouseLeave);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      reducedMotion.removeEventListener("change", handleMotionPreference);
+      observer.disconnect();
       cancelAnimationFrame(animationFrameId);
     };
   }, [theme]);

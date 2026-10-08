@@ -1,5 +1,11 @@
 import { login } from "./actions";
 import { getDictionary } from "@/locales/dictionaries";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Connexion à l’espace BDE",
+  robots: { index: false, follow: false },
+};
 
 export default async function LoginPage({
   searchParams,

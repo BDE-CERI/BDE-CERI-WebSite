@@ -5,6 +5,13 @@ import Link from "next/link";
 import Image from "next/image";
 import SharkWallpaper from "@/components/SharkWallpaper";
 import { Suspense } from "react";
+import { createSeoMetadata } from "@/utils/seo";
+
+export const metadata = createSeoMetadata({
+  path: "/equipe",
+  title: "L’équipe du BDE CERI",
+  description: "Rencontre l’équipe du BDE CERI à Avignon : les étudiantes et étudiants engagés dans la vie de campus.",
+});
 
 export const dynamic = "force-dynamic";
 
@@ -147,6 +154,7 @@ async function TeamGrid({ dict, lang, currentYear }: { dict: any; lang: string; 
               src={member.photo_url}
               fill
               priority={isPriority}
+              loading={isPriority ? "eager" : "lazy"}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
               suppressHydrationWarning
             />

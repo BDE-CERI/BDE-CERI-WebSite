@@ -1,30 +1,50 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { getDictionary, getLang } from "@/locales/dictionaries";
-import { createClient } from "@/utils/supabase/server";
 import { EditModeProvider } from "@/context/EditModeContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { Suspense } from "react";
+import RootHeader from "@/components/RootHeader";
+import RootFooter from "@/components/RootFooter";
+import StructuredData from "@/components/StructuredData";
+import CookieConsent from "@/components/CookieConsent";
+import { Manrope, Space_Grotesk } from "next/font/google";
+
+const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://bdeceri.fr"),
-  title: "BDE CERI - L'Élite Étudiante de l'Informatique en Avignon",
-  description: "Site officiel du Bureau des Étudiants du CERI (Centre d'Enseignement et de Recherche en Informatique) de l'Université d'Avignon. Événements, vie étudiante, boutique et plus.",
-  keywords: ["BDE", "CERI", "Avignon", "Informatique", "Université", "Étudiant", "Asso", "Bureau des Etudiants"],
+  title: {
+    default: "BDE CERI Avignon | Vie étudiante, événements et association",
+    template: "%s | BDE CERI Avignon",
+  },
+  description: "Le Bureau des étudiants du CERI à Avignon : événements, vie de campus, eSport, équipe et boutique étudiante.",
+  applicationName: "BDE CERI Avignon",
+  category: "student association",
+  keywords: ["BDE CERI", "BDE Avignon", "association étudiante Avignon", "vie étudiante", "CERI", "Université d'Avignon", "événements étudiants", "eSport étudiant"],
   authors: [{ name: "BDE CERI" }],
   creator: "BDE CERI",
+  publisher: "BDE CERI Avignon",
+  alternates: { canonical: "/" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
+  },
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+    : undefined,
   openGraph: {
-    title: "BDE CERI - Hub Digital",
-    description: "Rejoignez l'élite étudiante du CERI en Avignon.",
+    title: "BDE CERI Avignon | Vie étudiante et événements",
+    description: "Événements, eSport, projets associatifs et vie de campus au CERI à Avignon.",
     url: "https://bdeceri.fr",
     siteName: "BDE CERI",
     images: [
       {
-        url: "/logos/requin.png",
+        url: "/og-bde-ceri.jpg",
         width: 1200,
         height: 630,
-        alt: "Logo BDE CERI",
+        alt: "BDE CERI Avignon — association étudiante du CERI",
       },
     ],
     locale: "fr_FR",
@@ -32,13 +52,13 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "BDE CERI - Hub Digital",
-    description: "Rejoignez l'élite étudiante du CERI en Avignon.",
-    images: ["/logos/requin.png"],
+    title: "BDE CERI Avignon | Vie étudiante et événements",
+    description: "Événements, eSport, projets associatifs et vie de campus au CERI à Avignon.",
+    images: ["/og-bde-ceri.jpg"],
   },
   icons: {
-    icon: "/logos/requin.png",
-    apple: "/logos/requin.png",
+    icon: "/favicon.ico",
+    apple: "/logos/requin-180.png",
   },
 };
 
@@ -47,38 +67,19 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const dict = await getDictionary();
-  const lang = await getLang();
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // Fetch member info if logged in
-  let member = null;
-  if (user) {
-    const { data } = await supabase
-      .from("members")
-      .select("first_name, last_name, photo_url, category, role_label")
-      .eq("auth_user_id", user.id)
-      .single();
-    member = data;
-  }
-
   return (
-    <html lang={lang} className="dark" suppressHydrationWarning>
+    <html lang="fr" className="dark" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.lang = /(?:^|;\\s*)bde_lang=en(?:;|$)/.test(document.cookie) ? 'en' : 'fr';" }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
         <script dangerouslySetInnerHTML={{
           __html: `
-            if ('serviceWorker' in navigator) {
+            if ('serviceWorker' in navigator && ${process.env.NODE_ENV === "production"}) {
               window.addEventListener('load', function() {
                 navigator.serviceWorker.register('/sw.js').then(function(reg) {
                   console.log('SW registered:', reg.scope);
@@ -86,18 +87,30 @@ export default async function RootLayout({
                   console.log('SW registration failed:', err);
                 });
               });
+            } else if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                registrations.forEach(function(registration) {
+                  registration.unregister();
+                });
+              });
             }
           `
         }} />
       </head>
-      <body className="antialiased min-h-[1024px] flex flex-col selection:bg-tertiary/30 selection:text-tertiary bg-surface text-on-surface">
+      <body className={`${manrope.variable} ${spaceGrotesk.variable} antialiased min-h-[1024px] flex flex-col selection:bg-tertiary/30 selection:text-tertiary bg-surface text-on-surface`}>
         <ThemeProvider>
           <EditModeProvider>
-            <Header dict={dict} lang={lang} user={user} member={member} />
+            <StructuredData />
+            <Suspense fallback={<div aria-hidden="true" className="fixed inset-x-0 top-0 z-50 h-20 border-b border-outline-variant/10 bg-surface/70 backdrop-blur-xl" />}>
+              <RootHeader />
+            </Suspense>
+            <CookieConsent />
             <main className="flex-grow pt-20">
               {children}
             </main>
-            <Footer dict={dict} />
+            <Suspense fallback={<div aria-hidden="true" className="h-48 bg-surface-container-low" />}>
+              <RootFooter />
+            </Suspense>
           </EditModeProvider>
         </ThemeProvider>
       </body>

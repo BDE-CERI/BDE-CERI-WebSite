@@ -40,7 +40,7 @@ export default function EventCarousel({ events, dict }: { events: any[], dict: a
           alt={mainEvent.title}
           className="w-full h-full object-cover animate-fade-in opacity-40 group-hover:scale-105 transition-transform duration-1000"
           key={mainEvent.image_url} // Force animation on image change
-          src={mainEvent.image_url || "https://images.unsplash.com/photo-1514525253361-bee8a187499b?auto=format&fit=crop&q=80&w=1000"}
+          src={mainEvent.image_url || "/og-bde-ceri.jpg"}
           fill
           sizes="(max-width: 768px) 100vw, 50vw"
           suppressHydrationWarning

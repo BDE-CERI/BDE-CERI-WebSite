@@ -1,8 +1,10 @@
 import React from "react";
+import LoadingEstimate from "@/components/LoadingEstimate";
 
 export default function Loading() {
   return (
     <div className="min-h-screen pt-32 px-4 md:px-8 max-w-7xl mx-auto space-y-12">
+      <LoadingEstimate routeKey="equipe" />
       <header className="space-y-4">
         <div className="h-4 w-32 bg-surface-container-highest rounded-full animate-pulse" />
         <div className="h-10 w-64 bg-surface-container-highest rounded-xl animate-pulse" />

@@ -1,39 +1,35 @@
-import { getDictionary } from "@/locales/dictionaries";
+import { getDictionary, getLang } from "@/locales/dictionaries";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/StructuredData";
+import { createSeoMetadata } from "@/utils/seo";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: newsItem } = await supabase.from("news").select("title, content, image_url").eq("id", id).single();
+  const { data: newsItem } = await supabase.from("news").select("title, content, image_url, is_published").eq("id", id).single();
   
-  if (!newsItem) return { title: "Actualité introuvable - BDE CERI" };
+  if (!newsItem || !newsItem.is_published) return { title: "Actualité introuvable", robots: { index: false, follow: false } };
   
-  // Create a short description from content
-  const desc = newsItem.content?.substring(0, 160) + "..." || "Découvrez cette actualité sur le site du BDE CERI.";
+  const content = newsItem.content?.replace(/\s+/g, " ").trim() || "";
+  const desc = content.length > 160 ? `${content.slice(0, 157).trimEnd()}…` : content || "Découvrez les actualités du BDE CERI à Avignon.";
   
-  return {
-    title: `${newsItem.title} - BDE CERI`,
+  return createSeoMetadata({
+    path: `/news/${id}`,
+    title: newsItem.title,
     description: desc,
-    openGraph: {
-      title: newsItem.title,
-      description: desc,
-      images: newsItem.image_url ? [{ url: newsItem.image_url }] : [],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: newsItem.title,
-      description: desc,
-      images: newsItem.image_url ? [newsItem.image_url] : [],
-    }
-  };
+    image: newsItem.image_url,
+    type: "article",
+  });
 }
 
 export default async function NewsDetail({ params }: { params: Promise<{ id: string }> }) {
-  // const dict = await getDictionary(); // Currently unused on this page
+  const dict = await getDictionary();
+  const lang = await getLang();
+  const dateLocale = lang === "en" ? "en-GB" : "fr-FR";
   const supabase = await createClient();
   const { id } = await params;
 
@@ -53,8 +49,23 @@ export default async function NewsDetail({ params }: { params: Promise<{ id: str
     .eq("id", newsItem.author_id)
     .single();
 
+  const articleStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    headline: newsItem.title,
+    description: newsItem.content?.replace(/\s+/g, " ").trim().slice(0, 160),
+    datePublished: newsItem.published_at,
+    image: newsItem.image_url ? [newsItem.image_url] : undefined,
+    author: author
+      ? { "@type": "Person", name: `${author.first_name} ${author.last_name}` }
+      : { "@type": "Organization", name: "BDE CERI Avignon" },
+    publisher: { "@type": "Organization", name: "BDE CERI Avignon", url: "https://bdeceri.fr" },
+    mainEntityOfPage: `https://bdeceri.fr/news/${id}`,
+  };
+
   return (
     <div className="min-h-screen bg-surface">
+      <JsonLd data={articleStructuredData} />
       <section className="relative h-[50vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <Image 
@@ -70,7 +81,7 @@ export default async function NewsDetail({ params }: { params: Promise<{ id: str
         
         <div className="relative z-10 max-w-4xl mx-auto px-6 text-center pt-24">
           <div className="inline-block px-4 py-1 rounded-full border border-primary/40 bg-primary/10 text-primary mb-6">
-            <span className="text-xs font-bold uppercase tracking-widest">Actualité</span>
+            <span className="text-xs font-bold uppercase tracking-widest">{dict.common.article}</span>
           </div>
           <h1 className="text-4xl md:text-6xl font-headline font-bold text-on-surface mb-6 tracking-tight">
              {newsItem.title}
@@ -78,7 +89,7 @@ export default async function NewsDetail({ params }: { params: Promise<{ id: str
           <div className="flex items-center justify-center gap-4 text-sm text-on-surface-variant">
              <span className="flex items-center gap-1">
                <span className="material-symbols-outlined text-[16px]">schedule</span>
-               {new Date(newsItem.published_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+               {new Date(newsItem.published_at).toLocaleDateString(dateLocale, { day: 'numeric', month: 'long', year: 'numeric' })}
              </span>
              {author && (
                <>
@@ -102,7 +113,7 @@ export default async function NewsDetail({ params }: { params: Promise<{ id: str
       <div className="max-w-4xl mx-auto px-6 py-12 border-t border-outline-variant/10 mb-12">
         <Link href="/" className="inline-flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors group">
           <span className="material-symbols-outlined transition-transform group-hover:-translate-x-1">arrow_back</span>
-          Retour à l'accueil
+          {dict.header.home}
         </Link>
       </div>
     </div>

@@ -2,59 +2,44 @@ import Link from "next/link";
 import Image from "next/image";
 import { getDictionary } from "@/locales/dictionaries";
 import { createClient } from "@/utils/supabase/server";
+import { getCurrentUserContext } from "@/utils/supabase/current-user";
 import EventCarousel from "@/components/EventCarousel";
 import NewsSection from "@/components/NewsSection";
 import InteractiveBackground from "@/components/InteractiveBackground";
+import { createSeoMetadata } from "@/utils/seo";
+
+export const metadata = createSeoMetadata({
+  path: "/",
+  title: "Vie étudiante, événements et association",
+  description: "Découvre le BDE CERI à Avignon : événements étudiants, projets, eSport, équipe et vie de campus.",
+});
 
 export default async function Home() {
-  const dict = await getDictionary();
-  const supabase = await createClient();
+  const [dict, supabase] = await Promise.all([getDictionary(), createClient()]);
   
-  // Fetch upcoming events for carousel
-  const { data: eventsData } = await supabase
-    .from("events")
-    .select("*")
-    .eq("status", "upcoming")
-    .gte("date_start", new Date().toISOString())
-    .order("date_start", { ascending: true })
-    .limit(5);
+  const [{ data: eventsData }, { data: newsData }, { member }] = await Promise.all([
+    supabase
+      .from("events")
+      .select("id, title, category, description, short_description, image_url, date_start, location")
+      .eq("status", "upcoming")
+      .gte("date_start", new Date().toISOString())
+      .order("date_start", { ascending: true })
+      .limit(5),
+    supabase
+      .from("news")
+      .select("id, title, content, image_url, published_at, is_anonymous, members(first_name, last_name)")
+      .eq("is_published", true)
+      .order("published_at", { ascending: false })
+      .limit(4),
+    getCurrentUserContext(),
+  ]);
 
-  // Fetch latest news with authors
-  const { data: newsData } = await supabase
-    .from("news")
-    .select("*, members(first_name, last_name)")
-    .eq("is_published", true)
-    .order("published_at", { ascending: false })
-    .limit(4);
-
-  // Check if current user is Admin (BR or COM)
-  const { data: { user } } = await supabase.auth.getUser();
-  let isAdminNews = false;
-  
-  if (user) {
-    const { data: member } = await supabase
-      .from("members")
-      .select("*, member_assignments(*)")
-      .eq("auth_user_id", user.id)
-      .single();
-
-    if (member) {
-      const isBR = member.category === "bureau_restreint" || 
-                   ["president", "tresorier", "secretaire", "vp_general"].includes(member.role || "");
-      
-      const isInCOM = member.member_assignments?.some((a: any) => {
-        // We'll define a fuzzy match or check specific IDs if we had them. 
-        // For now, since COM is a standard pole, we'll check if the associated pole has COM in its name (just for safety or if we can fetch pole names)
-        return true; // We'll need a better check after fetching poles
-      });
-
-      // Let's be more precise: fetch the COM pole ID
-      const { data: comPole } = await supabase.from("poles").select("id").ilike("name", "%COM%").single();
-      const isCOMMember = comPole && member.member_assignments?.some((a: any) => a.pole_id === comPole.id);
-
-      isAdminNews = isBR || isCOMMember;
-    }
-  }
+  const isBR = member?.category === "bureau_restreint" ||
+    ["president", "tresorier", "secretaire", "vp_general"].includes(member?.role || "");
+  const isCOMMember = member?.member_assignments?.some((assignment: any) =>
+    assignment.poles?.name?.toLowerCase().includes("com")
+  );
+  const isAdminNews = Boolean(isBR || isCOMMember);
 
   const defaultEvents = [
     {
@@ -101,7 +86,7 @@ export default async function Home() {
           <div className="w-full md:w-1/2 flex flex-col items-start space-y-8">
             <div className="inline-flex items-center space-x-2 bg-surface-container-lowest px-4 py-2 rounded-full ghost-border-bottom">
               <span className="w-2 h-2 rounded-full bg-tertiary animate-ping"></span>
-              <span className="text-xs font-label uppercase tracking-widest text-on-surface-variant">Unveiling the Semester</span>
+              <span className="text-xs font-label uppercase tracking-widest text-on-surface-variant">{dict.home.semester}</span>
             </div>
             <h1 className="text-5xl md:text-7xl font-headline font-bold text-on-surface leading-tight tracking-[-0.02em]">
               {dict.home.welcome} <br />
@@ -139,13 +124,14 @@ export default async function Home() {
                                 alt="Event" 
                                 fill
                                 priority
+                                loading="eager"
                                 className="object-cover opacity-60"
                                 sizes="(max-width: 768px) 100vw, 400px"
                                 suppressHydrationWarning
                              />
                              <div className="absolute inset-0 bg-gradient-to-t from-surface-container-highest to-transparent"></div>
                              <div className="absolute bottom-6 left-6 right-6">
-                                <span className="bg-tertiary text-on-tertiary text-[10px] font-bold px-2 py-0.5 rounded uppercase mb-2 inline-block">Flash Event</span>
+                                 <span className="bg-tertiary text-on-tertiary text-[10px] font-bold px-2 py-0.5 rounded uppercase mb-2 inline-block">{dict.home.flash_event}</span>
                                 <h3 className="text-xl font-headline font-bold text-white mb-1">{upcomingEvents[0]?.title}</h3>
                                 <p className="text-xs text-white/70 line-clamp-2">{upcomingEvents[0]?.description}</p>
                              </div>
@@ -159,11 +145,11 @@ export default async function Home() {
                       <span className="material-symbols-outlined">auto_awesome</span>
                     </div>
                     <div>
-                      <p className="text-xs font-label text-on-surface-variant uppercase tracking-wider">Next Experience</p>
+                       <p className="text-xs font-label text-on-surface-variant uppercase tracking-wider">{dict.home.next_experience}</p>
                       <p className="text-sm font-headline font-bold text-on-surface">Digital Horizons</p>
                     </div>
                   </div>
-                  <p className="text-xs font-body text-on-surface-variant mb-4">Join us for a journey into the future of technology and human connection.</p>
+                   <p className="text-xs font-body text-on-surface-variant mb-4">{dict.home.featured_event_desc}</p>
                   <div className="w-full bg-surface-container-lowest h-1.5 rounded-full overflow-hidden">
                     <div className="bg-primary w-2/3 h-full rounded-full"></div>
                   </div>
@@ -183,11 +169,11 @@ export default async function Home() {
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
             <div>
-              <h2 className="text-sm font-label uppercase tracking-[0.1em] text-on-surface-variant mb-2">The Roster</h2>
+              <h2 className="text-sm font-label uppercase tracking-[0.1em] text-on-surface-variant mb-2">{dict.home.roster_title}</h2>
               <h3 className="text-4xl font-headline font-bold text-on-surface tracking-tight">{dict.home.discover_events}</h3>
             </div>
             <Link href="/evenement" className="text-sm font-label font-medium text-tertiary hover:text-white transition-colors flex items-center space-x-1">
-              <span>View All Events</span>
+              <span>{dict.home.view_all_events}</span>
               <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </Link>
           </div>

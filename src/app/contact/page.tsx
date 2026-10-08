@@ -1,12 +1,18 @@
 import { getDictionary } from "@/locales/dictionaries";
 import { createClient } from "@/utils/supabase/server";
-import InteractiveMap from "@/components/InteractiveMap";
+import LazyInteractiveMap from "@/components/LazyInteractiveMap";
 import Link from "next/link";
 import SharkWallpaper from "@/components/SharkWallpaper";
+import { createSeoMetadata } from "@/utils/seo";
+
+export const metadata = createSeoMetadata({
+  path: "/contact",
+  title: "Contacter le BDE CERI",
+  description: "Contacter le Bureau des étudiants du CERI à Avignon : adresse, réseaux sociaux, horaires du local et demandes de partenariat.",
+});
 
 export default async function Contact() {
-  const dict = await getDictionary();
-  const supabase = await createClient();
+  const [dict, supabase] = await Promise.all([getDictionary(), createClient()]);
 
   // Fetch dynamic site settings for address, social links, helloasso url
   const { data: settings } = await supabase
@@ -32,13 +38,13 @@ export default async function Contact() {
         {/* Header Section */}
         <section className="mb-20">
           <div className="inline-block px-3 py-1 mb-6 rounded-full border border-tertiary/20 bg-tertiary/5 text-tertiary text-[10px] font-bold uppercase tracking-[0.2em]">
-            Connect with us
+            {dict.contact.badge}
           </div>
           <h1 className="text-5xl md:text-7xl font-headline font-bold text-on-surface tracking-tight mb-8">
-            Prenons <span className="text-tertiary">Contact</span>.
+            <span className="text-tertiary">{dict.contact.page_title}</span>
           </h1>
           <p className="max-w-2xl text-on-surface-variant text-lg leading-relaxed font-body">
-            Une question sur un événement, un projet ou simplement envie de discuter ? Notre équipe est à votre écoute.
+            {dict.contact.description}
           </p>
         </section>
 
@@ -49,16 +55,16 @@ export default async function Contact() {
             
             {/* Interactive Map */}
             <div className="reveal-card h-[400px] rounded-3xl relative overflow-hidden group">
-               <InteractiveMap />
+               <LazyInteractiveMap />
                <div className="absolute top-6 left-6 z-[1000] p-4 glass-panel rounded-2xl border border-tertiary/20 shadow-2xl max-w-xs group-hover:-translate-y-1 transition-transform">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-8 h-8 rounded-lg bg-tertiary flex items-center justify-center text-on-tertiary">
                       <span className="material-symbols-outlined text-sm">location_on</span>
                     </div>
-                    <h3 className="text-sm font-bold text-on-surface uppercase tracking-wider">Où nous trouver ?</h3>
+                    <h3 className="text-sm font-bold text-on-surface uppercase tracking-wider">{dict.contact.map_title}</h3>
                   </div>
                   <p className="text-[10px] text-on-surface-variant leading-relaxed">
-                    Local BDE au Rez-de-chaussée du CERI, Face au foyer.
+                    {dict.contact.map_description}
                   </p>
                </div>
             </div>
@@ -66,9 +72,9 @@ export default async function Contact() {
             {/* Canaux Officiels */}
             <div className="glass-panel p-10 rounded-3xl border border-outline-variant/10 shadow-xl space-y-8">
                <div>
-                 <h2 className="text-2xl font-headline font-bold mb-2">Canaux Officiels & Réseaux Sociaux</h2>
+                  <h2 className="text-2xl font-headline font-bold mb-2">{dict.contact.channels_title}</h2>
                  <p className="text-sm text-on-surface-variant leading-relaxed">
-                   Rejoignez nos communautés pour suivre nos événements en direct, échanger avec les autres étudiants et contacter le bureau.
+                    {dict.contact.channels_description}
                  </p>
                </div>
 
@@ -80,9 +86,9 @@ export default async function Contact() {
                      <div className="w-12 h-12 rounded-xl bg-[#5865F2]/10 flex items-center justify-center text-[#5865F2] mb-4">
                        <span className="material-symbols-outlined text-2xl font-bold">forum</span>
                      </div>
-                     <h3 className="text-lg font-headline font-bold mb-2 text-on-surface">Discord Communautaire</h3>
+                      <h3 className="text-lg font-headline font-bold mb-2 text-on-surface">{dict.contact.discord_title}</h3>
                      <p className="text-xs text-on-surface-variant leading-relaxed mb-6">
-                       Le cœur de la vie étudiante du CERI. Annonces importantes, entraide sur les projets de dev, gaming et chill.
+                        {dict.contact.discord_description}
                      </p>
                    </div>
                    <a 
@@ -91,7 +97,7 @@ export default async function Contact() {
                      rel="noopener noreferrer"
                      className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[#5865F2] text-white font-bold hover:shadow-[0_0_15px_rgba(88,101,242,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
                    >
-                     <span>Rejoindre le Serveur</span>
+                      <span>{dict.contact.discord_button}</span>
                      <span className="material-symbols-outlined text-sm">north_east</span>
                    </a>
                  </div>
@@ -103,9 +109,9 @@ export default async function Contact() {
                      <div className="w-12 h-12 rounded-xl bg-tertiary/10 flex items-center justify-center text-tertiary mb-4">
                        <span className="material-symbols-outlined text-2xl font-bold">photo_camera</span>
                      </div>
-                     <h3 className="text-lg font-headline font-bold mb-2 text-on-surface">Instagram Officiel</h3>
+                      <h3 className="text-lg font-headline font-bold mb-2 text-on-surface">{dict.contact.instagram_title}</h3>
                      <p className="text-xs text-on-surface-variant leading-relaxed mb-6">
-                       Suivez toutes nos actualités en images, les stories de nos soirées, les rappels d'événements et concours.
+                        {dict.contact.instagram_description}
                      </p>
                    </div>
                    <a 
@@ -114,7 +120,7 @@ export default async function Contact() {
                      rel="noopener noreferrer"
                      className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gradient-to-tr from-primary via-tertiary to-secondary text-on-tertiary font-bold hover:shadow-[0_0_15px_rgba(123,208,255,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
                    >
-                     <span>Suivre @bde_ceri</span>
+                      <span>{dict.contact.instagram_button}</span>
                      <span className="material-symbols-outlined text-sm">north_east</span>
                    </a>
                  </div>
@@ -125,9 +131,9 @@ export default async function Contact() {
                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4">
                        <span className="material-symbols-outlined text-2xl font-bold">mail</span>
                      </div>
-                     <h3 className="text-lg font-headline font-bold mb-2 text-on-surface">Email de l'Association</h3>
+                      <h3 className="text-lg font-headline font-bold mb-2 text-on-surface">{dict.contact.association_email_title}</h3>
                      <p className="text-xs text-on-surface-variant leading-relaxed mb-6">
-                       Pour toute question officielle, demandes d'informations, propositions de partenariats ou démarches administratives.
+                        {dict.contact.association_email_description}
                      </p>
                    </div>
                    <a 
@@ -146,9 +152,9 @@ export default async function Contact() {
                      <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center text-[#0A66C2] mb-4">
                        <span className="material-symbols-outlined text-2xl font-bold">work</span>
                      </div>
-                     <h3 className="text-lg font-headline font-bold mb-2 text-on-surface">LinkedIn Professionnel</h3>
+                      <h3 className="text-lg font-headline font-bold mb-2 text-on-surface">{dict.contact.linkedin_title}</h3>
                      <p className="text-xs text-on-surface-variant leading-relaxed mb-6">
-                       Restez connecté avec les alumni du CERI, découvrez nos partenaires professionnels et facilitez votre insertion.
+                        {dict.contact.linkedin_description}
                      </p>
                    </div>
                    <a 
@@ -157,7 +163,7 @@ export default async function Contact() {
                      rel="noopener noreferrer"
                      className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant/10 text-on-surface font-bold hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
                    >
-                     <span>Réseau Pro / Alumni</span>
+                      <span>{dict.contact.linkedin_button}</span>
                      <span className="material-symbols-outlined text-sm">north_east</span>
                    </a>
                  </div>
@@ -173,15 +179,15 @@ export default async function Contact() {
                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-tertiary/10 rounded-full blur-3xl pointer-events-none group-hover:bg-tertiary/20 transition-all"></div>
                <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                   <span className="material-symbols-outlined text-tertiary">bolt</span>
-                  Aide Rapide
+                   {dict.contact.quick_help}
                </h2>
                <div className="space-y-4">
                   <Link href="/faq" className="flex items-center justify-between p-4 rounded-xl bg-surface-container-high/40 hover:bg-surface-container-high transition-colors">
-                     <span className="text-sm">Consulter le Forum / FAQ</span>
+                      <span className="text-sm">{dict.contact.faq_link}</span>
                      <span className="material-symbols-outlined text-sm">north_east</span>
                   </Link>
                   <a href={helloassoUrl} target="_blank" className="flex items-center justify-between p-4 rounded-xl bg-surface-container-high/40 hover:bg-surface-container-high transition-colors">
-                     <span className="text-sm">Donation HelloAsso</span>
+                      <span className="text-sm">{dict.contact.helloasso_donation}</span>
                      <span className="material-symbols-outlined text-sm">favorite</span>
                   </a>
                </div>
@@ -191,20 +197,20 @@ export default async function Contact() {
             <div className="glass-panel p-8 rounded-3xl border border-outline-variant/10 shadow-xl">
                <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                   <span className="material-symbols-outlined text-tertiary">schedule</span>
-                  Disponibilité Local
+                   {dict.contact.local_hours}
                </h2>
                <ul className="space-y-4">
                   <li className="flex justify-between text-xs">
-                     <span className="text-on-surface-variant font-medium">Lundi — Vendredi</span>
+                      <span className="text-on-surface-variant font-medium">{dict.contact.weekdays}</span>
                      <span className="text-on-surface font-bold text-success">12:30 — 13:45</span>
                   </li>
                   <li className="flex justify-between text-xs">
-                     <span className="text-on-surface-variant font-medium">Pause du midi</span>
-                     <span className="text-on-surface font-bold">Ouvert</span>
+                      <span className="text-on-surface-variant font-medium">{dict.contact.lunch_break}</span>
+                      <span className="text-on-surface font-bold">{dict.contact.open}</span>
                   </li>
                </ul>
                <p className="mt-6 text-[10px] text-on-surface-variant leading-relaxed italic border-t border-outline-variant/10 pt-4">
-                  * Les horaires peuvent varier en fonction de la disponibilité des membres du bureau.
+                   * {dict.contact.hours_note}
                </p>
             </div>
 

@@ -4,33 +4,25 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import type { Metadata } from "next";
+import { createSeoMetadata } from "@/utils/seo";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: member } = await supabase.from("members").select("first_name, last_name, role_label, photo_url, bio").eq("id", id).single();
+  const { data: member } = await supabase.from("members").select("first_name, last_name, role_label, photo_url, bio, is_visible").eq("id", id).single();
   
-  if (!member) return { title: "Membre introuvable - BDE CERI" };
+  if (!member || !member.is_visible) return { title: "Membre introuvable", robots: { index: false, follow: false } };
   
   const fullName = `${member.first_name} ${member.last_name}`;
-  const title = `${fullName} | ${member.role_label} - BDE CERI`;
-  const desc = member.bio || `Découvrez le profil de ${fullName}, ${member.role_label} au BDE CERI.`;
+  const title = `${fullName} | ${member.role_label}`;
+  const desc = (member.bio || `Découvrez le profil de ${fullName}, ${member.role_label} au BDE CERI.`).replace(/\s+/g, " ").slice(0, 160);
   
-  return {
+  return createSeoMetadata({
+    path: `/equipe/${id}`,
     title,
     description: desc,
-    openGraph: {
-      title,
-      description: desc,
-      images: member.photo_url ? [{ url: member.photo_url }] : [],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description: desc,
-      images: member.photo_url ? [member.photo_url] : [],
-    }
-  };
+    image: member.photo_url,
+  });
 }
 
 export default async function MemberProfile({ params }: { params: Promise<{ id: string }> }) {
@@ -101,7 +93,7 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
             </div>
 
             <div className="glass-panel p-8 rounded-2xl border border-outline-variant/10">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-tertiary mb-6">Contact & Social</h3>
+              <h3 className="text-sm font-bold uppercase tracking-widest text-tertiary mb-6">{dict.common.contact_social}</h3>
               <div className="space-y-4">
                 {member.email && (
                   <div className="flex items-center gap-3 text-on-surface-variant hover:text-on-surface transition-colors">
@@ -149,13 +141,13 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
                   </p>
                 </div>
                 <div className="px-4 py-2 bg-surface-container-highest rounded-full border border-outline-variant/15 text-xs font-bold text-on-surface-variant">
-                  {member.study_level || "Étudiant au CERI"}
+                  {member.study_level || dict.team.student_at_ceri}
                 </div>
               </div>
 
               <div className="prose prose-invert max-w-none">
                 <p className="text-xl text-on-surface-variant leading-relaxed font-body">
-                  {member.bio || member.description || "Pas de description disponible pour ce membre."}
+                  {member.bio || member.description || dict.team.member_bio_empty}
                 </p>
               </div>
             </div>
@@ -165,20 +157,20 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
                 <div className="glass-panel p-8 rounded-2xl border border-outline-variant/10">
                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                      <span className="material-symbols-outlined text-tertiary">verified_user</span>
-                     Mandat Actuel
+                     {dict.team.current_term}
                    </h3>
                    <div className="space-y-6">
                      <div className="flex flex-col">
-                         <span className="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">Rôle Principal</span>
+                         <span className="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">{dict.common.primary_role}</span>
                          <span className="text-sm font-bold text-primary">{member.role_label}</span>
                      </div>
                      
                      {member.member_assignments && member.member_assignments.length > 0 && (
                         <div className="space-y-4 pt-4 border-t border-outline-variant/10">
-                           <span className="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">Autres Missions</span>
+                           <span className="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">{dict.common.other_assignments}</span>
                            {member.member_assignments.map((a: any) => (
                               <div key={a.id} className="flex flex-col">
-                                 <span className="text-xs font-bold text-on-surface">Pôle {a.poles?.name}</span>
+                                 <span className="text-xs font-bold text-on-surface">{dict.common.pole} {a.poles?.name}</span>
                                  <span className="text-xs text-on-surface-variant">{a.role} {a.is_vp && "(VP)"}</span>
                               </div>
                            ))}
@@ -187,8 +179,8 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
 
                       {!member.member_assignments?.length && (
                         <div className="flex flex-col">
-                            <span className="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">Responsabilités</span>
-                            <span className="text-sm font-medium">{member.responsibilities || "Aucune responsabilité spécifique renseignée."}</span>
+                            <span className="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">{dict.common.responsibilities}</span>
+                            <span className="text-sm font-medium">{member.responsibilities || dict.team.no_responsibilities}</span>
                         </div>
                       )}
                    </div>
@@ -197,10 +189,10 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
                <div className="glass-panel p-8 rounded-2xl border border-outline-variant/10">
                   <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                     <span className="material-symbols-outlined text-tertiary">history_edu</span>
-                    Parcours Académique
+                    {dict.team.academic_journey}
                   </h3>
                   <p className="text-sm text-on-surface-variant leading-relaxed whitespace-pre-line">
-                    {member.academic_journey || `Actuellement en ${member.study_level || "cursus informatique"}, ce membre s'investit pour la cohésion et le dynamisme du CERI.`}
+                    {member.academic_journey || (member.study_level ? `${dict.team.student_at_ceri} — ${member.study_level}` : dict.team.member_bio_empty)}
                   </p>
                </div>
             </div>
@@ -210,7 +202,7 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
                <div>
                   <h3 className="text-2xl font-headline font-bold mb-8 flex items-center gap-3">
                     <span className="material-symbols-outlined text-primary">history</span>
-                    Historique au Bureau
+                    {dict.team.history_title}
                   </h3>
                   <div className="space-y-4">
                     {history.map((record: any) => (
@@ -218,10 +210,10 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
                         <div className="flex flex-col">
                             <span className="text-xs text-primary font-bold">{record.ancien_bureau?.academic_year}</span>
                             <span className="text-lg font-bold text-on-surface">{record.role_label}</span>
-                            <span className="text-xs text-on-surface-variant italic">Thème : {record.ancien_bureau?.theme || "N/A"}</span>
+                            <span className="text-xs text-on-surface-variant italic">{dict.team.theme_label} : {record.ancien_bureau?.theme || "N/A"}</span>
                         </div>
                         <div className="text-right">
-                            <span className="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">Niveau à l'époque</span>
+                            <span className="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">{dict.common.historical_level}</span>
                             <p className="text-xs font-medium">{record.study_year || "N/A"}</p>
                         </div>
                       </div>
@@ -237,7 +229,7 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
       <div className="max-w-7xl mx-auto px-6 py-12 border-t border-outline-variant/10">
         <Link href="/equipe" className="inline-flex items-center gap-2 text-on-surface-variant hover:text-ter transition-colors group">
           <span className="material-symbols-outlined transition-transform group-hover:-translate-x-1">arrow_back</span>
-          Retour à l'équipe
+          {dict.team.back_to_team}
         </Link>
       </div>
     </div>

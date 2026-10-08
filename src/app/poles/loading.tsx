@@ -1,8 +1,10 @@
 import React from "react";
+import LoadingEstimate from "@/components/LoadingEstimate";
 
 export default function Loading() {
   return (
     <div className="bg-surface min-h-screen pt-32 px-4 md:px-8 max-w-7xl mx-auto space-y-16">
+      <LoadingEstimate routeKey="poles" />
       {/* Title Skeletons */}
       <header className="text-center space-y-6">
         <div className="h-6 w-40 bg-surface-container-highest rounded-full mx-auto animate-pulse" />

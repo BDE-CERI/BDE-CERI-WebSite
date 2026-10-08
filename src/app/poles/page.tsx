@@ -4,6 +4,13 @@ import Link from "next/link";
 import Image from "next/image";
 import SharkWallpaper from "@/components/SharkWallpaper";
 import PolesTree from "@/components/PolesTree";
+import { createSeoMetadata } from "@/utils/seo";
+
+export const metadata = createSeoMetadata({
+  path: "/poles",
+  title: "Les équipes et pôles du BDE",
+  description: "Découvre les équipes du BDE CERI à Avignon et les projets qui font vivre l’association étudiante.",
+});
 
 export const dynamic = "force-dynamic";
 
@@ -108,10 +115,10 @@ export default async function Poles() {
           {dict.poles.structure}
         </div>
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 text-on-surface font-headline">
-          L'Architecture de notre <span className="text-tertiary">BDE</span>
+          {dict.poles.hero_title}
         </h1>
         <p className="max-w-2xl mx-auto text-on-surface-variant text-lg leading-relaxed font-body">
-          Cinq piliers fondamentaux travaillant main dans la main pour propulser la vie étudiante du CERI vers de nouveaux sommets.
+          {dict.poles.description}
         </p>
       </section>
 
@@ -122,20 +129,20 @@ export default async function Poles() {
       <section className="max-w-7xl mx-auto px-6 mt-32 mb-20">
         <div className="relative overflow-hidden rounded-3xl bg-surface-container-high border border-outline-variant/20 p-8 md:p-16 flex flex-col md:flex-row items-center gap-12 shadow-2xl">
           <div className="relative z-10 w-full md:w-1/2">
-            <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight font-headline">Rejoignez l'Élite</h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-6 tracking-tight font-headline">{dict.poles.recruitment_title}</h2>
             <p className="text-on-surface-variant mb-8 text-lg font-body max-w-md italic">
-              "L'excellence n'est pas un acte, mais une habitude de fer au sein de nos pôles."
+              “{dict.poles.recruitment_quote}”
             </p>
             <div className="flex flex-wrap gap-4">
               <a href="https://forms.gle/placeholder" target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-tertiary text-on-tertiary font-bold rounded-xl hover:shadow-[0_0_20px_rgba(123,208,255,0.4)] transition-all font-label">
-                Soumettre ma candidature
+                {dict.poles.apply}
               </a>
             </div>
           </div>
           <div className="w-full md:w-1/2 relative aspect-video">
             <div className="absolute inset-0 bg-tertiary/10 rounded-2xl animate-pulse"></div>
             <Image
-              alt="Collaboration"
+              alt={dict.poles.collaboration_alt}
               className="object-cover rounded-2xl opacity-40 mix-blend-luminosity border border-tertiary/20"
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOt7bBqZtSFJ43qj63UphQTW8OUYNqopsBkpG9Vws5AazbobXkjZwjRwol5oVHwhe38cRGdXzJAgCJnTqcXHDqb7ltYt_QoVfJsr0NIdutXdgVX-NkfMo3R_NR20x3bONCMGHzuyWgnqFWYi2UzZ34HjOHQssObwkvZPDzqYrYOltJyaGtrHvS1_Y1dRtubqXa6FMPzZoHQMvpeDJdfHh0LoJU8Pr4vRDoRDwxXbBCv92rtWZ62f6-IHljNPAL6OYGaxGZJyVfERlH"
               fill

@@ -34,3 +34,16 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+## Cookies et statistiques de fréquentation
+
+Le suivi de fréquentation est activé uniquement après consentement. Ajoutez ces variables à votre environnement local et à l’hébergement (ne publiez jamais les valeurs secrètes) :
+
+- SUPABASE_SERVICE_ROLE_KEY : clé service role du projet Supabase, uniquement côté serveur.
+- VISITOR_HASH_SECRET : secret aléatoire dédié (au moins 32 octets) utilisé pour produire les empreintes HMAC quotidiennes.
+- NEXT_PUBLIC_HELLOASSO_DONATION_URL : lien direct vers le formulaire HelloAsso de don de 1 € (optionnel).
+
+Appliquez ensuite supabase/migrations/202610080001_visitor_analytics.sql au projet Supabase via les migrations du CLI ou l’éditeur SQL. Les statistiques se trouvent dans l’espace membre du bureau restreint.
+
+Les coordonnées de l’éditeur et de l’hébergeur, les informations de conservation et les règles propres aux ventes HelloAsso dans les pages juridiques doivent être vérifiées et complétées avant publication définitive.

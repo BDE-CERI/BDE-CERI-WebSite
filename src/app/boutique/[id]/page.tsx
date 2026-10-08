@@ -6,8 +6,9 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import SizePicker from "./SizePicker";
 import BuyButton from "../BuyButton";
+import { createSeoMetadata } from "@/utils/seo";
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const supabase = await createClient();
   
@@ -18,29 +19,20 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     product = taverneItem;
   }
   
-  if (!product) return { title: "Article introuvable - Boutique BDE CERI" };
+  if (!product) return { title: "Article introuvable", robots: { index: false, follow: false } };
   
-  const title = `${product.name} | Boutique BDE CERI`;
-  const desc = product.description || "Achetez cet article sur la boutique officielle du BDE CERI.";
+  const title = `${product.name} | Boutique`;
+  const desc = (product.description || "Retrouve cet article sur la boutique officielle du BDE CERI à Avignon.").replace(/\s+/g, " ").slice(0, 160);
   
-  return {
+  return createSeoMetadata({
+    path: `/boutique/${id}`,
     title,
     description: desc,
-    openGraph: {
-      title,
-      description: desc,
-      images: product.image_url ? [{ url: product.image_url }] : [],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description: desc,
-      images: product.image_url ? [product.image_url] : [],
-    }
-  };
+    image: product.image_url,
+  });
 }
 
-export default async function ProductDetailPage({ params }: { params: { id: string } }) {
+export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const dict = await getDictionary();
   const supabase = await createClient();
@@ -76,7 +68,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
     <div className="flex-grow pt-24 pb-24 px-6 md:px-12 max-w-7xl mx-auto">
       <Link href="/boutique" className="text-tertiary flex items-center gap-2 mb-12 hover:gap-3 transition-all font-bold text-sm uppercase tracking-widest">
         <span className="material-symbols-outlined">arrow_back</span>
-        Retour à la boutique
+        {dict.boutique.back_to_store}
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
@@ -132,7 +124,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
             <section>
               <h3 className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-2">
                 <span className="material-symbols-outlined text-sm">info</span>
-                Description
+                {dict.boutique.description_label}
               </h3>
               <p className="font-body text-lg text-on-surface/80 leading-relaxed italic border-l-4 border-tertiary/30 pl-6 py-2">
                 {product.description}
@@ -141,7 +133,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
 
             {product.full_content && (
               <section className="prose prose-invert max-w-none">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3">Détails de l&apos;article</h3>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3">{dict.common.product_details}</h3>
                 <div className="whitespace-pre-wrap font-body leading-relaxed text-sm opacity-90">
                   {product.full_content}
                 </div>
@@ -149,26 +141,29 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
             )}
 
             {isBranding && product.branding_category === "vetement" && product.sizes && (
-              <SizePicker sizes={product.sizes} />
+              <SizePicker
+                sizes={product.sizes}
+                title={dict.boutique.size_title}
+                selectedLabel={dict.boutique.size_selected}
+              />
             )}
 
             <section className="bg-surface-container-low p-6 rounded-2xl ghost-border space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className={`w-3 h-3 rounded-full ${product.stock > 0 ? 'bg-success' : 'bg-error'}`}></span>
-                  <span className="text-xs font-bold uppercase tracking-widest">
-                    {product.stock > 0 ? 'Article disponible' : 'Rupture de stock'}
+              <span className="text-xs font-bold uppercase tracking-widest">
+                {product.stock > 0 ? dict.common.in_stock : dict.common.out_of_stock}
                   </span>
                 </div>
                 {product.stock > 0 && (
                   <span className="text-[10px] font-bold text-tertiary px-2 py-1 rounded-lg bg-tertiary/10 border border-tertiary/20">
-                     {product.stock} exemplaires restants
+                     {product.stock} {dict.boutique.remaining_stock}
                   </span>
                 )}
               </div>
               <p className="text-[10px] text-on-surface-variant leading-tight">
-                Le retrait des articles s&apos;effectue au local BDE (Bâtiment ADA, CERI). 
-                Vérifiez les horaires d&apos;ouverture dans le footer.
+                {dict.boutique.pickup_note}
               </p>
             </section>
           </div>

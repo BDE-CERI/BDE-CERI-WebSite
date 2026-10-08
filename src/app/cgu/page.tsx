@@ -1,0 +1,18 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { title: "Conditions générales d’utilisation", description: "Conditions d’utilisation du site du BDE CERI.", alternates: { canonical: "/cgu" } };
+
+export default function TermsOfUse() {
+  return <article className="mx-auto max-w-4xl px-6 py-20 text-on-surface">
+    <p className="mb-3 text-sm font-bold uppercase tracking-widest text-tertiary">BDE CERI · informations juridiques</p>
+    <h1 className="mb-8 font-headline text-4xl font-bold">Conditions générales d’utilisation</h1>
+    <div className="space-y-8 leading-relaxed text-on-surface-variant">
+      <section><h2 className="mb-2 text-xl font-bold text-on-surface">1. Éditeur du site</h2><p>Le site est édité par l’association <strong>[nom officiel et forme de l’association à compléter]</strong>, dont le siège est situé au <strong>[adresse du siège à compléter]</strong>. RNA : <strong>[numéro à compléter]</strong> · SIREN/SIRET : <strong>[numéro, le cas échéant]</strong>. Responsable de publication : <strong>[nom ou fonction à compléter]</strong>. Contact : <a className="underline" href="mailto:bde-ceri@univ-avignon.fr">bde-ceri@univ-avignon.fr</a>.</p><p className="mt-2 text-sm">Hébergement : <strong>[nom, adresse et coordonnées de l’hébergeur à confirmer]</strong>.</p></section>
+      <section><h2 className="mb-2 text-xl font-bold text-on-surface">2. Objet et accès</h2><p>Le site présente les activités, actualités, événements, équipes et services du BDE CERI. L’accès est gratuit, sous réserve du coût de connexion à Internet supporté par l’utilisateur. L’association peut faire évoluer ou interrompre certaines fonctionnalités pour maintenance ou raison opérationnelle.</p></section>
+      <section><h2 className="mb-2 text-xl font-bold text-on-surface">3. Utilisation du site</h2><p>L’utilisateur s’engage à fournir des informations exactes lorsqu’il utilise un formulaire, à ne pas perturber le fonctionnement du site et à respecter les droits des tiers. Les contenus publiés par les utilisateurs, le cas échéant, doivent être licites et respectueux des personnes.</p></section>
+      <section><h2 className="mb-2 text-xl font-bold text-on-surface">4. Propriété intellectuelle</h2><p>Les textes, visuels, logos et éléments du site sont protégés par les règles applicables à la propriété intellectuelle. Sauf indication contraire ou accord préalable, leur reproduction ou réutilisation n’est pas autorisée. Les marques et contenus de tiers restent la propriété de leurs titulaires.</p></section>
+      <section><h2 className="mb-2 text-xl font-bold text-on-surface">5. Liens et services tiers</h2><p>Le site peut renvoyer vers des services tiers, notamment HelloAsso pour la boutique ou les paiements. Ces services ont leurs propres conditions et politiques. Le BDE n’édite pas les pages externes et invite l’utilisateur à les consulter avant toute opération.</p></section>
+      <section><h2 className="mb-2 text-xl font-bold text-on-surface">6. Données personnelles et cookies</h2><p>Les traitements et les moyens de gérer le choix relatif aux statistiques sont décrits dans la <a className="underline" href="/confidentialite">politique de confidentialité</a> et la <a className="underline" href="/cookies">politique relative aux cookies</a>.</p></section>
+      <section><h2 className="mb-2 text-xl font-bold text-on-surface">7. Droit applicable</h2><p>Les présentes conditions sont soumises au droit français. Elles devront être adaptées aux informations définitives de l’association et à ses services effectivement proposés.</p></section>
+    </div>
+  </article>;
+}

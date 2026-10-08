@@ -37,9 +37,7 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
     };
   }, [bootState]);
 
-  if (!news || news.length === 0) return null;
-
-  const selectedNews = news.find((n) => n.id === selectedId) || news[0];
+  const selectedNews = news?.find((n) => n.id === selectedId) || news?.[0];
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("fr-FR", {
@@ -246,6 +244,9 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                         <div className="flex flex-grow overflow-hidden bg-surface">
                           {/* Sidebar Feed */}
                           <aside className="w-[30%] border-r border-outline-variant/10 flex flex-col bg-surface-container-low/30 overflow-y-auto custom-scrollbar">
+                            {news.length === 0 && (
+                              <p className="p-5 text-xs leading-relaxed text-on-surface-variant">{dict.news.empty_inbox}</p>
+                            )}
                             {news.map((item) => (
                               <button
                                 key={item.id}
@@ -284,6 +285,8 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                           {/* Main Content */}
                           <main className="flex-grow p-6 md:p-12 lg:p-16 overflow-y-auto custom-scrollbar bg-surface relative">
                             <div className="max-w-4xl mx-auto">
+                              {selectedNews ? (
+                                <>
                               <header className="mb-12 pb-12 border-b border-outline-variant/10">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                                   <div className="flex items-center gap-3">
@@ -352,7 +355,22 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                                   </div>
                                 </div>
                               </div>
-                            </div>
+                                            </>
+              ) : (
+                <div className="flex min-h-[50vh] flex-col items-center justify-center px-6 text-center">
+                  <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-tertiary/20 bg-tertiary/5 text-tertiary">
+                    <span className="material-symbols-outlined text-4xl">mail</span>
+                  </div>
+                  <h2 className="mb-3 font-headline text-3xl font-bold text-on-surface">{dict.news.empty_title}</h2>
+                  <p className="max-w-lg text-on-surface-variant">{dict.news.empty_description}</p>
+                  {isAdmin && (
+                    <Link href="/profil?tab=news" className="mt-6 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-on-primary transition hover:brightness-110">
+                      {dict.news.publish_first}
+                    </Link>
+                  )}
+                </div>
+              )}
+</div>
                           </main>
                         </div>
                       </div>

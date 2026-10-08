@@ -2,6 +2,13 @@ import { getDictionary } from "@/locales/dictionaries";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import SharkWallpaper from "@/components/SharkWallpaper";
+import { createSeoMetadata } from "@/utils/seo";
+
+export const metadata = createSeoMetadata({
+  path: "/evenement",
+  title: "Événements étudiants à Avignon",
+  description: "Retrouve les prochains événements, soirées, ateliers et rendez-vous étudiants organisés par le BDE CERI à Avignon.",
+});
 
 export default async function Evenements() {
   const dict = await getDictionary();

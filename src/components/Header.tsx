@@ -98,7 +98,7 @@ export default function Header({
           <button
             onClick={handleLanguageToggle}
             className="group relative w-10 h-10 flex items-center justify-center overflow-hidden rounded-full border border-outline-variant/20 hover:border-primary/50 transition-all shadow-lg"
-            title="Switch Language"
+            title={dict.header.switch_language || "Switch language"}
           >
             <span className="text-xl transform group-hover:scale-120 transition-transform">
                 {lang === "fr" ? "🇬🇧" : "🇫🇷"}

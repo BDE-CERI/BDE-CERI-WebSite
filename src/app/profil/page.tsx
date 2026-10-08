@@ -1,14 +1,22 @@
 import { getDictionary } from "@/locales/dictionaries";
+import type { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { signOut, updateProfile, addEvent, addProduct, addNews, addAssignment, deleteAssignment } from "./actions";
 import EditModeToggle from "./EditModeToggle";
+
 import MemberSwitcher from "./MemberSwitcher";
 import EventManager from "./EventManager";
 import ShopManager from "./ShopManager";
 import NewsManager from "./NewsManager";
 import PoleManager from "./PoleManager";
 import ImageUpload from "@/components/ImageUpload";
+import VisitorStats from "@/components/VisitorStats";
+
+export const metadata: Metadata = {
+  title: "Espace membre du BDE",
+  robots: { index: false, follow: false },
+};
 
 export default async function ProfilPage(props: { searchParams: Promise<{ [key: string]: string | undefined }> }) {
   const searchParams = await props.searchParams;
@@ -158,6 +166,7 @@ export default async function ProfilPage(props: { searchParams: Promise<{ [key: 
         </div>
       </header>
 
+      {isBR && <div className="mb-8"><VisitorStats /></div>}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Settings Column */}
         <div className="lg:col-span-1 space-y-8 relative z-30">

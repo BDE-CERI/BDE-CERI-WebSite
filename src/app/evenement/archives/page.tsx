@@ -1,6 +1,13 @@
 import { getDictionary } from "@/locales/dictionaries";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
+import { createSeoMetadata } from "@/utils/seo";
+
+export const metadata = createSeoMetadata({
+  path: "/evenement/archives",
+  title: "Archives des événements du BDE",
+  description: "Photos et souvenirs des événements étudiants organisés par le BDE CERI à Avignon.",
+});
 
 export default async function Archives() {
   const dict = await getDictionary();
@@ -28,7 +35,7 @@ export default async function Archives() {
           <span className="material-symbols-outlined text-sm">arrow_back</span>
           Retour aux événements à venir
         </Link>
-        <h1 className="text-4xl md:text-6xl font-headline font-bold text-on-surface">Archives <span className="text-on-surface-variant">du BDE</span></h1>
+        <h1 className="text-4xl md:text-6xl font-headline font-bold text-on-surface">{dict.events.archive_page_title}</h1>
         <p className="text-on-surface-variant mt-4 max-w-2xl">
           Revivez les moments forts qui ont marqué la vie étudiante du CERI. Une collection de souvenirs, de rires et de projets accomplis.
         </p>
@@ -64,7 +71,7 @@ export default async function Archives() {
         ) : (
           <div className="col-span-full py-24 text-center">
             <span className="material-symbols-outlined text-6xl text-outline mb-4">inventory_2</span>
-            <p className="text-on-surface-variant">Aucune archive disponible pour le moment.</p>
+          <p className="text-on-surface-variant">{dict.events.archive_empty}</p>
           </div>
         )}
       </div>

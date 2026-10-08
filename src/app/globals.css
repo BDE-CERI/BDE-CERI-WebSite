@@ -49,9 +49,9 @@
   --color-on-error-container: #ffdad6;
   --color-tertiary-fixed-dim: #7bd0ff;
 
-  --font-headline: 'Space Grotesk', sans-serif;
-  --font-body: 'Manrope', sans-serif;
-  --font-label: 'Manrope', sans-serif;
+  --font-headline: var(--font-space-grotesk), sans-serif;
+  --font-body: var(--font-manrope), sans-serif;
+  --font-label: var(--font-manrope), sans-serif;
 
   --transition-theme: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -82,10 +82,6 @@ body {
     color: var(--color-on-surface);
     font-family: var(--font-body);
     transition: var(--transition-theme);
-}
-
-* {
-    transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
 }
 
 .glass-panel {
