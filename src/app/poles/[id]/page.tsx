@@ -177,7 +177,7 @@ export default async function PoleDetail({ params }: { params: Promise<{ id: str
                 {/* Mini Player */}
                 <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black border border-outline-variant/10 shadow-lg">
                   <iframe
-                    src="https://player.twitch.tv/?channel=otplol&parent=localhost&parent=127.0.0.1&parent=bdeceri.fr"
+                    src="https://player.twitch.tv/?channel=bdeceri&parent=localhost&parent=127.0.0.1&parent=bdeceri.fr"
                     height="100%"
                     width="100%"
                     allowFullScreen

@@ -228,3 +228,42 @@ body {
 .ambient-shadow {
     box-shadow: 0 20px 40px rgba(7, 13, 31, 0.5);
 }
+
+/* CERI current atlas: layered water contours, animated routes and island reveal. */
+.ocean-chart {
+  background-color: #071725;
+  background-image: radial-gradient(ellipse at 50% 46%, rgba(25,103,144,.28), transparent 48%), linear-gradient(135deg, rgba(4,15,26,.2), transparent 48%, rgba(25,70,96,.15));
+}
+.ocean-depth {
+  opacity: .52;
+  background-image: radial-gradient(circle at 1px 1px, rgba(188,230,249,.16) 1px, transparent 1.5px), repeating-linear-gradient(135deg, transparent 0 68px, rgba(137,216,249,.025) 69px, transparent 70px);
+  background-size: 28px 28px, auto;
+  mask-image: radial-gradient(ellipse at center, black 16%, transparent 88%);
+}
+.atlas-contour { stroke: #8edcff; stroke-opacity: .16; stroke-width: 1.1; stroke-dasharray: 4 14; animation: atlas-current 44s linear infinite; }
+.atlas-contour-b { stroke-opacity: .1; stroke-dasharray: 2 12; animation-duration: 58s; animation-direction: reverse; }
+.atlas-contour-c { stroke-opacity: .13; stroke-dasharray: 1 10; animation-duration: 66s; }
+.atlas-route { stroke-dashoffset: 28; animation: atlas-route-flow 4s linear infinite; transition: stroke .45s ease, stroke-opacity .45s ease, stroke-width .45s ease; }
+.atlas-route-active { animation-duration: 1.5s; filter: drop-shadow(0 0 4px rgba(131,217,255,.5)); }
+.atlas-sonar { transform-box: fill-box; transform-origin: center; animation: atlas-sonar 4.6s ease-out infinite; }
+.atlas-island { animation: atlas-island-arrive .8s cubic-bezier(.2,.75,.15,1) both; }
+.atlas-island::before { content: ""; position: absolute; inset: 6px; border: 1px solid var(--island-color); border-radius: 9999px; opacity: .3; transform: scale(.7); transition: transform .35s ease, opacity .35s ease; }
+.atlas-island:hover::before, .atlas-island.is-active::before { opacity: .8; transform: scale(1.28); }
+.atlas-ping { animation: atlas-ping 2.5s ease-out infinite; }
+.atlas-detail { animation: atlas-detail-arrive .48s cubic-bezier(.2,.75,.15,1) both; }
+.recruit-orbit { transform-box: fill-box; transform-origin: center; animation: recruit-compass 32s linear infinite; }
+.recruit-route { stroke-dashoffset: 120; animation: atlas-route-flow 8s linear infinite; }
+.recruit-beacon { animation: atlas-sonar 3.5s ease-out infinite; }
+.recruit-beacon-two { animation-delay: 1.7s; }
+.atlas-index { scrollbar-width: thin; scrollbar-color: rgba(131,217,255,.25) transparent; }
+@keyframes recruit-compass { to { transform: rotate(360deg); } }
+@keyframes atlas-current { to { stroke-dashoffset: -360px; } }
+@keyframes atlas-route-flow { to { stroke-dashoffset: -28px; } }
+@keyframes atlas-sonar { 0% { opacity: .72; transform: scale(.72); } 85%,100% { opacity: 0; transform: scale(3.8); } }
+@keyframes atlas-ping { 0% { opacity: .7; transform: scale(.7); } 100% { opacity: 0; transform: scale(1.75); } }
+@keyframes atlas-island-arrive { from { opacity: 0; scale: .6; } to { opacity: 1; scale: 1; } }
+@keyframes atlas-detail-arrive { from { opacity: .25; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .atlas-contour, .atlas-route, .atlas-sonar, .atlas-island, .atlas-ping, .atlas-detail, .recruit-orbit, .recruit-route, .recruit-beacon { animation: none !important; }
+  .atlas-island::before, .atlas-route { transition: none !important; }
+}

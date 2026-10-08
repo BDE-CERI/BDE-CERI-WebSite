@@ -110,20 +110,20 @@ export default async function Poles() {
     <div className="relative overflow-hidden w-full bg-surface">
       <SharkWallpaper />
       
-      <section className="max-w-7xl mx-auto px-6 py-12 md:py-24 text-center">
+      <section className="relative z-10 mx-auto max-w-7xl px-6 pb-12 pt-16 text-center md:pb-16 md:pt-24">
         <div className="inline-block px-3 py-1 mb-6 rounded-full border border-tertiary/20 bg-tertiary/5 text-tertiary text-[10px] font-bold uppercase tracking-[0.2em]">
           {dict.poles.structure}
         </div>
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 text-on-surface font-headline">
+        <h1 className="mx-auto mb-6 max-w-5xl text-4xl font-bold tracking-tight text-on-surface font-headline sm:text-5xl md:text-7xl">
           {dict.poles.hero_title}
         </h1>
-        <p className="max-w-2xl mx-auto text-on-surface-variant text-lg leading-relaxed font-body">
+        <p className="mx-auto max-w-2xl text-base leading-relaxed text-on-surface-variant font-body md:text-lg">
           {dict.poles.description}
         </p>
       </section>
 
-      <section className="max-w-5xl mx-auto px-6">
-        <PolesTree poles={polesTreeData} />
+      <section id="poles" className="relative z-10 mx-auto max-w-7xl px-6">
+        <PolesTree poles={polesTreeData} labels={{ map_kicker: dict.poles.map_kicker, map_title: dict.poles.map_title, map_hint: dict.poles.map_hint, map_anchor: dict.poles.map_anchor, map_current: dict.poles.map_current, map_crew: dict.poles.map_crew, map_lead: dict.poles.map_lead, member_count: dict.poles.member_count, discover_pole: dict.poles.discover_pole, no_poles: dict.poles.no_poles, no_crew: dict.poles.no_crew, map_currents: dict.poles.map_currents, map_places: dict.poles.map_places }} />
       </section>
 
       <section className="max-w-7xl mx-auto px-6 mt-32 mb-20">
@@ -134,20 +134,25 @@ export default async function Poles() {
               “{dict.poles.recruitment_quote}”
             </p>
             <div className="flex flex-wrap gap-4">
-              <a href="https://forms.gle/placeholder" target="_blank" rel="noopener noreferrer" className="px-8 py-4 bg-tertiary text-on-tertiary font-bold rounded-xl hover:shadow-[0_0_20px_rgba(123,208,255,0.4)] transition-all font-label">
+              <a href="/contact" className="px-8 py-4 bg-tertiary text-on-tertiary font-bold rounded-xl hover:shadow-[0_0_20px_rgba(123,208,255,0.4)] transition-all font-label">
                 {dict.poles.apply}
               </a>
             </div>
           </div>
-          <div className="w-full md:w-1/2 relative aspect-video">
-            <div className="absolute inset-0 bg-tertiary/10 rounded-2xl animate-pulse"></div>
-            <Image
-              alt={dict.poles.collaboration_alt}
-              className="object-cover rounded-2xl opacity-40 mix-blend-luminosity border border-tertiary/20"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOt7bBqZtSFJ43qj63UphQTW8OUYNqopsBkpG9Vws5AazbobXkjZwjRwol5oVHwhe38cRGdXzJAgCJnTqcXHDqb7ltYt_QoVfJsr0NIdutXdgVX-NkfMo3R_NR20x3bONCMGHzuyWgnqFWYi2UzZ34HjOHQssObwkvZPDzqYrYOltJyaGtrHvS1_Y1dRtubqXa6FMPzZoHQMvpeDJdfHh0LoJU8Pr4vRDoRDwxXbBCv92rtWZ62f6-IHljNPAL6OYGaxGZJyVfERlH"
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-            />
+          <div className="recruit-chart relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-2xl border border-tertiary/20 bg-[#071725] md:w-1/2">
+            <svg aria-hidden="true" viewBox="0 0 600 340" className="absolute inset-0 h-full w-full" fill="none">
+              <circle cx="300" cy="170" r="104" stroke="#83d9ff" strokeOpacity=".15" strokeDasharray="2 9" />
+              <circle className="recruit-orbit" cx="300" cy="170" r="143" stroke="#83d9ff" strokeOpacity=".25" strokeDasharray="140 24 18 20" />
+              <path className="recruit-route" d="M54 276C154 258 142 90 252 104s132 137 222 90 44-94 86-113" stroke="#83d9ff" strokeOpacity=".6" strokeWidth="1.5" strokeDasharray="5 8" />
+              <path d="M0 280c102-42 150 8 244-14s141-66 220-38 95 31 136 5" stroke="#b9eaff" strokeOpacity=".12" />
+              <path d="M0 305c102-42 150 8 244-14s141-66 220-38 95 31 136 5" stroke="#b9eaff" strokeOpacity=".08" />
+              <circle className="recruit-beacon" cx="54" cy="276" r="5" fill="#83d9ff" />
+              <circle className="recruit-beacon recruit-beacon-two" cx="560" cy="81" r="5" fill="#83d9ff" />
+            </svg>
+            <div className="relative z-10 flex h-32 w-32 items-center justify-center rounded-full border border-tertiary/30 bg-[#dceef5] shadow-[0_0_55px_rgba(78,195,245,.24)]">
+              <Image src="/logos/BDE-CERI-logo.png" alt="Logo du BDE CERI" width={110} height={110} className="h-24 w-24 object-contain" sizes="110px" />
+            </div>
+            <span className="absolute bottom-4 left-4 rounded-full border border-white/10 bg-[#06131f]/80 px-3 py-1.5 font-mono text-[9px] uppercase tracking-[.2em] text-[#c7e4f1]/65">{dict.poles.recruit_visual_caption}</span>
           </div>
         </div>
       </section>

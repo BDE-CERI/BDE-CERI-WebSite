@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -24,575 +24,244 @@ interface PoleNode {
 
 interface PolesTreeProps {
   poles: PoleNode[];
+  labels: {
+    map_kicker: string;
+    map_title: string;
+    map_hint: string;
+    map_anchor: string;
+    map_current: string;
+    map_crew: string;
+    map_lead: string;
+    member_count: string;
+    discover_pole: string;
+    no_poles: string;
+    no_crew: string;
+    map_currents: string;
+    map_places: string;
+  };
 }
 
-export default function PolesTree({ poles }: PolesTreeProps) {
-  const [hoveredPoleId, setHoveredPoleId] = useState<string | null>(null);
-  const [selectedPoleId, setSelectedPoleId] = useState<string | null>(null);
+const islandPositions = [
+  { x: 12, y: 30 },
+  { x: 29, y: 70 },
+  { x: 50, y: 13 },
+  { x: 72, y: 25 },
+  { x: 89, y: 48 },
+  { x: 71, y: 77 },
+  { x: 50, y: 88 },
+  { x: 29, y: 30 },
+  { x: 89, y: 80 },
+  { x: 11, y: 72 },
+];
 
-  // Initialize selected pole as the first one if available
-  useEffect(() => {
-    if (poles.length > 0 && !selectedPoleId) {
-      setSelectedPoleId(poles[0].id);
-    }
-  }, [poles, selectedPoleId]);
+const iconForPole = (name: string) => {
+  const value = name.toLowerCase();
+  if (value.includes("évén") || value.includes("even")) return "celebration";
+  if (value.includes("com")) return "campaign";
+  if (value.includes("jeu") || value.includes("gaming") || value.includes("esport")) return "sports_esports";
+  if (value.includes("parten")) return "handshake";
+  if (value.includes("sport")) return "sports_soccer";
+  if (value.includes("taverne") || value.includes("bar")) return "local_cafe";
+  return "groups";
+};
 
-  // Precompute 5 giant PCB processing units with custom technical serial codes and coordinates
-  const computedPoles = poles.map((pole, pIndex) => {
-    // Majestic routed traces that expand outwards and upwards symmetrically
-    const routingPaths = [
-      {
-        x: 150,
-        y: 290,
-        path: "M 380 430 L 250 430 L 150 380 L 150 290", // Outer Left
-        serial: "IC-EVEN-404",
-      },
-      {
-        x: 275,
-        y: 230,
-        path: "M 390 430 L 390 340 L 275 290 L 275 230", // Inner Left
-        serial: "IC-COMM-200",
-      },
-      {
-        x: 400,
-        y: 180,
-        path: "M 400 430 L 400 180", // Straight Center
-        serial: "IC-TAVN-101",
-      },
-      {
-        x: 525,
-        y: 230,
-        path: "M 410 430 L 410 340 L 525 290 L 525 230", // Inner Right
-        serial: "IC-PART-808",
-      },
-      {
-        x: 650,
-        y: 290,
-        path: "M 420 430 L 550 430 L 650 380 L 650 290", // Outer Right
-        serial: "IC-SPRT-007",
-      },
-    ];
+export default function PolesTree({ poles, labels }: PolesTreeProps) {
+  const [activeId, setActiveId] = useState(poles[0]?.id ?? "");
+  const active = poles.find((pole) => pole.id === activeId) ?? poles[0] ?? null;
 
-    const route = routingPaths[pIndex] || routingPaths[2];
+  if (!poles.length) {
+    return (
+      <div className="rounded-[2rem] border border-outline-variant/15 bg-surface-container-low px-6 py-16 text-center text-on-surface-variant">
+        {labels.no_poles}
+      </div>
+    );
+  }
 
-    return {
-      ...pole,
-      x: route.x,
-      y: route.y,
-      pcbPath: route.path,
-      serial: route.serial,
-    };
-  });
-
-  const socketX = 400;
-  const socketY = 430;
-
-  const activePoleId = hoveredPoleId || selectedPoleId;
-  const activePole = computedPoles.find((p) => p.id === activePoleId) || computedPoles[0];
-
-  const getPoleIcon = (name: string) => {
-    const n = name.toLowerCase();
-    if (n.includes("éven") || n.includes("even")) return "star";
-    if (n.includes("com")) return "campaign";
-    if (n.includes("jeux") || n.includes("gaming") || n.includes("esport") || n.includes("play")) return "sports_esports";
-    if (n.includes("taverne") || n.includes("bar") || n.includes("snack") || n.includes("boisson")) return "local_cafe";
-    if (n.includes("partenariat") || n.includes("partenaires") || n.includes("sponsor")) return "handshake";
-    if (n.includes("sport")) return "sports_soccer";
-    return "groups";
-  };
+  const crew = active ? [...(active.vp ? [active.vp] : []), ...active.members] : [];
 
   return (
-    <div className="w-full space-y-12">
-      {/* Interactive Motherboard PCB Viewport */}
-      <div className="relative glass-panel rounded-3xl p-6 md:p-8 border border-outline-variant/15 shadow-2xl overflow-hidden bg-[#050914] min-h-[500px]">
-        {/* Technical Grid Pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
+    <section className="current-atlas relative">
+      <div className="mb-5 flex flex-col justify-between gap-3 px-1 sm:flex-row sm:items-end">
+        <div>
+          <p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-tertiary">
+            <span className="h-px w-7 bg-tertiary" />
+            {labels.map_kicker}
+          </p>
+          <h2 className="font-headline text-2xl font-bold tracking-tight text-on-surface sm:text-3xl">{labels.map_title}</h2>
+        </div>
+        <p className="max-w-sm text-xs leading-5 text-on-surface-variant sm:text-right">{labels.map_hint}</p>
+      </div>
 
-        {/* Futuristic glowing circuits on corners */}
-        <div className="absolute -top-10 -left-10 w-64 h-64 bg-primary/5 rounded-full blur-[90px] pointer-events-none" />
-        <div className="absolute -bottom-10 -right-10 w-64 h-64 bg-tertiary/5 rounded-full blur-[90px] pointer-events-none" />
-
-        {/* SVG Schematic Canvas */}
-        <svg
-          viewBox="0 0 800 480"
-          className="w-full h-auto overflow-visible select-none"
-        >
+      <div className="ocean-chart relative isolate min-h-[390px] overflow-hidden rounded-[2rem] border border-[#83d9ff]/20 bg-[#071725] shadow-[0_35px_100px_rgba(1,9,18,.5)] sm:min-h-[480px] lg:min-h-[540px]">
+        <div aria-hidden="true" className="ocean-depth absolute inset-0" />
+        <svg aria-hidden="true" className="absolute inset-0 h-full w-full" viewBox="0 0 1000 520" preserveAspectRatio="none" fill="none">
           <defs>
-            <style>{`
-              .pcb-trace {
-                stroke-linejoin: round;
-                stroke-linecap: round;
-                transition: stroke-width 0.4s ease, stroke 0.4s ease;
-              }
-              .pcb-glow {
-                filter: drop-shadow(0 0 8px currentColor);
-                transition: stroke 0.4s ease;
-              }
-              .sap-pulse {
-                stroke-linecap: round;
-                stroke-linejoin: round;
-                stroke-dasharray: 6, 15;
-                animation: sap-flow 1.8s linear infinite;
-              }
-              .sap-pulse-active {
-                stroke-linecap: round;
-                stroke-linejoin: round;
-                stroke-dasharray: 4, 8;
-                animation: sap-flow 0.7s linear infinite;
-              }
-              .chip-giant {
-                transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), stroke-width 0.3s ease;
-              }
-              .console-text {
-                animation: blink 1.5s infinite;
-              }
-              @keyframes sap-flow {
-                from { stroke-dashoffset: 36; }
-                to { stroke-dashoffset: 0; }
-              }
-              @keyframes blink {
-                0%, 100% { opacity: 1; }
-                50% { opacity: 0.3; }
-              }
-            `}</style>
-
-            {/* Glowing filter for neon LEDs */}
-            <filter id="ledGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
+            <radialGradient id="oceanGlow" cx="0" cy="0" r="1" gradientTransform="matrix(0 360 -470 0 500 260)" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#17618a" stopOpacity=".6" />
+              <stop offset="1" stopColor="#071725" stopOpacity="0" />
+            </radialGradient>
+            <linearGradient id="currentLine" x1="130" y1="260" x2="870" y2="260" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#83d9ff" stopOpacity="0" />
+              <stop offset=".5" stopColor="#83d9ff" stopOpacity=".78" />
+              <stop offset="1" stopColor="#83d9ff" stopOpacity="0" />
+            </linearGradient>
           </defs>
-
-          {/* ================= BACKGROUND TELEMETRY DIAGRAMS ================= */}
-          
-          {/* Top-Left: Green Glass Diagnostic Terminal */}
-          <g>
-            <rect x={15} y={15} width={180} height={120} rx={6} fill="rgba(6, 12, 26, 0.85)" stroke="#1a2e46" strokeWidth={1} />
-            <rect x={20} y={20} width={170} height={18} rx={3} fill="#0d182b" />
-            
-            {/* Blinking green telemetry status dot */}
-            <circle cx={30} cy={29} r={3} fill="#10b981" className="console-text" />
-            <text x={38} y={32} className="fill-emerald-400 font-mono text-[7px] tracking-widest font-bold">MONITOR_LOG_v2.0</text>
-            
-            {/* Scrolling fictional console lines */}
-            <text x={25} y={55} className="fill-emerald-500/70 font-mono text-[6.5px] font-semibold">{`> SYSTEM: CONNECTED`}</text>
-            <text x={25} y={70} className="fill-emerald-500/70 font-mono text-[6.5px]">{`> CLOCK_CORE: 4.88 GHz`}</text>
-            <text x={25} y={85} className="fill-emerald-500/70 font-mono text-[6.5px]">{`> STABLE_VOLTAGE: 1.22V`}</text>
-            <text x={25} y={100} className="fill-emerald-500/70 font-mono text-[6.5px]">{`> ACTIVE_POLES: 5/5`}</text>
-            <text x={25} y={115} className="fill-emerald-400 font-mono text-[6.5px] font-bold">{`> POLE_SELECTED: ${activePole.name.toUpperCase()} _`}</text>
-          </g>
-
-          {/* Top-Right: Oscilloscope Wave Analyzer */}
-          <g>
-            <rect x={605} y={15} width={180} height={120} rx={6} fill="rgba(6, 12, 26, 0.85)" stroke="#1a2e46" strokeWidth={1} />
-            <rect x={610} y={20} width={170} height={18} rx={3} fill="#0d182b" />
-            
-            <circle cx={620} cy={29} r={3} fill={activePole.color} className="console-text" />
-            <text x={628} y={32} className="fill-on-surface font-mono text-[7px] tracking-widest font-bold" style={{ color: activePole.color }}>SIGNAL_WAVE</text>
-            
-            {/* Oscilloscope Grid Gridlines */}
-            <line x1={615} y1={75} x2={775} y2={75} stroke="#ffffff" strokeWidth={0.5} opacity={0.06} />
-            <line x1={695} y1={45} x2={695} y2={125} stroke="#ffffff" strokeWidth={0.5} opacity={0.06} />
-            
-            {/* Beautiful real dynamic green/cyan oscilloscope sine wave */}
-            <path
-              d={`M 615 75 Q 635 35, 655 75 T 695 75 T 735 75 T 775 75`}
-              fill="none"
-              stroke={activePole.color}
-              strokeWidth={1.5}
-              className="pcb-glow"
-              style={{ color: activePole.color }}
-              opacity={0.8}
-            />
-            
-            <text x={620} y={120} className="fill-on-surface-variant/40 font-mono text-[5.5px]">FREQ: 154.2 MHz</text>
-            <text x={720} y={120} className="fill-on-surface-variant/40 font-mono text-[5.5px]">AMP: +1.8dBm</text>
-          </g>
-
-          {/* ================= MAIN PCB CIRCUIT TRACES ================= */}
-          {computedPoles.map((pole) => {
-            const isActive = hoveredPoleId === pole.id || (selectedPoleId === pole.id && !hoveredPoleId);
-
+          <rect width="1000" height="520" fill="url(#oceanGlow)" />
+          <path className="atlas-contour atlas-contour-a" d="M-40 120C94 40 159 212 305 156s167-149 295-100 212 154 453 48" />
+          <path className="atlas-contour atlas-contour-b" d="M-20 210c167-122 221 102 369 15S512 81 640 169s205 139 390 35" />
+          <path className="atlas-contour atlas-contour-c" d="M-36 340c131-117 223-27 342-67s171-149 309-89 210 168 417 58" />
+          <path className="atlas-contour atlas-contour-a" d="M-28 458c156-102 219 22 375-31s169-120 289-52 191 97 394 8" />
+          <path d="M0 260H1000M500 0V520" stroke="#b7e9ff" strokeOpacity=".055" strokeDasharray="2 12" />
+          <circle cx="500" cy="260" r="128" stroke="#83d9ff" strokeOpacity=".11" strokeDasharray="2 9" />
+          <circle cx="500" cy="260" r="190" stroke="#83d9ff" strokeOpacity=".08" strokeDasharray="1 13" />
+          {poles.map((pole, index) => {
+            const point = islandPositions[index % islandPositions.length];
+            const x = point.x * 10;
+            const y = point.y * 5.2;
+            const activePoint = pole.id === active?.id;
+            const controlX = Math.round((500 + x) / 2);
+            const controlY = Math.round(y + (y < 260 ? 44 : -44));
             return (
-              <g key={`trace-${pole.id}`}>
-                {/* Copper bottom trace */}
+              <g key={pole.id}>
                 <path
-                  d={pole.pcbPath}
-                  fill="none"
-                  stroke={isActive ? pole.color : "#141c2f"}
-                  strokeWidth={isActive ? 5.5 : 2.5}
-                  className="pcb-trace pcb-glow"
-                  style={{ color: pole.color }}
-                  opacity={isActive ? 0.95 : 0.4}
+                  d={"M 500 260 Q " + controlX + " " + controlY + " " + x + " " + y}
+                  stroke={activePoint ? (pole.color || "#83d9ff") : "url(#currentLine)"}
+                  strokeOpacity={activePoint ? ".86" : ".3"}
+                  strokeWidth={activePoint ? "2.1" : "1"}
+                  strokeDasharray={activePoint ? "7 7" : "3 10"}
+                  className={activePoint ? "atlas-route atlas-route-active" : "atlas-route"}
                 />
-                
-                {/* Gold energy pulses overlay */}
-                <path
-                  d={pole.pcbPath}
-                  fill="none"
-                  stroke={isActive ? "#ffffff" : pole.color}
-                  strokeWidth={1.5}
-                  className={isActive ? "sap-pulse-active" : "sap-pulse"}
-                  opacity={isActive ? 1 : 0.2}
-                />
+                <circle cx={x} cy={y} r={activePoint ? "13" : "7"} fill={pole.color || "#83d9ff"} fillOpacity={activePoint ? ".18" : ".09"} />
               </g>
             );
           })}
-
-          {/* Faint Parallel Bus Tracks in Trunk Section */}
-          <g opacity={0.3}>
-            <line x1={390} y1={430} x2={390} y2={370} stroke="#ffffff" strokeWidth={0.8} strokeDasharray="3,3" />
-            <line x1={400} y1={430} x2={400} y2={370} stroke="#ffffff" strokeWidth={0.8} />
-            <line x1={410} y1={430} x2={410} y2={370} stroke="#ffffff" strokeWidth={0.8} strokeDasharray="3,3" />
-          </g>
-
-          {/* ================= PRIMARY CONNECTORS ================= */}
-
-          {/* Base CPU Connector Socket [CORE_0x00] */}
-          <g className="cursor-pointer">
-            <rect
-              x={350}
-              y={412}
-              width={100}
-              height={42}
-              rx={4}
-              fill="#060b18"
-              stroke="var(--color-primary)"
-              strokeWidth={1.8}
-              filter="drop-shadow(0 4px 10px rgba(0,0,0,0.5))"
-            />
-            <rect
-              x={356}
-              y={418}
-              width={88}
-              height={30}
-              rx={2}
-              fill="#0b1222"
-              stroke="var(--color-outline-variant)"
-              strokeWidth={0.8}
-            />
-            {/* Gold interface pins */}
-            {Array.from({ length: 12 }).map((_, idx) => (
-              <circle key={idx} cx={362 + idx * 7} cy={422} r={1} fill="#ffd700" />
-            ))}
-            {Array.from({ length: 12 }).map((_, idx) => (
-              <circle key={idx} cx={362 + idx * 7} cy={444} r={1} fill="#ffd700" />
-            ))}
-
-            <text
-              x={socketX}
-              y={socketY + 5}
-              textAnchor="middle"
-              className="fill-on-surface font-mono font-bold text-[8px] tracking-[0.25em]"
-            >
-              BDE_CORE_0x00
-            </text>
-          </g>
-
-          {/* ================= MAJESTIC PROCESSING UNITS (Pole Chips) ================= */}
-          {computedPoles.map((pole) => {
-            const isHovered = hoveredPoleId === pole.id;
-            const isSelected = selectedPoleId === pole.id && !hoveredPoleId;
-            const isActive = isHovered || isSelected;
-
-            const px = pole.x;
-            const py = pole.y;
-
-            return (
-              <g
-                key={`chip-${pole.id}`}
-                className="cursor-pointer chip-giant"
-                onMouseEnter={() => setHoveredPoleId(pole.id)}
-                onMouseLeave={() => setHoveredPoleId(null)}
-                onClick={() => setSelectedPoleId(pole.id)}
-                style={{ transform: `scale(${isActive ? 1.06 : 1})`, transformOrigin: `${px}px ${py}px` }}
-              >
-                {/* Heavy active ping glow circle */}
-                {isActive && (
-                  <circle
-                    cx={px}
-                    cy={py}
-                    r={45}
-                    fill="none"
-                    stroke={pole.color}
-                    strokeWidth={1.5}
-                    opacity={0.3}
-                    className="animate-ping"
-                    style={{ transformOrigin: `${px}px ${py}px` }}
-                  />
-                )}
-
-                {/* Golden/Metallic Connector pins (Top, Bottom, Left, Right) */}
-                <g opacity={isActive ? 1 : 0.6}>
-                  {/* Left pins */}
-                  <rect x={px - 39} y={py - 20} width={4} height={3} fill="#ffd700" />
-                  <rect x={px - 39} y={py - 10} width={4} height={3} fill="#ffd700" />
-                  <rect x={px - 39} y={py} width={4} height={3} fill="#ffd700" />
-                  <rect x={px - 39} y={py + 10} width={4} height={3} fill="#ffd700" />
-                  <rect x={px - 39} y={py + 20} width={4} height={3} fill="#ffd700" />
-                  
-                  {/* Right pins */}
-                  <rect x={px + 35} y={py - 20} width={4} height={3} fill="#ffd700" />
-                  <rect x={px + 35} y={py - 10} width={4} height={3} fill="#ffd700" />
-                  <rect x={px + 35} y={py} width={4} height={3} fill="#ffd700" />
-                  <rect x={px + 35} y={py + 10} width={4} height={3} fill="#ffd700" />
-                  <rect x={px + 35} y={py + 20} width={4} height={3} fill="#ffd700" />
-
-                  {/* Top pins */}
-                  <rect x={px - 20} y={py - 39} width={3} height={4} fill="#ffd700" />
-                  <rect x={px - 10} y={py - 39} width={3} height={4} fill="#ffd700" />
-                  <rect x={px} y={py - 39} width={3} height={4} fill="#ffd700" />
-                  <rect x={px + 10} y={py - 39} width={3} height={4} fill="#ffd700" />
-                  <rect x={px + 20} y={py - 39} width={3} height={4} fill="#ffd700" />
-
-                  {/* Bottom pins */}
-                  <rect x={px - 20} y={py + 35} width={3} height={4} fill="#ffd700" />
-                  <rect x={px - 10} y={py + 35} width={3} height={4} fill="#ffd700" />
-                  <rect x={px} y={py + 35} width={3} height={4} fill="#ffd700" />
-                  <rect x={px + 10} y={py + 35} width={3} height={4} fill="#ffd700" />
-                  <rect x={px + 20} y={py + 35} width={3} height={4} fill="#ffd700" />
-                </g>
-
-                {/* Substrate Base Chip (Obsidian high-tech processor board) */}
-                <rect
-                  x={px - 35}
-                  y={py - 35}
-                  width={70}
-                  height={70}
-                  rx={4}
-                  fill={isActive ? pole.color : "#0a0f21"}
-                  stroke={isActive ? "#ffffff" : pole.color}
-                  strokeWidth={isActive ? 2.5 : 1.5}
-                  filter="drop-shadow(0 6px 12px rgba(0,0,0,0.75))"
-                />
-
-                {/* Golden central silicon die */}
-                <rect
-                  x={px - 18}
-                  y={py - 18}
-                  width={36}
-                  height={36}
-                  rx={2}
-                  fill="rgba(12, 20, 38, 0.95)"
-                  stroke={isActive ? "#ffffff" : "#ffd700"}
-                  strokeWidth={0.8}
-                />
-
-                {/* Glowing LED indicator in core */}
-                <circle
-                  cx={px - 10}
-                  cy={py - 10}
-                  r={2.5}
-                  fill={pole.color}
-                  filter="url(#ledGlow)"
-                  className={isActive ? "console-text" : ""}
-                />
-
-                {/* Icon inside silicon core */}
-                <text
-                  x={px}
-                  y={py + 8}
-                  textAnchor="middle"
-                  className={`material-symbols-outlined select-none pointer-events-none transition-all duration-300 ${isActive ? "fill-white text-white" : "fill-primary text-primary"}`}
-                  style={{
-                    fontFamily: "Material Symbols Outlined",
-                    fontSize: "20px",
-                    color: isActive ? "#ffffff" : pole.color,
-                    fill: isActive ? "#ffffff" : pole.color,
-                  }}
-                >
-                  {getPoleIcon(pole.name)}
-                </text>
-
-                {/* Serial Label printed on substrate */}
-                <text
-                  x={px}
-                  y={py + 28}
-                  textAnchor="middle"
-                  className={`font-mono text-[5.5px] font-bold ${isActive ? "fill-white/80" : "fill-on-surface-variant/35"}`}
-                >
-                  {pole.serial}
-                </text>
-
-                {/* HUD Interactive Info Border above chip on hover */}
-                {isActive && (
-                  <g className="animate-fade-in pointer-events-none">
-                    <rect
-                      x={px - 60}
-                      y={py - 54}
-                      width={120}
-                      height={16}
-                      rx={4}
-                      fill="rgba(4, 8, 16, 0.95)"
-                      stroke={pole.color}
-                      strokeWidth={1}
-                    />
-                    <text
-                      x={px}
-                      y={py - 44}
-                      textAnchor="middle"
-                      className="fill-white font-mono text-[7px] font-bold tracking-wider"
-                    >
-                      {`PROCESSOR_POLE_${pole.name.toUpperCase()}`}
-                    </text>
-                  </g>
-                )}
-              </g>
-            );
-          })}
+          <circle className="atlas-sonar" cx="500" cy="260" r="48" stroke="#a8e7ff" strokeOpacity=".32" />
+          <circle cx="500" cy="260" r="35" fill="#0b263b" stroke="#83d9ff" strokeOpacity=".45" />
         </svg>
 
-        {/* Main Board Header UI Overlay */}
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 text-center pointer-events-none">
-          <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[0.3em] font-mono">
-            BDE CERI TELEMETRY MAINBOARD
-          </p>
+        <div className="absolute left-5 top-5 z-10 flex items-center gap-2 rounded-full border border-white/10 bg-[#06131f]/70 px-3 py-2 text-[9px] font-bold uppercase tracking-[.2em] text-[#b8d9e9]/75 backdrop-blur">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#74e4d0] shadow-[0_0_10px_#74e4d0]" />
+          {labels.map_anchor}
+        </div>
+        <div className="absolute right-5 top-5 z-10 hidden text-right font-mono text-[9px] leading-5 tracking-widest text-[#b8d9e9]/40 sm:block">
+          43°56′ N · 4°48′ E<br />AVIGNON / CERI
+        </div>
+
+        <div className="absolute left-1/2 top-1/2 z-10 flex h-[78px] w-[78px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[#8bdfff]/35 bg-[#dceef5] shadow-[0_0_50px_rgba(78,195,245,.22)] sm:h-[90px] sm:w-[90px]">
+          <Image src="/logos/BDE-CERI-logo.png" alt="BDE CERI" width={72} height={72} className="h-14 w-14 object-contain sm:h-[68px] sm:w-[68px]" sizes="72px" />
+        </div>
+        <div className="pointer-events-none absolute left-1/2 top-[calc(50%+52px)] z-10 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/10 bg-[#06131f]/80 px-2.5 py-1 text-[8px] font-bold uppercase tracking-[.18em] text-[#c7e4f1]/65 backdrop-blur sm:top-[calc(50%+59px)]">
+          BDE CERI · Avignon
+        </div>
+
+        {poles.map((pole, index) => {
+          const point = islandPositions[index % islandPositions.length];
+          const isActive = pole.id === active?.id;
+          const accent = pole.color || "#83d9ff";
+          const style = {
+            left: point.x + "%",
+            top: point.y + "%",
+            "--island-color": accent,
+            animationDelay: (index * 90) + "ms",
+          } as CSSProperties;
+          return (
+            <button
+              key={pole.id}
+              type="button"
+              aria-label={pole.name}
+              aria-pressed={isActive}
+              title={pole.name}
+              onClick={() => setActiveId(pole.id)}
+              className={"atlas-island absolute z-20 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-[10px] font-mono font-bold shadow-lg outline-none transition duration-300 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#071725] sm:h-14 sm:w-14 " + (isActive ? "is-active border-[var(--island-color)] bg-[var(--island-color)] text-[#06131f]" : "border-white/20 bg-[#0b2538]/90 text-[#d0e7f3] hover:border-[var(--island-color)] hover:text-white")}
+              style={style}
+            >
+              <span className="material-symbols-outlined absolute -top-1.5 right-0 text-[15px] text-[var(--island-color)]">{iconForPole(pole.name)}</span>
+              <span>{(index + 1).toString().padStart(2, "0")}</span>
+              {isActive && <span className="atlas-ping absolute inset-[-8px] rounded-full border border-[var(--island-color)]" />}
+            </button>
+          );
+        })}
+
+        <div className="pointer-events-none absolute bottom-5 left-5 z-10 hidden items-center gap-2 font-mono text-[9px] uppercase tracking-[.16em] text-[#c7e4f1]/35 sm:flex">
+          <span>{labels.map_currents}</span><span className="h-px w-10 bg-[#83d9ff]/40" /><span>{labels.map_crew}</span>
+        </div>
+        <div className="pointer-events-none absolute bottom-5 right-5 z-10 font-mono text-[9px] uppercase tracking-widest text-[#c7e4f1]/35">
+          {labels.map_places.replace("{count}", String(poles.length))}
         </div>
       </div>
 
-      {/* Bento Detail Card (Double-Layered Processor view + Member listing) */}
-      <div className="reveal-card rounded-3xl bg-surface-container-high/40 border border-outline-variant/15 p-1 transition-all duration-500 hover:shadow-[0_20px_40px_rgba(7,13,31,0.55)] min-h-[220px]">
-        {activePole ? (
-          /* Display the active Pole processor details & full list of rattached members */
-          <div className="p-6 md:p-10 rounded-3xl relative overflow-hidden flex flex-col md:flex-row gap-8 md:items-center justify-between">
-            <div
-              className="absolute -top-24 -left-24 w-80 h-80 rounded-full blur-[100px] opacity-15 pointer-events-none transition-all duration-700"
-              style={{ backgroundColor: activePole.color }}
-            />
+      <nav aria-label={labels.map_title} className="atlas-index mt-3 flex gap-2 overflow-x-auto pb-2">
+        {poles.map((pole, index) => {
+          const isActive = pole.id === active?.id;
+          const accent = pole.color || "#83d9ff";
+          return (
+            <button
+              key={pole.id}
+              type="button"
+              aria-pressed={isActive}
+              onClick={() => setActiveId(pole.id)}
+              className={"shrink-0 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors " + (isActive ? "border-[var(--island-color)] bg-[var(--island-color)]/10 text-on-surface" : "border-outline-variant/20 bg-surface-container-low/60 text-on-surface-variant hover:border-outline-variant/50")}
+              style={{ "--island-color": accent } as CSSProperties}
+            >
+              <span className="mr-2 font-mono text-[9px] opacity-55">{(index + 1).toString().padStart(2, "0")}</span>
+              {pole.name}
+            </button>
+          );
+        })}
+      </nav>
 
-            <div className="space-y-4 md:w-3/5 relative z-10 text-left">
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center border border-outline-variant/15 bg-surface-container-low"
-                  style={{ boxShadow: `0 0 20px ${activePole.color}25` }}
-                >
-                  <span
-                    className="material-symbols-outlined text-lg"
-                    style={{ color: activePole.color }}
-                  >
-                    {getPoleIcon(activePole.name)}
-                  </span>
-                </div>
-                <div>
-                  <h3 className="font-headline font-bold text-2xl md:text-3xl text-on-surface font-headline leading-tight">
-                    Pôle {activePole.name}
-                  </h3>
-                  <p className="text-[9px] text-on-surface-variant/50 font-mono tracking-widest uppercase">
-                    {`SYS_SERIAL: ${activePole.serial}`}
-                  </p>
-                </div>
-              </div>
-
-              <p className="font-body text-on-surface-variant/90 text-sm md:text-base leading-relaxed italic">
-                "{activePole.description}"
-              </p>
-              
-              {/* Full grid list of members in this pole with avatars inside the Bento card */}
-              {activePole.members.length > 0 && (
-                <div className="pt-2 space-y-3">
-                  <span className="text-[9px] text-on-surface-variant font-mono uppercase tracking-wider block">
-                    ÉQUIPE / MEMBRES RATTACHÉS :
-                  </span>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {activePole.members.map((m: any) => (
-                      <div key={m.id} className="flex items-center gap-2.5 p-2 rounded-xl bg-surface-container-low border border-outline-variant/10 hover:border-primary/20 transition-all">
-                        <div className="w-6 h-6 rounded-full overflow-hidden relative border border-outline-variant/20 shadow-sm flex-shrink-0">
-                          {m.photo_url ? (
-                            <Image
-                              src={m.photo_url}
-                              alt={m.first_name}
-                              fill
-                              className="object-cover"
-                              sizes="24px"
-                              suppressHydrationWarning
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-surface-container-high flex items-center justify-center text-outline text-[9px] font-bold">
-                              {m.first_name.charAt(0)}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col text-left min-w-0">
-                          <span className="text-xs font-bold text-on-surface truncate">
-                            {m.first_name} {m.last_name.substring(0, 1)}.
-                          </span>
-                          <span className="text-[8px] text-on-surface-variant truncate font-mono">
-                            {m.role_label}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="md:w-1/3 flex flex-col md:items-end justify-between h-full gap-6 relative z-10">
-              {activePole.vp ? (
-                <div className="flex items-center gap-3 md:text-right">
-                  <div className="flex flex-col text-left md:text-right">
-                    <span className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest font-mono">
-                      CHIP_VP_LEADER
-                    </span>
-                    <span className="text-sm font-bold text-on-surface">
-                      {activePole.vp.first_name} {activePole.vp.last_name}
-                    </span>
-                  </div>
-                  <div className="w-12 h-12 rounded-full overflow-hidden border border-primary/30 relative shadow-md">
-                    {activePole.vp.photo_url ? (
-                      <Image
-                        src={activePole.vp.photo_url}
-                        alt={activePole.vp.first_name}
-                        fill
-                        className="object-cover"
-                        sizes="48px"
-                        suppressHydrationWarning
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-surface-container-low flex items-center justify-center text-outline text-lg font-bold">
-                        {activePole.vp.first_name.charAt(0)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 md:text-right">
-                  <div className="flex flex-col text-left md:text-right">
-                    <span className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest font-mono">
-                      VP_NOMINATION
-                    </span>
-                    <span className="text-xs font-semibold text-on-surface-variant italic">
-                      Pending assignment...
-                    </span>
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-surface-container-low border border-outline-variant/15 flex items-center justify-center text-outline text-lg">
-                    ?
-                  </div>
-                </div>
-              )}
-
-              <Link href={`/poles/${activePole.id}`} className="w-full md:w-auto">
-                <button
-                  className="w-full md:w-auto px-6 py-3 rounded-xl bg-surface-container-lowest hover:bg-primary hover:text-on-primary font-bold text-sm flex items-center justify-center gap-2 border border-outline-variant/15 transition-all shadow-lg group hover:scale-[1.03]"
-                  style={{ "--hover-color": activePole.color } as React.CSSProperties}
-                >
-                  Explorer le Pôle
-                  <span className="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1">
-                    east
-                  </span>
-                </button>
-              </Link>
-            </div>
-          </div>
-        ) : (
-          /* General console loading view */
-          <div className="p-10 flex items-center justify-center min-h-[220px]">
-            <p className="text-on-surface-variant text-sm font-mono tracking-wider italic">
-              // Survolez les circuits pour inspecter l'architecture matérielle
+      {active && (
+        <article key={active.id} className="atlas-detail mt-5 grid overflow-hidden rounded-[2rem] border border-outline-variant/15 bg-surface-container-low md:grid-cols-[1.05fr_.95fr]">
+          <div className="relative overflow-hidden p-6 sm:p-9">
+            <div aria-hidden="true" className="absolute -right-24 -top-24 h-64 w-64 rounded-full opacity-[.11] blur-3xl" style={{ backgroundColor: active.color || "#83d9ff" }} />
+            <p className="relative mb-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.22em]" style={{ color: active.color || "#83d9ff" }}>
+              <span>{labels.map_current}</span><span className="h-px w-8 bg-current opacity-50" />
+              {String(poles.findIndex((pole) => pole.id === active.id) + 1).padStart(2, "0")} / {String(poles.length).padStart(2, "0")}
             </p>
+            <h3 className="relative max-w-xl font-headline text-3xl font-bold tracking-tight text-on-surface sm:text-4xl">{active.name}</h3>
+            <p className="relative mt-4 max-w-xl text-sm leading-7 text-on-surface-variant sm:text-base">{active.description}</p>
+            <Link href={"/poles/" + active.id} className="group relative mt-7 inline-flex items-center gap-2 rounded-full px-5 py-3 text-xs font-bold text-[#071725] transition hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ backgroundColor: active.color || "#83d9ff" }}>
+              {labels.discover_pole}
+              <span aria-hidden="true" className="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1">arrow_forward</span>
+            </Link>
           </div>
-        )}
-      </div>
-    </div>
+
+          <div className="relative border-t border-outline-variant/10 bg-surface-container-lowest/35 p-6 sm:p-9 md:border-l md:border-t-0">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-[10px] font-bold uppercase tracking-[.2em] text-on-surface-variant">{labels.map_crew}</p>
+              <span className="rounded-full border border-outline-variant/15 px-2.5 py-1 text-[10px] font-mono text-on-surface-variant">
+                {labels.member_count.replace("{count}", String(crew.length))}
+              </span>
+            </div>
+            {active.vp && (
+              <div className="mt-5 flex items-center gap-3 rounded-2xl border border-outline-variant/10 bg-surface-container-low/65 p-3">
+                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-outline-variant/20 bg-surface-container-high">
+                  {active.vp.photo_url ? <Image src={active.vp.photo_url} alt="" fill sizes="48px" className="object-cover" /> : <span className="flex h-full w-full items-center justify-center font-bold text-on-surface-variant">{active.vp.first_name.charAt(0)}</span>}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-on-surface">{active.vp.first_name} {active.vp.last_name}</p>
+                  <p className="mt-0.5 text-[10px] uppercase tracking-wider text-on-surface-variant">{labels.map_lead}</p>
+                </div>
+                <span className="material-symbols-outlined ml-auto text-xl" style={{ color: active.color || "#83d9ff" }}>workspace_premium</span>
+              </div>
+            )}
+            {crew.length > 0 ? (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {crew.map((member) => (
+                  <Link key={member.id} href={"/equipe/" + member.id} className="group flex max-w-full items-center gap-2 rounded-full border border-outline-variant/10 bg-surface-container-low/45 py-1 pl-1 pr-3 transition hover:border-outline-variant/35">
+                    <span className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full bg-surface-container-high">
+                      {member.photo_url ? <Image src={member.photo_url} alt="" fill sizes="28px" className="object-cover" /> : <span className="flex h-full w-full items-center justify-center text-[9px] font-bold text-on-surface-variant">{member.first_name.charAt(0)}</span>}
+                    </span>
+                    <span className="truncate text-[11px] font-medium text-on-surface-variant group-hover:text-on-surface">{member.first_name}</span>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-5 text-sm leading-6 text-on-surface-variant">{labels.no_crew}</p>
+            )}
+          </div>
+        </article>
+      )}
+    </section>
   );
 }

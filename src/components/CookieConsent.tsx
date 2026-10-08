@@ -5,6 +5,20 @@ import { usePathname } from "next/navigation";
 
 type Choice = "accepted" | "rejected" | null;
 
+function BrookieIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 32 32" className="h-7 w-7 shrink-0 drop-shadow-sm">
+      <path d="M7 4h18a3 3 0 0 1 3 3v18a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3Z" fill="#7c3f25" />
+      <path d="M6 11c4 0 4-5 9-5s5 5 11 5v10c0 2-1 3-3 3H9c-2 0-3-1-3-3V11Z" fill="#b86a3e" />
+      <path d="M6 12c4 0 4-4 9-4s5 4 11 4" fill="none" stroke="#f0c69b" strokeLinecap="round" strokeWidth="2" />
+      <circle cx="12" cy="15" r="1.5" fill="#442216" />
+      <circle cx="21" cy="17" r="1.7" fill="#442216" />
+      <circle cx="14" cy="22" r="1.4" fill="#442216" />
+      <path d="M23 4h3a3 3 0 0 1 3 3v3c-2 0-3-1-4-2s-2-2-2-4Z" fill="var(--md-sys-color-surface-container-high, #20283b)" />
+    </svg>
+  );
+}
+
 export default function CookieConsent() {
   const pathname = usePathname();
   const [choice, setChoice] = useState<Choice>(null);
@@ -57,40 +71,59 @@ export default function CookieConsent() {
 
   return (
     <aside
-      aria-label={isEnglish ? "Cookie preferences" : "Préférences de cookies"}
-      className="fixed inset-x-3 bottom-3 z-[100] mx-auto max-w-4xl rounded-2xl border border-outline-variant/30 bg-surface-container-high p-5 shadow-2xl md:inset-x-6 md:bottom-6 md:p-6"
+      aria-label={isEnglish ? "Brookie preferences" : "Préférences de brookies"}
+      className="fixed inset-x-3 bottom-3 z-[100] mx-auto max-w-3xl rounded-2xl border border-outline-variant/30 bg-surface-container-high p-4 shadow-2xl md:inset-x-6 md:bottom-5 md:p-5"
     >
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="max-w-2xl">
-          <h2 className="mb-1 text-base font-bold text-on-surface">{isEnglish ? "Cookies and analytics" : "Cookies et statistiques"}</h2>
-          <p className="text-sm leading-relaxed text-on-surface-variant">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="mb-1.5 flex items-center gap-2">
+            <BrookieIcon />
+            <h2 className="font-headline text-base font-bold text-on-surface">
+              {isEnglish ? "BDE Brookies" : "Les Brookies du BDE"}
+            </h2>
+            <span className="hidden rounded-full bg-tertiary/10 px-2 py-0.5 text-[10px] font-semibold text-tertiary sm:inline">
+              {isEnglish ? "Digital treats" : "En informatique, on est gourmands"}
+            </span>
+          </div>
+          <p className="text-xs leading-relaxed text-on-surface-variant">
             {isEnglish
-              ? "With your permission, we use a daily pseudonymous fingerprint derived from your IP address and your device type to count visits. Your raw IP address is not stored. A necessary cookie remembers your choice."
-              : "Avec votre accord, nous utilisons une empreinte quotidienne pseudonymisée dérivée de votre adresse IP et le type d’appareil pour compter les visites. Votre adresse IP brute n’est pas enregistrée. Un cookie nécessaire mémorise votre choix."}
-            {" "}<a className="underline underline-offset-2" href="/confidentialite">{isEnglish ? "Learn more" : "En savoir plus"}</a>
+              ? "We have a sweet tooth in computing: essential brookies remember your preferences; optional analytics count visits and device types only if you agree."
+              : "En informatique, on est gourmands : les brookies essentiels mémorisent vos préférences ; les statistiques facultatives comptent visites et appareils uniquement avec votre accord."}
+            {" "}<a className="font-semibold underline underline-offset-2" href="/confidentialite">
+              {isEnglish ? "Details" : "Détails"}
+            </a>
           </p>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-on-surface-variant">
+            <span><strong className="text-on-surface">{isEnglish ? "Essential · on" : "Essentiels · actifs"}</strong> — {isEnglish ? "language, choice and member sign-in" : "langue, choix et connexion membre"}</span>
+            <span><strong className="text-on-surface">{isEnglish ? "Analytics · optional" : "Statistiques · facultatives"}</strong> — {isEnglish ? "daily IP hash, no raw IP stored" : "empreinte IP quotidienne, IP brute non conservée"}</span>
+          </div>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <button disabled={saving} onClick={() => void saveChoice("rejected")} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-on-primary hover:brightness-110 disabled:opacity-50">
-            {isEnglish ? "Reject all" : "Tout refuser"}
+
+        <div className="flex shrink-0 flex-wrap gap-2 md:max-w-[15rem] md:justify-end">
+          <button
+            disabled={saving}
+            onClick={() => void saveChoice("rejected")}
+            className="flex-1 whitespace-nowrap rounded-xl bg-primary px-3 py-2.5 text-xs font-bold text-on-primary transition hover:brightness-110 disabled:opacity-50"
+          >
+            {isEnglish ? "Reject analytics" : "Refuser les stats"}
           </button>
-          <button disabled={saving} onClick={() => void saveChoice("accepted")} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-on-primary hover:brightness-110 disabled:opacity-50">
-            {isEnglish ? "Accept analytics" : "Accepter les statistiques"}
+          <button
+            disabled={saving}
+            onClick={() => void saveChoice("accepted")}
+            className="flex-1 whitespace-nowrap rounded-xl bg-primary px-3 py-2.5 text-xs font-bold text-on-primary transition hover:brightness-110 disabled:opacity-50"
+          >
+            {isEnglish ? "Accept analytics" : "Accepter les stats"}
           </button>
         </div>
       </div>
-      {donationUrl ? (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <a href={donationUrl} target="_blank" rel="noopener noreferrer" onClick={() => void saveChoice("rejected")} className="rounded-xl border border-outline-variant/40 px-4 py-2.5 text-sm font-semibold text-on-surface hover:bg-surface-container-highest">
-            {isEnglish ? "Reject and support us (€1)" : "Refuser et soutenir le BDE (1 €)"}
+
+      {donationUrl && (
+        <p className="mt-2 text-[11px] text-on-surface-variant">
+          {isEnglish ? "Want to support the BDE? " : "Envie de soutenir le BDE ? "}
+          <a href={donationUrl} target="_blank" rel="noopener noreferrer" onClick={() => void saveChoice("rejected")} className="font-semibold underline underline-offset-2">
+            {isEnglish ? "Optional €1 donation via HelloAsso" : "Don facultatif de 1 € via HelloAsso"}
           </a>
-          <span className="text-xs text-on-surface-variant">{isEnglish ? "The donation is optional and does not affect your choice." : "Le don est facultatif et ne conditionne pas votre choix."}</span>
-        </div>
-      ) : (
-        <p className="mt-3 text-xs text-on-surface-variant">
-          {isEnglish
-            ? "A voluntary €1 donation link will appear once the HelloAsso checkout URL is configured. Rejecting analytics is free."
-            : "Un lien de don facultatif de 1 € sera ajouté dès que l’URL de paiement HelloAsso sera configurée. Le refus des statistiques reste gratuit."}
+          {isEnglish ? " — rejecting analytics is always free." : " — refuser les statistiques reste gratuit."}
         </p>
       )}
     </aside>
