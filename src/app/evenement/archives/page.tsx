@@ -1,7 +1,9 @@
-import { getDictionary } from "@/locales/dictionaries";
+import { getDictionary, getLang } from "@/locales/dictionaries";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
+import Image from "next/image";
 import { createSeoMetadata } from "@/utils/seo";
+import { formatParisDateTime } from "@/utils/paris-time";
 
 export const metadata = createSeoMetadata({
   path: "/evenement/archives",
@@ -11,6 +13,8 @@ export const metadata = createSeoMetadata({
 
 export default async function Archives() {
   const dict = await getDictionary();
+  const lang = await getLang();
+  const dateLocale = lang === "en" ? "en-GB" : "fr-FR";
   const supabase = await createClient();
 
   // Fetch past events
@@ -21,11 +25,11 @@ export default async function Archives() {
     .order("date_start", { ascending: false });
 
   const formatDate = (isoStr: string) => {
-    return new Date(isoStr).toLocaleDateString("fr-FR", { 
-      month: "short", 
-      day: "numeric", 
-      year: "numeric" 
-    });
+    return formatParisDateTime(isoStr, {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    }, dateLocale);
   };
 
   return (
@@ -47,9 +51,11 @@ export default async function Archives() {
             <Link key={event.id} href={`/evenement/${event.id}`} className="group">
               <article className="glass-panel rounded-2xl overflow-hidden border border-outline-variant/10 hover:border-tertiary/30 transition-all flex flex-col h-full">
                 <div className="h-48 relative overflow-hidden">
-                  <img 
-                    src={event.image_url || "https://images.unsplash.com/photo-1511795409834-432f7b1728bb?auto=format&fit=crop&q=80&w=800"} 
+                  <Image
+                    src={event.image_url || "https://images.unsplash.com/photo-1511795409834-432f7b1728bb?auto=format&fit=crop&q=80&w=800"}
                     alt={event.title}
+                    fill
+                    sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw"
                     className="w-full h-full object-cover grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-surface-container-highest to-transparent"></div>
@@ -62,7 +68,7 @@ export default async function Archives() {
                 <div className="p-6">
                   <h3 className="text-xl font-headline font-bold text-on-surface mb-2">{event.title}</h3>
                   <p className="text-sm text-on-surface-variant line-clamp-2 italic">
-                    "{event.description}"
+                    « {event.description} »
                   </p>
                 </div>
               </article>

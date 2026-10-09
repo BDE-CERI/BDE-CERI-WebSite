@@ -1,12 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getDictionary } from "@/locales/dictionaries";
+import { getDictionary, getLang } from "@/locales/dictionaries";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentUserContext } from "@/utils/supabase/current-user";
 import EventCarousel from "@/components/EventCarousel";
 import NewsSection from "@/components/NewsSection";
 import InteractiveBackground from "@/components/InteractiveBackground";
 import { createSeoMetadata } from "@/utils/seo";
+import { formatParisDateTime } from "@/utils/paris-time";
+import { getPublicMemberLastName } from "@/utils/member-display";
 
 export const metadata = createSeoMetadata({
   path: "/",
@@ -15,7 +17,8 @@ export const metadata = createSeoMetadata({
 });
 
 export default async function Home() {
-  const [dict, supabase] = await Promise.all([getDictionary(), createClient()]);
+  const [dict, lang, supabase] = await Promise.all([getDictionary(), getLang(), createClient()]);
+  const dateLocale = lang === "en" ? "en-GB" : "fr-FR";
   
   const [{ data: eventsData }, { data: newsData }, { member }] = await Promise.all([
     supabase
@@ -27,7 +30,7 @@ export default async function Home() {
       .limit(5),
     supabase
       .from("news")
-      .select("id, title, content, image_url, published_at, is_anonymous, members(first_name, last_name)")
+      .select("*, members(*)")
       .eq("is_published", true)
       .order("published_at", { ascending: false })
       .limit(4),
@@ -36,9 +39,10 @@ export default async function Home() {
 
   const isBR = member?.category === "bureau_restreint" ||
     ["president", "tresorier", "secretaire", "vp_general"].includes(member?.role || "");
-  const isCOMMember = member?.member_assignments?.some((assignment: any) =>
-    assignment.poles?.name?.toLowerCase().includes("com")
-  );
+  const isCOMMember = member?.member_assignments?.some(assignment => {
+    const pole = Array.isArray(assignment.poles) ? assignment.poles[0] : assignment.poles;
+    return typeof pole?.name === "string" && /(?:communication|\bcom\b)/i.test(pole.name);
+  });
   const isAdminNews = Boolean(isBR || isCOMMember);
 
   const defaultEvents = [
@@ -65,17 +69,26 @@ export default async function Home() {
 
   const upcomingEvents = eventsData && eventsData.length > 0 ? eventsData : defaultEvents;
   const secondaryEvent = upcomingEvents[1] || upcomingEvents[0];
-  const news = (newsData ?? []).map(item => ({
-    ...item,
-    members: Array.isArray(item.members) ? item.members[0] : item.members ?? undefined,
-  }));
+  const news = (newsData ?? []).map(item => {
+    const author = Array.isArray(item.members) ? item.members[0] : item.members;
+    return {
+      id: item.id,
+      title: item.title,
+      content: item.content,
+      image_url: item.image_url || undefined,
+      published_at: item.published_at,
+      is_anonymous: Boolean(item.is_anonymous),
+      // Serialize only the public identity, never a hidden surname or member record.
+      members: item.is_anonymous || !author ? undefined : {
+        first_name: author.first_name || "",
+        last_name: getPublicMemberLastName(author),
+        hide_last_name: author.hide_last_name !== false,
+      },
+    };
+  });
 
-  const formatDate = (isoStr: string) => {
-    return new Date(isoStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  };
-  const formatTime = (isoStr: string) => {
-    return new Date(isoStr).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-  };
+  const formatDate = (isoStr: string) => formatParisDateTime(isoStr, { month: "short", day: "numeric" }, dateLocale);
+  const formatTime = (isoStr: string) => formatParisDateTime(isoStr, { hour: "2-digit", minute: "2-digit" }, dateLocale);
 
   // Google Form Link (Placeholder as requested)
   const googleFormUrl = "https://forms.gle/placeholder";

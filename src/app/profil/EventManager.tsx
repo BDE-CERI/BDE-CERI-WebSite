@@ -6,6 +6,7 @@ import Image from "next/image";
 import type { getDictionary } from "@/locales/dictionaries";
 import { addEvent, updateEvent, deleteEvent } from "./actions";
 import ImageUpload from "@/components/ImageUpload";
+import { formatParisDateTime, parseParisDateTimeLocal, toParisDateTimeLocal } from "@/utils/paris-time";
 import { AdminForm, ConfirmDeleteButton, EmptyState, Field, ManagerToolbar, inputClass } from "./AdminUI";
 
 type Dictionary = Awaited<ReturnType<typeof getDictionary>>;
@@ -23,20 +24,20 @@ interface EventItem {
   status: string;
 }
 
-function localDateTime(value?: string) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-}
 
 function EventEditor({ event, dict, onCancel, onSuccess }: { event?: EventItem; dict: Dictionary; onCancel: () => void; onSuccess: () => void }) {
   const en = dict.profil?.title === "My Account";
   const l = (fr: string, english: string) => en ? english : fr;
   const save = async (formData: FormData) => {
-    const date = new Date(String(formData.get("date_start") || ""));
-    if (Number.isNaN(date.getTime())) return { error: l("Choisissez une date valide.", "Choose a valid date.") };
-    formData.set("date_start", date.toISOString());
+    const localValue = String(formData.get("date_start") || "");
+    const parsed = parseParisDateTimeLocal(localValue);
+    if ("error" in parsed) return { error: parsed.error === "nonexistent"
+      ? l("Cette heure n’existe pas à Paris lors du passage à l’heure d’été. Choisissez une autre heure.", "This time does not exist in Paris when daylight saving time starts. Choose another time.")
+      : l("Choisissez une date et une heure valides.", "Choose a valid date and time.") };
+    // Keep an unchanged event’s exact instant, including the second occurrence
+    // of a repeated autumn hour and any seconds not displayed in the input.
+    const unchanged = event && localValue === toParisDateTimeLocal(event.date_start);
+    formData.set("date_start", unchanged ? new Date(event.date_start).toISOString() : parsed.iso);
     return event ? updateEvent(formData) : addEvent(formData);
   };
 
@@ -65,8 +66,8 @@ function EventEditor({ event, dict, onCancel, onSuccess }: { event?: EventItem; 
           </fieldset>
           <fieldset className="min-w-0 space-y-4">
             <legend className="mb-4 font-headline text-base font-bold">{l("Organisation et visuel", "Logistics and image")}</legend>
-            <Field label={l("Date et heure de début", "Start date and time")} required hint={l("L'heure est affichée dans le fuseau horaire de votre appareil.", "The time uses your device's time zone.")}>
-              <input name="date_start" type="datetime-local" defaultValue={localDateTime(event?.date_start)} required className={inputClass + " min-w-0"} />
+            <Field label={l("Date et heure de début", "Start date and time")} required hint={l("Heure de Paris (UTC+2 en été, UTC+1 en hiver). Une nouvelle heure répétée au passage à l’heure d’hiver utilise sa première occurrence.", "Paris time (UTC+2 in summer, UTC+1 in winter). A newly selected repeated hour at the autumn clock change uses its first occurrence.")}>
+              <input name="date_start" type="datetime-local" defaultValue={toParisDateTimeLocal(event?.date_start)} required className={inputClass + " min-w-0"} />
             </Field>
             <Field label={l("Lieu", "Location")} required>
               <input name="location" defaultValue={event?.location || ""} required maxLength={200} className={inputClass} placeholder={l("Ex. : Campus Jean-Henri Fabre", "E.g. Jean-Henri Fabre campus")} />
@@ -106,8 +107,7 @@ export default function EventManager({ dict, initialEvents, embedded = false }: 
   const editingEvent = events.find(event => event.id === editingId);
   const closeEditor = () => { setEditingId(null); setCreating(false); requestAnimationFrame(() => (embedded ? document.getElementById("admin-section-title") : headingRef.current)?.focus()); };
   const dateLabel = (date: string) => {
-    const parsed = new Date(date);
-    return Number.isNaN(parsed.getTime()) ? l("Date non renseignée", "Date unavailable") : new Intl.DateTimeFormat(en ? "en-GB" : "fr-FR", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Paris" }).format(parsed);
+    return formatParisDateTime(date, { dateStyle: "medium", timeStyle: "short" }, en ? "en-GB" : "fr-FR") || l("Date non renseignée", "Date unavailable");
   };
 
   return (

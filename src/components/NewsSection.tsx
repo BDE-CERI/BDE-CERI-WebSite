@@ -1,9 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatParisDateTime } from "@/utils/paris-time";
+import { getPublicMemberName } from "@/utils/member-display";
+import type { getDictionary } from "@/locales/dictionaries";
+
+type Dictionary = Awaited<ReturnType<typeof getDictionary>>;
 
 interface NewsItem {
   id: string;
@@ -15,11 +20,29 @@ interface NewsItem {
   members?: {
     first_name: string;
     last_name: string;
+    hide_last_name?: boolean;
     photo_url?: string;
   };
 }
 
-export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[], dict: any, isAdmin: boolean }) {
+function ParisClock({ locale }: { locale: string }) {
+  const [time, setTime] = useState("");
+
+  useEffect(() => {
+    const update = () => setTime(formatParisDateTime(Date.now(), { hour: "2-digit", minute: "2-digit" }, locale));
+    const initialUpdate = setTimeout(update, 0);
+    const interval = setInterval(update, 60_000);
+    return () => {
+      clearTimeout(initialUpdate);
+      clearInterval(interval);
+    };
+  }, [locale]);
+
+  return <span>{time || "--:--"}</span>;
+}
+
+export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[], dict: Dictionary, isAdmin: boolean }) {
+  const locale = dict.profil?.title === "My Account" ? "en-GB" : "fr-FR";
   const [bootState, setBootState] = useState<"off" | "booting" | "desktop" | "app-open">("off");
   const [selectedId, setSelectedId] = useState(news[0]?.id);
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -40,11 +63,7 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
   const selectedNews = news?.find((n) => n.id === selectedId) || news?.[0];
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("fr-FR", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+    return formatParisDateTime(dateStr, { day: "numeric", month: "long", year: "numeric" }, locale);
   };
 
   const handlePowerOn = () => {
@@ -209,7 +228,7 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                         </div>
                         <div className="w-px h-6 bg-white/10 mx-2"></div>
                         <div className="text-[10px] font-mono text-white/40 ml-auto">
-                          {new Date().toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}
+                          <ParisClock locale={locale} />
                         </div>
                       </div>
                     </motion.div>
@@ -304,7 +323,7 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                                     <div className="flex flex-col">
                                       <div className="flex items-center gap-1">
                                         <span className="text-sm font-bold text-on-surface">
-                                          {selectedNews.is_anonymous ? dict.news.author_hidden : (selectedNews.members ? `${selectedNews.members.first_name} ${selectedNews.members.last_name}` : "BDE CERI")}
+                                          {selectedNews.is_anonymous ? dict.news.author_hidden : (selectedNews.members ? getPublicMemberName(selectedNews.members) : "BDE CERI")}
                                         </span>
                                         {!selectedNews.is_anonymous && (
                                           <span className="text-xs text-on-surface-variant opacity-60 italic">&lt;presse@bde-ceri.fr&gt;</span>

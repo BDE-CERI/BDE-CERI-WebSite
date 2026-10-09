@@ -1,0 +1,205 @@
+.root {
+  min-width: 0;
+}
+
+.list {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.item {
+  --brand: 14, 165, 233;
+  --label-color: #7bd0ff;
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) 1rem;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  min-height: 3.6rem;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid rgba(var(--brand), 0.25);
+  border-radius: 1rem;
+  background: linear-gradient(110deg, rgba(var(--brand), 0.1), rgba(var(--brand), 0.035));
+  color: var(--color-on-surface);
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+
+.email {
+  --brand: 14, 165, 233;
+  --label-color: #7bd0ff;
+}
+
+.instagram {
+  --brand: 225, 48, 108;
+  --label-color: #ffa7c4;
+}
+
+.discord {
+  --brand: 88, 101, 242;
+  --label-color: #c1c7ff;
+}
+
+.linkedin {
+  --brand: 10, 102, 194;
+  --label-color: #91caff;
+}
+
+.icon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: 0.8rem;
+  background: rgb(var(--brand));
+  color: white;
+}
+
+.icon svg {
+  display: block;
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+.instagram .icon {
+  background: linear-gradient(35deg, #f9ce34 -10%, #ee2a7b 48%, #6228d7 105%);
+}
+
+.labels {
+  display: grid;
+  align-items: center;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.networkLabel,
+.accountLabel {
+  grid-area: 1 / 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  transition: opacity 170ms ease, transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.networkLabel {
+  color: var(--label-color);
+}
+
+.accountLabel {
+  opacity: 0;
+  transform: translateY(0.3rem);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.action {
+  display: block;
+  color: var(--label-color);
+  opacity: 0.7;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.action svg {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--label-color);
+  outline-offset: 3px;
+  border-color: rgba(var(--brand), 0.65);
+}
+
+.item:focus-visible .networkLabel {
+  opacity: 0;
+  transform: translateY(-0.3rem);
+}
+
+.item:focus-visible .accountLabel {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.item:focus-visible .action {
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .item:hover {
+    border-color: rgba(var(--brand), 0.65);
+    background-color: rgba(var(--brand), 0.07);
+    transform: translateY(-1px);
+  }
+
+  .item:hover .networkLabel {
+    opacity: 0;
+    transform: translateY(-0.3rem);
+  }
+
+  .item:hover .accountLabel {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .item:hover .action {
+    opacity: 1;
+    transform: translate(1px, -1px);
+  }
+}
+
+:global([data-theme="light"]) .email {
+  --label-color: #0369a1;
+}
+
+:global([data-theme="light"]) .instagram {
+  --label-color: #ad2458;
+}
+
+:global([data-theme="light"]) .discord {
+  --label-color: #454dc1;
+}
+
+:global([data-theme="light"]) .linkedin {
+  --label-color: #0a66c2;
+}
+
+.feedback {
+  min-height: 1.25rem;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--color-on-surface-variant);
+}
+
+.manualCopy {
+  display: block;
+  margin-top: 0.35rem;
+  overflow-wrap: anywhere;
+  user-select: all;
+  color: var(--color-on-surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item,
+  .networkLabel,
+  .accountLabel,
+  .action {
+    transition: none;
+    transform: none;
+  }
+
+  .item:hover,
+  .item:hover .networkLabel,
+  .item:focus-visible .networkLabel,
+  .item:hover .action {
+    transform: none;
+  }
+}

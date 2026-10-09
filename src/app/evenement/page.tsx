@@ -1,8 +1,9 @@
-import { getDictionary } from "@/locales/dictionaries";
+import { getDictionary, getLang } from "@/locales/dictionaries";
 import { createClient } from "@/utils/supabase/server";
 import Link from "next/link";
 import SharkWallpaper from "@/components/SharkWallpaper";
 import { createSeoMetadata } from "@/utils/seo";
+import { formatParisDateTime } from "@/utils/paris-time";
 
 export const metadata = createSeoMetadata({
   path: "/evenement",
@@ -12,6 +13,8 @@ export const metadata = createSeoMetadata({
 
 export default async function Evenements() {
   const dict = await getDictionary();
+  const lang = await getLang();
+  const dateLocale = lang === "en" ? "en-GB" : "fr-FR";
   const supabase = await createClient();
 
   const { data: eventsData } = await supabase
@@ -65,7 +68,7 @@ export default async function Evenements() {
   ];
 
   const formatDate = (isoStr: string) => {
-    return new Date(isoStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+    return formatParisDateTime(isoStr, { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit", timeZoneName: "short" }, dateLocale);
   };
 
   return (

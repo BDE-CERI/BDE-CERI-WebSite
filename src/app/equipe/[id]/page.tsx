@@ -5,15 +5,61 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import type { Metadata } from "next";
 import { createSeoMetadata } from "@/utils/seo";
+import { getPublicMemberName } from "@/utils/member-display";
+import ProfileSocialLinks from "@/components/ProfileSocialLinks";
+
+type PoleRelation = { name: string | null };
+type AssignmentRow = {
+  id: string;
+  role: string | null;
+  is_vp: boolean | null;
+  poles: PoleRelation | PoleRelation[] | null;
+};
+
+type MemberProfileRow = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  hide_last_name?: boolean | null;
+  is_visible: boolean | null;
+  role_label: string | null;
+  photo_url?: string | null;
+  bio?: string | null;
+  description?: string | null;
+  email?: string | null;
+  instagram?: string | null;
+  discord?: string | null;
+  social_links?: { linkedin?: string | null } | null;
+  study_level?: string | null;
+  responsibilities?: string | null;
+  academic_journey?: string | null;
+  member_assignments?: AssignmentRow | AssignmentRow[] | null;
+};
+
+type BoardRelation = { academic_year: string | null; theme: string | null };
+type HistoryRow = {
+  id: string;
+  role_label: string | null;
+  study_year?: string | null;
+  ancien_bureau: BoardRelation | BoardRelation[] | null;
+};
+
+function normalizeRelation<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? value[0] || null : value || null;
+}
+
+function normalizeList<T>(value: T | T[] | null | undefined): T[] {
+  return Array.isArray(value) ? value : value ? [value] : [];
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: member } = await supabase.from("members").select("first_name, last_name, role_label, photo_url, bio, is_visible").eq("id", id).single();
+  const { data: member } = await supabase.from("members").select("*").eq("id", id).eq("is_visible", true).returns<MemberProfileRow[]>().single();
   
   if (!member || !member.is_visible) return { title: "Membre introuvable", robots: { index: false, follow: false } };
   
-  const fullName = `${member.first_name} ${member.last_name}`;
+  const fullName = getPublicMemberName(member);
   const title = `${fullName} | ${member.role_label}`;
   const desc = (member.bio || `Découvrez le profil de ${fullName}, ${member.role_label} au BDE CERI.`).replace(/\s+/g, " ").slice(0, 160);
   
@@ -30,7 +76,7 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
   const supabase = await createClient();
   const { id } = await params;
 
-  const getRoleIcon = (role: string) => {
+  const getRoleIcon = (role: string | null) => {
     const r = role?.toLowerCase() || "";
     if (r.includes("président") || r.includes("president")) return "crown";
     if (r.includes("vice") || r.includes("vp")) return "verified_user";
@@ -45,6 +91,8 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
     .from("members")
     .select("*, member_assignments(*, poles(name))")
     .eq("id", id)
+    .eq("is_visible", true)
+    .returns<MemberProfileRow[]>()
     .single();
 
   if (!member) {
@@ -64,9 +112,13 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
     `)
     .eq("first_name", member.first_name)
     .eq("last_name", member.last_name)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .returns<HistoryRow[]>();
 
+  const assignments = normalizeList(member.member_assignments).map(assignment => ({ ...assignment, poles: normalizeRelation(assignment.poles) }));
+  const historyRecords = (history || []).map(record => ({ ...record, ancien_bureau: normalizeRelation(record.ancien_bureau) }));
   const socialLinks = member.social_links || {};
+  const publicName = getPublicMemberName(member);
 
   return (
     <div className="min-h-screen bg-surface">
@@ -82,7 +134,7 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
               <div className="aspect-[4/5] rounded-2xl overflow-hidden relative group">
                 <Image 
                   src={member.photo_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=800"} 
-                  alt={`${member.first_name} ${member.last_name}`}
+                  alt={publicName}
                   fill
                   priority
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -94,32 +146,8 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
 
             <div className="glass-panel p-8 rounded-2xl border border-outline-variant/10">
               <h3 className="text-sm font-bold uppercase tracking-widest text-tertiary mb-6">{dict.common.contact_social}</h3>
-              <div className="space-y-4">
-                {member.email && (
-                  <div className="flex items-center gap-3 text-on-surface-variant hover:text-on-surface transition-colors">
-                    <span className="material-symbols-outlined text-tertiary text-lg">mail</span>
-                    <a href={`mailto:${member.email}`} className="text-sm font-body">{member.email}</a>
-                  </div>
-                )}
-                {member.instagram && (
-                   <div className="flex items-center gap-3 text-on-surface-variant hover:text-on-surface transition-colors">
-                    <span className="material-symbols-outlined text-tertiary text-lg">public</span>
-                    <a href={member.instagram.startsWith('http') ? member.instagram : `https://instagram.com/${member.instagram.replace('@', '')}`} target="_blank" className="text-sm font-body">Instagram</a>
-                  </div>
-                )}
-                {member.discord && (
-                   <div className="flex items-center gap-3 text-on-surface-variant hover:text-on-surface transition-colors">
-                    <span className="material-symbols-outlined text-tertiary text-lg">forum</span>
-                    <span className="text-sm font-body">{member.discord}</span>
-                  </div>
-                )}
-                {socialLinks.linkedin && (
-                   <div className="flex items-center gap-3 text-on-surface-variant hover:text-on-surface transition-colors">
-                    <span className="material-symbols-outlined text-tertiary text-lg">account_circle</span>
-                    <a href={socialLinks.linkedin} target="_blank" className="text-sm font-body">LinkedIn</a>
-                  </div>
-                )}
-              </div>
+              <ProfileSocialLinks email={member.email} instagram={member.instagram} discord={member.discord}
+                linkedin={socialLinks.linkedin} english={dict.profil.title === "My Account"} />
             </div>
           </div>
 
@@ -129,7 +157,7 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
                 <div>
                   <h1 className="text-4xl md:text-6xl font-headline font-bold text-on-surface tracking-tight mb-2">
-                    {member.first_name} {member.last_name}
+                    {publicName}
                   </h1>
                   <p className="text-lg text-primary font-label font-bold uppercase tracking-widest flex items-center gap-2">
                     {getRoleIcon(member.role_label) && (
@@ -165,10 +193,10 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
                          <span className="text-sm font-bold text-primary">{member.role_label}</span>
                      </div>
                      
-                     {member.member_assignments && member.member_assignments.length > 0 && (
+                     {assignments.length > 0 && (
                         <div className="space-y-4 pt-4 border-t border-outline-variant/10">
                            <span className="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">{dict.common.other_assignments}</span>
-                           {member.member_assignments.map((a: any) => (
+                           {assignments.map((a) => (
                               <div key={a.id} className="flex flex-col">
                                  <span className="text-xs font-bold text-on-surface">{dict.common.pole} {a.poles?.name}</span>
                                  <span className="text-xs text-on-surface-variant">{a.role} {a.is_vp && "(VP)"}</span>
@@ -177,7 +205,7 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
                         </div>
                      )}
 
-                      {!member.member_assignments?.length && (
+                      {assignments.length === 0 && (
                         <div className="flex flex-col">
                             <span className="text-[10px] text-on-surface-variant uppercase font-bold tracking-wider">{dict.common.responsibilities}</span>
                             <span className="text-sm font-medium">{member.responsibilities || dict.team.no_responsibilities}</span>
@@ -198,14 +226,14 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
             </div>
 
             {/* History Table / List */}
-            {history && history.length > 0 && (
+            {historyRecords.length > 0 && (
                <div>
                   <h3 className="text-2xl font-headline font-bold mb-8 flex items-center gap-3">
                     <span className="material-symbols-outlined text-primary">history</span>
                     {dict.team.history_title}
                   </h3>
                   <div className="space-y-4">
-                    {history.map((record: any) => (
+                    {historyRecords.map((record) => (
                       <div key={record.id} className="flex items-center justify-between p-6 rounded-2xl border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
                         <div className="flex flex-col">
                             <span className="text-xs text-primary font-bold">{record.ancien_bureau?.academic_year}</span>

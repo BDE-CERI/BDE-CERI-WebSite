@@ -13,7 +13,7 @@ export default function CookiesPolicy() {
       </section>
       <section>
         <h2 className="mb-2 text-xl font-bold text-on-surface">Statistiques facultatives</h2>
-        <p>Elles ne sont activées qu’après votre accord. Elles servent à compter les visites uniques par adresse IP et par jour UTC, estimer les visiteurs actifs sur cinq minutes et produire des totaux par type d’appareil. Une empreinte HMAC quotidienne est utilisée pour dédupliquer les visites ; l’IP brute n’est pas enregistrée. Aucune statistique n’est envoyée si vous refusez.</p>
+        <p>Elles ne sont activées qu’après votre accord. Elles servent à compter les visites uniques par adresse IP et par jour dans le fuseau Europe/Paris, estimer les visiteurs actifs sur cinq minutes et produire des totaux par type d’appareil. Une empreinte HMAC quotidienne est utilisée pour dédupliquer les visites ; l’IP brute n’est pas enregistrée. Aucune statistique n’est envoyée si vous refusez.</p>
       </section>
       <p>Les statistiques restent limitées à la fréquentation du site : elles ne sont pas liées à une identité de membre, à un don ou à une future liste d’information. Toute enquête ou inscription à des communications futures sera proposée séparément, avec ses propres informations et choix. Vous pouvez changer votre préférence à tout moment ici ou depuis le pied de page. Les détails figurent dans la <a className="underline" href="/confidentialite">politique de confidentialité</a>.</p>
       <LegalCookieSettings />

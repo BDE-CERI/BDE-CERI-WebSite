@@ -7,6 +7,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/StructuredData";
 import { createSeoMetadata } from "@/utils/seo";
+import { formatParisDateTime } from "@/utils/paris-time";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -23,11 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   });
 }
 
-export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const dict = await getDictionary();
-  const lang = await getLang();
-  const dateLocale = lang === "en" ? "en-GB" : "fr-FR";
+async function readEventDetail(id: string) {
   const supabase = await createClient();
 
   const { data: event } = await supabase
@@ -36,7 +33,22 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     .eq("id", id)
     .single();
 
-  if (!event) notFound();
+  if (!event) return null;
+  const eventStatus = event.status === "past" || new Date(event.date_start).getTime() < Date.now()
+    ? "https://schema.org/EventCompleted"
+    : "https://schema.org/EventScheduled";
+  return { event, eventStatus };
+}
+
+export default async function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const dict = await getDictionary();
+  const lang = await getLang();
+  const dateLocale = lang === "en" ? "en-GB" : "fr-FR";
+  const eventDetail = await readEventDetail(id);
+  if (!eventDetail) notFound();
+  const { event, eventStatus } = eventDetail;
+  const detailedContent = typeof event.full_content === "string" ? event.full_content.trim() : "";
 
   const eventStructuredData = {
     "@context": "https://schema.org",
@@ -46,9 +58,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     startDate: event.date_start,
     image: event.image_url ? [event.image_url] : undefined,
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-    eventStatus: new Date(event.date_start).getTime() < Date.now()
-      ? "https://schema.org/EventCompleted"
-      : "https://schema.org/EventScheduled",
+    eventStatus,
     location: {
       "@type": "Place",
       name: event.location || "CERI, Avignon",
@@ -58,14 +68,15 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   };
 
   const formatDate = (isoStr: string) => {
-    return new Date(isoStr).toLocaleDateString(dateLocale, {
+    return formatParisDateTime(isoStr, {
       weekday: 'long',
       month: 'long', 
       day: 'numeric', 
       year: 'numeric', 
       hour: 'numeric', 
-      minute: '2-digit' 
-    });
+      minute: '2-digit',
+      timeZoneName: 'short'
+    }, dateLocale);
   };
 
   return (
@@ -126,13 +137,15 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 lg:grid-cols-12 gap-16 mt-16">
         <div className="lg:col-span-8 space-y-12 text-on-surface/90">
           <section className="prose prose-invert max-w-none">
-            <p className="text-xl font-body leading-relaxed mb-8 opacity-80 italic">
+            <p className="text-xl font-body leading-relaxed opacity-80 italic">
               {event.description}
             </p>
-            <div className="whitespace-pre-wrap font-body leading-loose text-lg">
-              {event.full_content || dict.events.details_empty}
-            </div>
           </section>
+          {detailedContent && (
+            <section aria-label={lang === "en" ? "Additional event details" : "Détails supplémentaires de l’événement"} className="prose prose-invert max-w-none">
+              <div className="whitespace-pre-wrap font-body leading-loose text-lg">{detailedContent}</div>
+            </section>
+          )}
 
           {/* Gallery placeholder or real gallery */}
           {event.gallery_urls && event.gallery_urls.length > 0 && (
@@ -175,8 +188,9 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{dict.common.schedule}</p>
-                  <p className="font-body text-sm">{dict.common.starts} : {new Date(event.date_start).toLocaleTimeString(dateLocale, {hour: '2-digit', minute:'2-digit'})}</p>
-                  {event.date_end && <p className="font-body text-sm">{dict.common.ends} : {new Date(event.date_end).toLocaleTimeString(dateLocale, {hour: '2-digit', minute:'2-digit'})}</p>}
+                  <p className="mt-1 text-xs text-on-surface-variant">{lang === "en" ? "Paris time" : "Heure de Paris"}</p>
+                  <p className="font-body text-sm">{dict.common.starts} : {formatParisDateTime(event.date_start, { hour: '2-digit', minute: '2-digit' }, dateLocale)}</p>
+                  {event.date_end && <p className="font-body text-sm">{dict.common.ends} : {formatParisDateTime(event.date_end, { hour: '2-digit', minute: '2-digit' }, dateLocale)}</p>}
                 </div>
               </div>
             </div>

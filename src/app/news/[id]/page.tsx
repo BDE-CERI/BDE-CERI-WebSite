@@ -6,6 +6,8 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import { JsonLd } from "@/components/StructuredData";
 import { createSeoMetadata } from "@/utils/seo";
+import { formatParisDateTime } from "@/utils/paris-time";
+import { getPublicMemberName } from "@/utils/member-display";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -37,17 +39,18 @@ export default async function NewsDetail({ params }: { params: Promise<{ id: str
     .from("news")
     .select("*")
     .eq("id", id)
+    .eq("is_published", true)
     .single();
 
   if (!newsItem) {
     notFound();
   }
 
-  const { data: author } = await supabase
-    .from("members")
-    .select("*")
-    .eq("id", newsItem.author_id)
-    .single();
+  const { data: author } = !newsItem.is_anonymous && newsItem.author_id
+    ? await supabase.from("members").select("*").eq("id", newsItem.author_id).maybeSingle()
+    : { data: null };
+  const authorLabel = newsItem.is_anonymous ? dict.news.author_hidden
+    : author ? getPublicMemberName(author) : "BDE CERI";
 
   const articleStructuredData = {
     "@context": "https://schema.org",
@@ -57,7 +60,7 @@ export default async function NewsDetail({ params }: { params: Promise<{ id: str
     datePublished: newsItem.published_at,
     image: newsItem.image_url ? [newsItem.image_url] : undefined,
     author: author
-      ? { "@type": "Person", name: `${author.first_name} ${author.last_name}` }
+      ? { "@type": "Person", name: getPublicMemberName(author) }
       : { "@type": "Organization", name: "BDE CERI Avignon" },
     publisher: { "@type": "Organization", name: "BDE CERI Avignon", url: "https://bdeceri.fr" },
     mainEntityOfPage: `https://bdeceri.fr/news/${id}`,
@@ -89,17 +92,13 @@ export default async function NewsDetail({ params }: { params: Promise<{ id: str
           <div className="flex items-center justify-center gap-4 text-sm text-on-surface-variant">
              <span className="flex items-center gap-1">
                <span className="material-symbols-outlined text-[16px]">schedule</span>
-               {new Date(newsItem.published_at).toLocaleDateString(dateLocale, { day: 'numeric', month: 'long', year: 'numeric' })}
+               {formatParisDateTime(newsItem.published_at, { day: 'numeric', month: 'long', year: 'numeric' }, dateLocale)}
              </span>
-             {author && (
-               <>
-                 <span>•</span>
-                 <span className="flex items-center gap-1">
-                   <span className="material-symbols-outlined text-[16px]">person</span>
-                   {author.first_name} {author.last_name}
-                 </span>
-               </>
-             )}
+             <span aria-hidden="true">•</span>
+             <span className="flex items-center gap-1">
+               <span aria-hidden="true" className="material-symbols-outlined text-[16px]">{newsItem.is_anonymous ? "visibility_off" : "person"}</span>
+               {authorLabel}
+             </span>
           </div>
         </div>
       </section>

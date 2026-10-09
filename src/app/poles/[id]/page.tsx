@@ -6,6 +6,7 @@ import Image from "next/image";
 import SharkWallpaper from "@/components/SharkWallpaper";
 import type { Metadata } from "next";
 import { createSeoMetadata } from "@/utils/seo";
+import { getPublicMemberName } from "@/utils/member-display";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -50,6 +51,7 @@ export default async function PoleDetail({ params }: { params: Promise<{ id: str
     .from("members")
     .select("*")
     .eq("pole_id", id)
+    .eq("is_visible", true)
     .eq("role", "vice_president_pole")
     .single();
 
@@ -57,6 +59,7 @@ export default async function PoleDetail({ params }: { params: Promise<{ id: str
     .from("members")
     .select("*")
     .eq("pole_id", id)
+    .eq("is_visible", true)
     .neq("role", "vice_president_pole")
     .order("last_name", { ascending: true });
 
@@ -75,8 +78,8 @@ export default async function PoleDetail({ params }: { params: Promise<{ id: str
 
   // Add assigned members/vps
   assignments?.forEach(a => {
-    const m = a.members as any;
-    if (!m) return;
+    const m = Array.isArray(a.members) ? a.members[0] : a.members;
+    if (!m || !m.is_visible) return;
 
     if (a.is_vp) {
       if (!finalVp) finalVp = m;
@@ -112,7 +115,7 @@ export default async function PoleDetail({ params }: { params: Promise<{ id: str
             className="object-cover opacity-40 mix-blend-overlay"
             sizes="100vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-transparent"></div>
+          <div className="absolute inset-0 bg-linear-to-t from-surface via-surface/60 to-transparent"></div>
           <div 
             className="absolute inset-0 opacity-30 mix-blend-color" 
             style={{ backgroundColor: pole.color || 'transparent' }}
@@ -196,24 +199,24 @@ export default async function PoleDetail({ params }: { params: Promise<{ id: str
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {finalVp && (
                    <Link href={`/equipe/${finalVp.id}`} className="group relative">
-                    <div className="absolute -inset-0.5 bg-gradient-to-br from-tertiary/40 to-primary/40 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div className="absolute -inset-0.5 bg-linear-to-br from-tertiary/40 to-primary/40 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                     <div className="relative flex flex-col items-center text-center p-6 rounded-3xl bg-surface-container-highest/80 backdrop-blur-md border border-tertiary/20 group-hover:border-tertiary/60 transition-all shadow-xl">
                       <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 border-tertiary ring-4 ring-tertiary/10 relative shadow-lg group-hover:scale-105 transition-transform duration-500">
-                        <Image src={finalVp.photo_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200"} alt="VP" fill className="object-cover" sizes="96px" />
+                        <Image src={finalVp.photo_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200"} alt={getPublicMemberName(finalVp)} fill className="object-cover" sizes="96px" />
                       </div>
-                      <span className="text-sm font-bold text-on-surface group-hover:text-tertiary transition-colors">{finalVp.first_name} {finalVp.last_name}</span>
+                      <span className="text-sm font-bold text-on-surface group-hover:text-tertiary transition-colors">{getPublicMemberName(finalVp)}</span>
                        <span className="text-[10px] text-tertiary uppercase font-bold tracking-[0.2em] mt-2 bg-tertiary/10 px-3 py-1 rounded-full">{dict.poles.vice_president}</span>
                     </div>
                   </Link>
                 )}
                 {finalMembers?.map((member) => (
                   <Link key={member.id} href={`/equipe/${member.id}`} className="group relative">
-                    <div className="absolute -inset-0.5 bg-gradient-to-br from-white/10 to-white/5 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div className="absolute -inset-0.5 bg-linear-to-br from-white/10 to-white/5 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                     <div className="relative flex flex-col items-center text-center p-6 rounded-3xl bg-surface-container-low/50 backdrop-blur-sm hover:bg-surface-container-high transition-all border border-outline-variant/10 hover:border-outline-variant/30">
                       <div className="w-20 h-20 rounded-full overflow-hidden mb-4 grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500 relative ring-2 ring-transparent group-hover:ring-white/20">
-                        <Image src={member.photo_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200"} alt="Member" fill className="object-cover" sizes="80px" />
+                        <Image src={member.photo_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200"} alt={getPublicMemberName(member)} fill className="object-cover" sizes="80px" />
                       </div>
-                      <span className="text-xs font-bold text-on-surface-variant group-hover:text-on-surface transition-colors">{member.first_name} {member.last_name}</span>
+                      <span className="text-xs font-bold text-on-surface-variant group-hover:text-on-surface transition-colors">{getPublicMemberName(member)}</span>
                       {member.display_role && (
                         <span className="text-[9px] text-on-surface-variant/60 uppercase font-bold tracking-wider mt-2">{member.display_role}</span>
                       )}
@@ -222,7 +225,7 @@ export default async function PoleDetail({ params }: { params: Promise<{ id: str
                 ))}
               </div>
             </div>
-          </div>
+          </div>ut 
 
           {/* Sidebar Info */}
           <div className="space-y-8 relative z-10">

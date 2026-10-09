@@ -2,6 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { createClient } from "@/utils/supabase/server";
+import { parseParisDateTimeLocal } from "@/utils/paris-time";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -9,8 +10,10 @@ type ActionResult = { success: true } | { error: string };
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 type Permission = "member" | "board" | "news";
 type MemberAccess = { id: string; category: string | null; role: string | null; pole_id: string | null };
+type UploadedImage = { bucket: string; path: string; publicUrl: string; uploadedAt: number };
 
 const boardRoles = ["president", "tresorier", "secretaire", "vp_general"];
+const newsAuthorCategories = ["bureau_restreint", "bureau"];
 const brandingCategories = ["vetement", "accessoire", "goodies"];
 const productCategories = ["boisson", "snack", ...brandingCategories];
 const maxImageSize = 5 * 1024 * 1024;
@@ -62,8 +65,37 @@ function boolean(formData: FormData, field: string, fallback = false) {
   throw new ActionError("Le choix « " + field + " » est invalide.");
 }
 
+function hideLastName(formData: FormData) {
+  const values = formData.getAll("hide_last_name");
+  // The unchecked hidden value may be submitted before the checked checkbox.
+  if (values.length === 0) return true;
+  if (values.some(value => typeof value !== "string" || !["true", "on", "1", "false", "0", ""].includes(value))) {
+    throw new ActionError("Le choix de visibilité du nom de famille est invalide.");
+  }
+  return values.some(value => value === "true" || value === "on" || value === "1");
+}
+
+function profilePrivacyDatabaseError(error: { message: string; code?: string; details?: string } | null) {
+  if (error) {
+    const details = error.message + " " + (error.details ?? "");
+    if (/\bhide_last_name\b/i.test(details) && (["PGRST204", "42703"].includes(error.code ?? "") || /schema cache|column|does not exist/i.test(details))) {
+      throw new ActionError("La confidentialité des profils nécessite une mise à jour de Supabase : la colonne « hide_last_name » est absente ou son cache est périmé. Appliquez la migration 202610090004_member_last_name_privacy.sql, puis réessayez. Votre saisie reste dans ce formulaire.");
+    }
+  }
+  databaseError(error);
+}
+
 function dateStart(formData: FormData) {
   const value = text(formData, "date_start", "La date de début", 40, true);
+  if (!/(?:Z|[+-]\d{2}:\d{2})$/.test(value)) {
+    const parsed = parseParisDateTimeLocal(value);
+    if ("error" in parsed) {
+      throw new ActionError(parsed.error === "nonexistent"
+        ? "Cette heure n’existe pas à Paris lors du passage à l’heure d’été. Choisissez une autre heure."
+        : "La date de début est invalide.");
+    }
+    return parsed.iso;
+  }
   const parts = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})?$/.exec(value);
   if (!parts || !Number.isFinite(Date.parse(value))) throw new ActionError("La date de début est invalide.");
   const [, year, month, day, hour, minute, second = "0"] = parts;
@@ -131,7 +163,7 @@ function validateImageSignature(bytes: Uint8Array, type: string) {
   return false;
 }
 
-async function image(supabase: Supabase, formData: FormData, field: string, bucket: string, current: string | null = null) {
+async function image(supabase: Supabase, formData: FormData, field: string, bucket: string, current: string | null = null, onUpload?: (upload: UploadedImage) => void) {
   const value = formData.get(field);
   if (value === null || (typeof value !== "string" && value.size === 0)) return current;
   if (typeof value === "string") throw new ActionError("Le fichier image est invalide.");
@@ -143,7 +175,9 @@ async function image(supabase: Supabase, formData: FormData, field: string, buck
   const fileName = randomUUID() + "." + extension;
   const { data, error } = await supabase.storage.from(bucket).upload(fileName, value, { contentType: value.type, upsert: false });
   if (error || !data) throw new ActionError("L’image n’a pas pu être envoyée. Réessayez avec une image de moins de 5 Mo.");
-  return supabase.storage.from(bucket).getPublicUrl(data.path).data.publicUrl;
+  const publicUrl = supabase.storage.from(bucket).getPublicUrl(data.path).data.publicUrl;
+  onUpload?.({ bucket, path: data.path, publicUrl, uploadedAt: Date.now() });
+  return publicUrl;
 }
 
 function refresh(paths: string[]) {
@@ -166,9 +200,10 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
     if (targetId !== member.id && !isBoard) throw new ActionError("Vous pouvez uniquement modifier votre propre profil.");
     const rankValue = text(formData, "rank", "L’ordre d’affichage", 12);
     if (rankValue && !isBoard) throw new ActionError("Seul le bureau restreint peut modifier l’ordre d’affichage des membres.");
-    const payload: Record<string, string | number | null> = {
+    const payload: Record<string, string | number | boolean | null> = {
       first_name: text(formData, "first_name", "Le prénom", 100, true),
       last_name: text(formData, "last_name", "Le nom", 100, true),
+      hide_last_name: hideLastName(formData),
       bio: text(formData, "bio", "La présentation", 10000),
       study_level: text(formData, "study_level", "Le niveau d’étude", 100),
       responsibilities: text(formData, "responsibilities", "Les responsabilités", 10000),
@@ -178,14 +213,16 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
       updated_at: new Date().toISOString(),
     };
     if (rankValue) payload.rank = integer(formData, "rank", "L’ordre d’affichage");
-    const { data: target, error: targetError } = await supabase.from("members").select("id, photo_url").eq("id", targetId).maybeSingle();
-    databaseError(targetError);
+    const { data: target, error: targetError } = await supabase.from("members").select("id, photo_url, hide_last_name").eq("id", targetId).maybeSingle();
+    // Verify the privacy column before uploading a replacement portrait.
+    profilePrivacyDatabaseError(targetError);
     if (!target) throw new ActionError("Le profil à modifier n’est plus disponible.");
     payload.photo_url = await image(supabase, formData, "photo", "member-profiles", target.photo_url);
     const { error } = await supabase.from("members").update(payload).eq("id", targetId).select("id").single();
-    databaseError(error);
-    refresh(["/equipe", "/equipe/" + targetId, "/poles"]);
+    profilePrivacyDatabaseError(error);
+    refresh(["/equipe", "/equipe/" + targetId, "/poles", "/", "/sitemap.xml"]);
     revalidatePath("/poles/[id]", "page");
+    revalidatePath("/news/[id]", "page");
   });
 }
 
@@ -295,6 +332,35 @@ export async function deleteProduct(id: string, isBranding: boolean): Promise<Ac
   });
 }
 
+function newsDatabaseError(error: { message: string; code?: string; details?: string } | null) {
+  if (error) {
+    const details = error.message + " " + (error.details ?? "");
+    if (/\bis_anonymous\b/i.test(details) && (["PGRST204", "42703"].includes(error.code ?? "") || /schema cache|column|does not exist/i.test(details))) {
+      throw new ActionError("Le schéma Supabase des actualités doit être mis à jour : la colonne « is_anonymous » est absente ou son cache est périmé. Appliquez la migration 202610090001_news_anonymity.sql dans Supabase, puis réessayez. Votre saisie reste dans ce formulaire.");
+    }
+  }
+  databaseError(error);
+}
+
+async function selectedNewsAuthor(supabase: Supabase, formData: FormData, member: MemberAccess, existingAuthorId?: string | null) {
+  const chosenId = text(formData, "author_id", "L’auteur", 128);
+  const hasAuthorField = formData.get("author_id") !== null;
+  const defaultId = existingAuthorId !== undefined
+    ? existingAuthorId
+    : newsAuthorCategories.includes(member.category ?? "") ? String(member.id) : null;
+  const candidateId = chosenId || (!hasAuthorField ? defaultId : null);
+  if (!candidateId) throw new ActionError("Choisissez un auteur parmi les membres du bureau restreint ou du bureau élargi.");
+  const authorId = identifier(candidateId, "Identifiant de l’auteur");
+  const { data: author, error } = await supabase.from("members").select("id, category").eq("id", authorId).maybeSingle();
+  databaseError(error);
+  if (!author) throw new ActionError("Cet auteur n’est plus disponible. Choisissez un membre du bureau.");
+  // Preserve an existing historical attribution without allowing a new out-of-board author.
+  if (!newsAuthorCategories.includes(author.category ?? "") && authorId !== existingAuthorId) {
+    throw new ActionError("L’auteur choisi doit appartenir au bureau restreint ou au bureau élargi.");
+  }
+  return authorId;
+}
+
 function newsFields(formData: FormData, publishedByDefault: boolean) {
   return {
     title: text(formData, "title", "Le titre", 200, true),
@@ -308,23 +374,31 @@ export async function addNews(formData: FormData): Promise<ActionResult> {
   return perform("addNews", async () => {
     const { supabase, member } = await access("news");
     const fields = newsFields(formData, true);
+    // Check schema availability before uploading a new cover image.
+    const { error: schemaError } = await supabase.from("news").select("is_anonymous").limit(0);
+    newsDatabaseError(schemaError);
+    const authorId = await selectedNewsAuthor(supabase, formData, member);
     const imageUrl = await image(supabase, formData, "image", "news-images");
-    const { error } = await supabase.from("news").insert({ ...fields, author_id: member.id, image_url: imageUrl }).select("id").single();
-    databaseError(error);
+    const { error } = await supabase.from("news").insert({ ...fields, author_id: authorId, image_url: imageUrl }).select("id").single();
+    newsDatabaseError(error);
     refresh(["/"]);
   });
 }
 
 export async function updateNews(formData: FormData): Promise<ActionResult> {
   return perform("updateNews", async () => {
-    const { supabase } = await access("news");
+    const { supabase, member } = await access("news");
     const id = identifier(formData.get("id"));
     const fields = newsFields(formData, false);
-    const current = await existing(supabase, "news", id);
+    const { data: current, error: currentError } = await supabase.from("news").select("id, image_url, author_id, is_anonymous").eq("id", id).maybeSingle();
+    newsDatabaseError(currentError);
+    if (!current) throw new ActionError("Cette actualité n’est plus disponible ou vous n’avez pas accès à sa modification. Rechargez la page.");
+    const currentAuthorId = current.author_id == null ? null : String(current.author_id);
+    const authorId = await selectedNewsAuthor(supabase, formData, member, currentAuthorId);
     const imageUrl = await image(supabase, formData, "image", "news-images", current.image_url);
-    const { error } = await supabase.from("news").update({ ...fields, image_url: imageUrl, updated_at: new Date().toISOString() }).eq("id", id).select("id").single();
-    databaseError(error);
-    refresh(["/"]);
+    const { error } = await supabase.from("news").update({ ...fields, author_id: authorId, image_url: imageUrl, updated_at: new Date().toISOString() }).eq("id", id).select("id").single();
+    newsDatabaseError(error);
+    refresh(["/", "/news/" + id]);
   });
 }
 
@@ -338,23 +412,119 @@ export async function deleteNews(id: string): Promise<ActionResult> {
   });
 }
 
+function poleFields(formData: FormData) {
+  let color = text(formData, "color", "La couleur", 9) || "#7BD0FF";
+  if (/^#[\da-f]{3}$/i.test(color)) color = "#" + color.slice(1).split("").map(char => char + char).join("");
+  if (!/^#(?:[\da-f]{6}|[\da-f]{8})$/i.test(color)) throw new ActionError("La couleur doit contenir six ou huit caractères hexadécimaux, par exemple #7BD0FF.");
+  return {
+    name: text(formData, "name", "Le nom du pôle", 120, true),
+    description: text(formData, "description", "La description", 500, true),
+    full_content: text(formData, "full_content", "Le contenu détaillé", 100000),
+    color: color.toUpperCase(),
+    order_index: integer(formData, "order_index", "L’ordre d’affichage", 0),
+  };
+}
+
+function poleId(value: unknown) {
+  if (typeof value !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
+    throw new ActionError("L’identifiant du pôle est invalide. Rechargez la page puis réessayez.");
+  }
+  return value;
+}
+
+function poleDatabaseError(error: { message: string; code?: string; details?: string } | null) {
+  if (!error) return;
+  const details = error.message + " " + (error.details ?? "");
+  if (["PGRST202", "42883", "42703", "42P01"].includes(error.code ?? "") || (/schema cache|does not exist/i.test(details) && /bde_admin_|full_name|full_content|image_url|order_index|updated_at/i.test(details))) {
+    throw new ActionError("La gestion des pôles nécessite une mise à jour de Supabase. Appliquez la migration 202610090003_pole_management.sql, puis réessayez. Votre saisie reste dans ce formulaire.");
+  }
+  if (error.code === "42501") throw new ActionError("La gestion des pôles est réservée au bureau restreint.");
+  if (error.code === "23505") throw new ActionError("Un pôle porte déjà ce nom. Choisissez un nom différent.");
+  if (error.code === "23503") throw new ActionError("Ce pôle est encore lié à des membres ou à des affectations. Réaffectez-les dans « Membres & rôles » avant de le supprimer.");
+  if (error.code === "P0002") throw new ActionError("Ce pôle n’est plus disponible. Rechargez la liste des pôles.");
+  databaseError(error);
+}
+
+async function poleCapabilities(supabase: Supabase) {
+  // The migration installs this read-only check and the three writes atomically.
+  const { data, error } = await supabase.rpc("bde_admin_can_manage_poles");
+  poleDatabaseError(error);
+  if (data !== true) throw new ActionError("La gestion des pôles est réservée au bureau restreint.");
+}
+
+async function cleanupPoleCover(supabase: Supabase, upload: UploadedImage | null, error: { code?: string }) {
+  // Only an explicit database rejection proves the RPC did not commit.
+  // A lost response can hide a successful save: preserve its cover for review.
+  const rejectedCodes = ["23505", "23503", "23502", "23514", "42501", "P0002", "P0001", "22023", "42703", "42883", "42P01", "40001", "40P01", "PGRST202", "PGRST204"];
+  if (!upload || !rejectedCodes.includes(error.code ?? "")) return;
+  try {
+    // The receipt comes from this action's upload, never from a form URL.
+    const age = Date.now() - upload.uploadedAt;
+    if (upload.bucket !== "event-images" || age < 0 || age > 30 * 60 * 1000
+      || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:jpg|png|webp|gif|avif)$/i.test(upload.path)
+      || upload.publicUrl !== supabase.storage.from("event-images").getPublicUrl(upload.path).data.publicUrl) return;
+    const { error: cleanupError } = await supabase.storage.from("event-images").remove([upload.path]);
+    if (cleanupError) console.warn("La nouvelle couverture du pôle n’a pas pu être nettoyée :", cleanupError.message);
+  } catch (cleanupError: unknown) {
+    // Cleanup is best effort and never replaces the original save error.
+    console.warn("La nouvelle couverture du pôle n’a pas pu être nettoyée :", cleanupError);
+  }
+}
+
+function refreshPoles(id: string) {
+  refresh(["/poles", "/poles/" + id, "/equipe", "/sitemap.xml", "/"]);
+  revalidatePath("/equipe/[id]", "page");
+}
+
+export async function addPole(formData: FormData): Promise<ActionResult> {
+  return perform("addPole", async () => {
+    const { supabase } = await access("board");
+    const fields = poleFields(formData);
+    await poleCapabilities(supabase);
+    const upload: { current: UploadedImage | null } = { current: null };
+    const imageUrl = await image(supabase, formData, "image", "event-images", null, receipt => { upload.current = receipt; });
+    const { data: id, error } = await supabase.rpc("bde_admin_create_pole", {
+      p_name: fields.name, p_description: fields.description, p_full_content: fields.full_content,
+      p_color: fields.color, p_image_url: imageUrl, p_order_index: fields.order_index,
+    });
+    if (error) await cleanupPoleCover(supabase, upload.current, error);
+    poleDatabaseError(error);
+    if (!id || typeof id !== "string") throw new ActionError("La création du pôle n’a pas pu être confirmée. Rechargez la liste avant de réessayer.");
+    refreshPoles(id);
+  });
+}
+
 export async function updatePole(formData: FormData): Promise<ActionResult> {
   return perform("updatePole", async () => {
     const { supabase } = await access("board");
-    const id = identifier(formData.get("id"));
-    const color = text(formData, "color", "La couleur", 9) || "#7BD0FF";
-    if (!/^#(?:[\da-f]{3}|[\da-f]{6}|[\da-f]{8})$/i.test(color)) throw new ActionError("La couleur doit être un code hexadécimal, par exemple #7BD0FF.");
-    const fields = {
-      name: text(formData, "name", "Le nom du pôle", 200, true),
-      description: text(formData, "description", "La description", 10000, true),
-      full_content: text(formData, "full_content", "Le contenu détaillé", 100000),
-      color,
-    };
-    const current = await existing(supabase, "poles", id);
-    const imageUrl = await image(supabase, formData, "image", "event-images", current.image_url);
-    const { error } = await supabase.from("poles").update({ ...fields, image_url: imageUrl, updated_at: new Date().toISOString() }).eq("id", id).select("id").single();
-    databaseError(error);
-    refresh(["/poles", "/poles/" + id]);
+    const id = poleId(formData.get("id"));
+    const fields = poleFields(formData);
+    await poleCapabilities(supabase);
+    const { data: current, error: currentError } = await supabase.from("poles").select("id, image_url").eq("id", id).maybeSingle();
+    poleDatabaseError(currentError);
+    if (!current) throw new ActionError("Ce pôle n’est plus disponible. Rechargez la liste des pôles.");
+    const upload: { current: UploadedImage | null } = { current: null };
+    const imageUrl = await image(supabase, formData, "image", "event-images", current.image_url, receipt => { upload.current = receipt; });
+    const { data: updatedId, error } = await supabase.rpc("bde_admin_update_pole", {
+      p_id: id, p_name: fields.name, p_description: fields.description, p_full_content: fields.full_content,
+      p_color: fields.color, p_image_url: imageUrl, p_order_index: fields.order_index,
+    });
+    if (error) await cleanupPoleCover(supabase, upload.current, error);
+    poleDatabaseError(error);
+    if (typeof updatedId !== "string" || updatedId.toLowerCase() !== id.toLowerCase()) throw new ActionError("La modification du pôle n’a pas pu être confirmée. Rechargez la liste avant de réessayer.");
+    refreshPoles(id);
+  });
+}
+
+export async function deletePole(id: string): Promise<ActionResult> {
+  return perform("deletePole", async () => {
+    const { supabase } = await access("board");
+    poleId(id);
+    await poleCapabilities(supabase);
+    const { data: deletedId, error } = await supabase.rpc("bde_admin_delete_pole", { p_id: id });
+    poleDatabaseError(error);
+    if (typeof deletedId !== "string" || deletedId.toLowerCase() !== id.toLowerCase()) throw new ActionError("La suppression du pôle n’a pas pu être confirmée. Rechargez la liste avant de réessayer.");
+    refreshPoles(id);
   });
 }
 

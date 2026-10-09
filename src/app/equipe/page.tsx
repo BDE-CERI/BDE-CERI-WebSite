@@ -6,6 +6,36 @@ import Image from "next/image";
 import SharkWallpaper from "@/components/SharkWallpaper";
 import { Suspense } from "react";
 import { createSeoMetadata } from "@/utils/seo";
+import { getPublicMemberName } from "@/utils/member-display";
+
+type PoleRelation = { name: string | null };
+type TeamAssignmentRow = { role: string | null; poles?: PoleRelation | PoleRelation[] | null };
+type TeamAssignment = { role: string | null; poles: PoleRelation | null };
+
+type TeamMemberRow = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  hide_last_name?: boolean | null;
+  role_label?: string | null;
+  category?: string | null;
+  bio?: string | null;
+  description?: string | null;
+  photo_url?: string | null;
+  photo_position?: string | null;
+  member_assignments?: TeamAssignmentRow | TeamAssignmentRow[] | null;
+};
+
+type TeamMember = Omit<TeamMemberRow, "member_assignments"> & { member_assignments: TeamAssignment[] };
+type CardLayout = { colSpan: string; rowSpan: string };
+
+function normalizeRelation<T>(value: T | T[] | null | undefined): T | null {
+  return Array.isArray(value) ? value[0] || null : value || null;
+}
+
+function normalizeList<T>(value: T | T[] | null | undefined): T[] {
+  return Array.isArray(value) ? value : value ? [value] : [];
+}
 
 export const metadata = createSeoMetadata({
   path: "/equipe",
@@ -49,7 +79,7 @@ function TeamGridSkeleton() {
 }
 
 // ─── Grille des membres (composant asynchrone) ──────────────────────────────
-async function TeamGrid({ dict, lang, currentYear }: { dict: any; lang: string; currentYear: string }) {
+async function TeamGrid({ lang, currentYear }: { lang: string; currentYear: string }) {
   const supabase = await createClient();
 
   const { data: membersData } = await supabase
@@ -58,9 +88,10 @@ async function TeamGrid({ dict, lang, currentYear }: { dict: any; lang: string; 
     .eq("is_visible", true)
     .or(`current_academic_year.eq.${currentYear},category.eq.membre_honneur`)
     .order("rank", { ascending: true })
-    .order("last_name", { ascending: true });
+    .order("last_name", { ascending: true })
+    .returns<TeamMemberRow[]>();
 
-  const defaultMembers = [
+  const defaultMembers: TeamMemberRow[] = [
     {
       id: "1",
       first_name: "Alexandre",
@@ -100,23 +131,30 @@ async function TeamGrid({ dict, lang, currentYear }: { dict: any; lang: string; 
     { id: "7", first_name: "Hugo", last_name: "", role_label: "Tavern Master", category: "membre_actif" },
   ];
 
-  const teamList = membersData && membersData.length > 0 ? membersData : defaultMembers;
+  const rawTeamList = membersData && membersData.length > 0 ? membersData : defaultMembers;
+  const teamList: TeamMember[] = rawTeamList.map(member => ({
+    ...member,
+    member_assignments: normalizeList(member.member_assignments).map(assignment => ({
+      role: assignment.role,
+      poles: normalizeRelation(assignment.poles),
+    })),
+  }));
 
   const isFr = lang === "fr";
 
   // Group members by category
-  const bureauRestreint = teamList.filter((m: any) => m.category === "bureau_restreint" && m.first_name !== "Gautier");
-  const bureau = teamList.filter((m: any) => m.category === "bureau" || (m.category === "bureau_restreint" && m.first_name === "Gautier"));
-  const membresActifs = teamList.filter((m: any) => (m.category === "membre_actif" || !m.category) && m.first_name !== "Gautier" && m.category !== "membre_honneur");
-  const membresHonneur = teamList.filter((m: any) => m.category === "membre_honneur");
+  const bureauRestreint = teamList.filter((m) => m.category === "bureau_restreint" && m.first_name !== "Gautier");
+  const bureau = teamList.filter((m) => m.category === "bureau" || (m.category === "bureau_restreint" && m.first_name === "Gautier"));
+  const membresActifs = teamList.filter((m) => (m.category === "membre_actif" || !m.category) && m.first_name !== "Gautier" && m.category !== "membre_honneur");
+  const membresHonneur = teamList.filter((m) => m.category === "membre_honneur");
 
-  const getGridPosition = (index: number) => {
+  const getGridPosition = (index: number): CardLayout => {
     if (index === 0) return { colSpan: "md:col-span-2", rowSpan: "md:row-span-2" };
     if (index === 1 || index === 2) return { colSpan: "md:col-span-2", rowSpan: "md:row-span-1" };
     return { colSpan: "md:col-span-1", rowSpan: "md:row-span-1" };
   };
 
-  const getRoleIcon = (role: string) => {
+  const getRoleIcon = (role?: string | null) => {
     const r = role?.toLowerCase() || "";
     if (r.includes("président") || r.includes("president")) return "crown";
     if (r.includes("vice") || r.includes("vp")) return "verified_user";
@@ -126,16 +164,14 @@ async function TeamGrid({ dict, lang, currentYear }: { dict: any; lang: string; 
     return null;
   };
 
-  const getPhotoPosition = (member: any, index: number): string => {
+  const getPhotoPosition = (member: TeamMember, index: number): string => {
     if (member.photo_position) return `object-${member.photo_position}`;
     if (index === 1) return "object-top";
     return "object-center";
   };
 
-  const renderMemberCard = (member: any, layout: any, index: number) => {
-    const fullName = member.last_name
-      ? `${member.first_name} ${member.last_name}`
-      : member.first_name;
+  const renderMemberCard = (member: TeamMember, layout: CardLayout, index: number) => {
+    const fullName = getPublicMemberName(member);
     const photoPos = getPhotoPosition(member, index);
     const isPriority = index < 3;
 
@@ -188,7 +224,7 @@ async function TeamGrid({ dict, lang, currentYear }: { dict: any; lang: string; 
                 >
                   {member.role_label}
                 </p>
-                {member.member_assignments?.map((a: any, i: number) => (
+                {member.member_assignments?.map((a, i) => (
                   <span
                     key={i}
                     className="text-[9px] px-1.5 py-0.5 rounded-md bg-surface-container-highest text-on-surface-variant border border-outline-variant/10 uppercase font-bold tracking-tighter"
@@ -250,7 +286,7 @@ async function TeamGrid({ dict, lang, currentYear }: { dict: any; lang: string; 
               <p className="font-body text-xs uppercase tracking-wider text-primary">
                 {member.role_label}
               </p>
-              {member.member_assignments?.map((a: any, i: number) => (
+              {member.member_assignments?.map((a, i) => (
                 <span
                   key={i}
                   className="text-[8px] px-1 py-0.5 rounded bg-surface-container-highest text-on-surface-variant border border-outline-variant/10 uppercase font-bold"
@@ -340,9 +376,7 @@ async function TeamGrid({ dict, lang, currentYear }: { dict: any; lang: string; 
 
             <div className="flex flex-col gap-4">
               {membresHonneur.map((member) => {
-                const fullName = member.last_name
-                  ? `${member.first_name} ${member.last_name}`
-                  : member.first_name;
+                const fullName = getPublicMemberName(member);
 
                 return (
                   <Link
@@ -435,7 +469,7 @@ export default async function Equipe() {
 
         {/* Bento Grid avec Suspense + Skeleton */}
         <Suspense fallback={<TeamGridSkeleton />}>
-          <TeamGrid dict={dict} lang={lang} currentYear={currentYear} />
+          <TeamGrid lang={lang} currentYear={currentYear} />
         </Suspense>
 
         {/* Past Boards Section (Lazy) */}

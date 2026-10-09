@@ -1,10 +1,46 @@
 import { getDictionary } from "@/locales/dictionaries";
 import { createClient } from "@/utils/supabase/server";
-import Link from "next/link";
 import Image from "next/image";
 import SharkWallpaper from "@/components/SharkWallpaper";
 import PolesTree from "@/components/PolesTree";
 import { createSeoMetadata } from "@/utils/seo";
+import { getPublicMemberLastName } from "@/utils/member-display";
+import type { ComponentProps } from "react";
+
+type PoleRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string | null;
+};
+
+type MemberSummary = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  hide_last_name?: boolean | null;
+  photo_url: string | null;
+  role_label: string | null;
+};
+
+type PrimaryMember = MemberSummary & {
+  role: string | null;
+  pole_id: string | null;
+};
+
+type AssignmentRow = {
+  role: string | null;
+  is_vp: boolean | null;
+  pole_id: string | null;
+  members: (MemberSummary & { is_visible: boolean | null }) | (MemberSummary & { is_visible: boolean | null })[] | null;
+};
+
+type TreePole = ComponentProps<typeof PolesTree>["poles"][number];
+type TreeMember = NonNullable<TreePole["vp"]>;
+
+function normalizeRelation<T>(relation: T | T[] | null | undefined): T | null {
+  return Array.isArray(relation) ? relation[0] || null : relation || null;
+}
 
 export const metadata = createSeoMetadata({
   path: "/poles",
@@ -18,91 +54,81 @@ export default async function Poles() {
   const dict = await getDictionary();
   const supabase = await createClient();
 
-  const { data: polesData } = await supabase
+  const en = dict.profil.title === "My Account";
+  const l = (fr: string, english: string) => en ? english : fr;
+
+  const { data: polesData, error: polesError } = await supabase
     .from("poles")
-    .select("*")
-    .order("order_index", { ascending: true });
+    .select("id, name, description, color")
+    .order("order_index", { ascending: true })
+    .returns<PoleRow[]>();
 
-  // Fetch all visible members
-  const { data: allMembers } = await supabase
-    .from("members")
-    .select("id, first_name, last_name, role, role_label, photo_url, pole_id")
-    .eq("is_visible", true);
+  const polesList = polesData || [];
+  let allMembers: PrimaryMember[] = [];
+  let assignmentsData: AssignmentRow[] = [];
+  let unavailable = !!polesError;
 
-  // Fetch all assignments with member details
-  const { data: assignmentsData } = await supabase
-    .from("member_assignments")
-    .select("role, is_vp, pole_id, members(id, first_name, last_name, photo_url, role_label, is_visible)");
+  if (!polesError && polesList.length > 0) {
+    const [membersResult, assignmentsResult] = await Promise.all([
+      supabase
+        .from("members")
+        .select("*")
+        .eq("is_visible", true)
+        .returns<PrimaryMember[]>(),
+      supabase
+        .from("member_assignments")
+        .select("role, is_vp, pole_id, members(*)")
+        .returns<AssignmentRow[]>(),
+    ]);
+    unavailable = !!membersResult.error || !!assignmentsResult.error;
+    allMembers = membersResult.data || [];
+    assignmentsData = assignmentsResult.data || [];
+  }
 
-  const defaultPoles = [
-    {
-      id: "1",
-      name: "Événementiel",
-      description: "Créateurs d'expériences mémorables et de soirées légendaires.",
-      color: "#FF5252",
-    },
-    {
-      id: "2",
-      name: "Communication",
-      description: "Les magiciens du visuel et des réseaux sociaux.",
-      color: "#448AFF",
-    }
-  ];
+  const assignments = assignmentsData.flatMap(assignment => {
+    const member = normalizeRelation(assignment.members);
+    return member?.is_visible ? [{ ...assignment, member }] : [];
+  });
 
-  const polesList = polesData && polesData.length > 0 ? polesData : defaultPoles;
+  const polesTreeData: TreePole[] = polesList.map(pole => {
+    const memberMap = new Map<string, TreeMember>();
 
-  // Build the hierarchical tree data
-  const polesTreeData = polesList.map((pole) => {
-    // 1. Members directly assigned via pole_id
-    const primary = allMembers?.filter(m => m.pole_id === pole.id) || [];
-    
-    // 2. Members assigned via member_assignments
-    const assigned = assignmentsData
-      ?.filter(a => a.pole_id === pole.id && a.members && (a.members as any).is_visible)
-      .map(a => ({
-        id: (a.members as any).id,
-        first_name: (a.members as any).first_name,
-        last_name: (a.members as any).last_name,
-        photo_url: (a.members as any).photo_url,
-        role_label: a.role || (a.members as any).role_label || "Membre",
-        is_vp: a.is_vp || false,
-      })) || [];
-
-    const memberMap = new Map();
-
-    primary.forEach(m => {
-      memberMap.set(m.id, {
-        id: m.id,
-        first_name: m.first_name,
-        last_name: m.last_name,
-        photo_url: m.photo_url,
-        role_label: m.role_label || "Membre du Pôle",
-        is_vp: m.role === "vice_president_pole",
+    allMembers.filter(member => member.pole_id === pole.id).forEach(member => {
+      memberMap.set(member.id, {
+        id: member.id,
+        first_name: member.first_name || "",
+        last_name: getPublicMemberLastName(member),
+        hide_last_name: member.hide_last_name !== false,
+        photo_url: member.photo_url,
+        role_label: member.role_label || l("Membre du pôle", "Team member"),
+        is_vp: member.role === "vice_president_pole",
       });
     });
 
-    assigned.forEach(m => {
-      const existing = memberMap.get(m.id);
-      if (!existing || m.is_vp) {
-        memberMap.set(m.id, {
-          id: m.id,
-          first_name: m.first_name,
-          last_name: m.last_name,
-          photo_url: m.photo_url,
-          role_label: m.role_label,
-          is_vp: m.is_vp,
+    assignments.filter(assignment => assignment.pole_id === pole.id).forEach(assignment => {
+      const member = assignment.member;
+      const existing = memberMap.get(member.id);
+      if (!existing || assignment.is_vp) {
+        memberMap.set(member.id, {
+          id: member.id,
+          first_name: member.first_name || "",
+          last_name: getPublicMemberLastName(member),
+          hide_last_name: member.hide_last_name !== false,
+          photo_url: member.photo_url,
+          role_label: assignment.role || member.role_label || l("Membre du pôle", "Team member"),
+          is_vp: assignment.is_vp || false,
         });
       }
     });
 
     const list = Array.from(memberMap.values());
-    const vp = list.find(m => m.is_vp) || null;
-    const members = list.filter(m => !m.is_vp);
-
     return {
-      ...pole,
-      vp,
-      members,
+      id: pole.id,
+      name: pole.name,
+      description: pole.description || "",
+      color: pole.color || "#7BD0FF",
+      vp: list.find(member => member.is_vp) || null,
+      members: list.filter(member => !member.is_vp),
     };
   });
 
@@ -123,7 +149,23 @@ export default async function Poles() {
       </section>
 
       <section id="poles" className="relative z-10 mx-auto max-w-7xl px-6">
-        <PolesTree poles={polesTreeData} labels={{ map_kicker: dict.poles.map_kicker, map_title: dict.poles.map_title, map_hint: dict.poles.map_hint, map_anchor: dict.poles.map_anchor, map_current: dict.poles.map_current, map_crew: dict.poles.map_crew, map_lead: dict.poles.map_lead, member_count: dict.poles.member_count, discover_pole: dict.poles.discover_pole, no_poles: dict.poles.no_poles, no_crew: dict.poles.no_crew, map_currents: dict.poles.map_currents, map_places: dict.poles.map_places }} />
+        {unavailable ? (
+          <div role="alert" className="rounded-[2rem] border border-outline-variant/20 bg-surface-container-low px-6 py-12 text-center">
+            <span aria-hidden="true" className="material-symbols-outlined mb-4 text-4xl text-on-surface-variant">cloud_off</span>
+            <h2 className="font-headline text-xl font-bold">{l("Les pôles sont momentanément indisponibles", "Teams are temporarily unavailable")}</h2>
+            <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-on-surface-variant">
+              {l("Nous n’avons pas pu charger les pôles et leurs équipes. Réessayez dans quelques instants.", "We could not load the teams and their members. Please try again in a moment.")}
+            </p>
+            <form action="/poles" method="get" className="mt-6">
+              <button type="submit" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-tertiary/30 px-5 py-2.5 text-sm font-bold text-tertiary transition-colors hover:bg-tertiary/10">
+                <span aria-hidden="true" className="material-symbols-outlined text-lg">refresh</span>
+                {l("Réessayer", "Try again")}
+              </button>
+            </form>
+          </div>
+        ) : (
+          <PolesTree poles={polesTreeData} labels={{ map_kicker: dict.poles.map_kicker, map_title: dict.poles.map_title, map_hint: dict.poles.map_hint, map_anchor: dict.poles.map_anchor, map_current: dict.poles.map_current, map_crew: dict.poles.map_crew, map_lead: dict.poles.map_lead, member_count: dict.poles.member_count, discover_pole: dict.poles.discover_pole, no_poles: dict.poles.no_poles, no_crew: dict.poles.no_crew, map_currents: dict.poles.map_currents, map_places: dict.poles.map_places }} />
+        )}
       </section>
 
       <section className="max-w-7xl mx-auto px-6 mt-32 mb-20">
