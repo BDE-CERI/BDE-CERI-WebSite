@@ -6,6 +6,7 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import { createSeoMetadata } from "@/utils/seo";
 import { getPublicMemberName } from "@/utils/member-display";
+import ProfileSocialLinks from "@/components/ProfileSocialLinks";
 
 type PoleRelation = { name: string | null };
 type AssignmentRow = {
@@ -145,32 +146,8 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
 
             <div className="glass-panel p-8 rounded-2xl border border-outline-variant/10">
               <h3 className="text-sm font-bold uppercase tracking-widest text-tertiary mb-6">{dict.common.contact_social}</h3>
-              <div className="space-y-4">
-                {member.email && (
-                  <div className="flex items-center gap-3 text-on-surface-variant hover:text-on-surface transition-colors">
-                    <span className="material-symbols-outlined text-tertiary text-lg">mail</span>
-                    <a href={`mailto:${member.email}`} className="text-sm font-body">{member.email}</a>
-                  </div>
-                )}
-                {member.instagram && (
-                   <div className="flex items-center gap-3 text-on-surface-variant hover:text-on-surface transition-colors">
-                    <span className="material-symbols-outlined text-tertiary text-lg">public</span>
-                    <a href={member.instagram.startsWith('http') ? member.instagram : `https://instagram.com/${member.instagram.replace('@', '')}`} target="_blank" className="text-sm font-body">Instagram</a>
-                  </div>
-                )}
-                {member.discord && (
-                   <div className="flex items-center gap-3 text-on-surface-variant hover:text-on-surface transition-colors">
-                    <span className="material-symbols-outlined text-tertiary text-lg">forum</span>
-                    <span className="text-sm font-body">{member.discord}</span>
-                  </div>
-                )}
-                {socialLinks.linkedin && (
-                   <div className="flex items-center gap-3 text-on-surface-variant hover:text-on-surface transition-colors">
-                    <span className="material-symbols-outlined text-tertiary text-lg">account_circle</span>
-                    <a href={socialLinks.linkedin} target="_blank" className="text-sm font-body">LinkedIn</a>
-                  </div>
-                )}
-              </div>
+              <ProfileSocialLinks email={member.email} instagram={member.instagram} discord={member.discord}
+                linkedin={socialLinks.linkedin} english={dict.profil.title === "My Account"} />
             </div>
           </div>
 
