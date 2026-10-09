@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { createVisitorAdminClient } from "@/utils/visitor-admin";
+import { getParisDateKey } from "@/utils/paris-time";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export async function GET() {
   const threshold = new Date(now.getTime() - 5 * 60_000).toISOString();
   const [total, active, devices] = await Promise.all([
     admin.from("visitor_stats_totals").select("total_visits").eq("id", 1).maybeSingle(),
-    admin.from("visitor_daily_visits").select("visitor_hash", { count: "exact", head: true }).eq("visit_date", now.toISOString().slice(0, 10)).gte("last_seen", threshold),
+    admin.from("visitor_daily_visits").select("visitor_hash", { count: "exact", head: true }).eq("visit_date", getParisDateKey(now)).gte("last_seen", threshold),
     admin.from("visitor_device_totals").select("device_type, visit_count").order("device_type"),
   ]);
   if (total.error || active.error || devices.error) return NextResponse.json({ error: "Stats are unavailable" }, { status: 503 });

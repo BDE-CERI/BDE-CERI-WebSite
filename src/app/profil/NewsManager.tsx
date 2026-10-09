@@ -11,20 +11,64 @@ import { AdminForm, ConfirmDeleteButton, EmptyState, Field, ManagerToolbar, inpu
 
 type Dictionary = Awaited<ReturnType<typeof getDictionary>>;
 
+export type NewsAuthor = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  role_label?: string | null;
+  category?: string | null;
+};
+
 interface NewsItem {
   id: string;
   title: string;
   content: string;
+  author_id?: string | null;
+  author?: Pick<NewsAuthor, "first_name" | "last_name"> | null;
   image_url?: string;
   published_at?: string;
   is_published: boolean;
   is_anonymous?: boolean;
 }
 
-function NewsEditor({ item, dict, onCancel, onSuccess }: { item?: NewsItem; dict: Dictionary; onCancel: () => void; onSuccess: () => void }) {
+function NewsEditor({
+  item,
+  dict,
+  authors,
+  currentMemberId,
+  onCancel,
+  onSuccess,
+}: {
+  item?: NewsItem;
+  dict: Dictionary;
+  authors: NewsAuthor[];
+  currentMemberId: string;
+  onCancel: () => void;
+  onSuccess: () => void;
+}) {
   const en = dict.profil?.title === "My Account";
   const l = (fr: string, english: string) => en ? english : fr;
   const [published, setPublished] = useState(item?.is_published || false);
+  const [authorId, setAuthorId] = useState(
+    item?.author_id || (authors.some(author => author.id === currentMemberId) ? currentMemberId : ""),
+  );
+  const originalOutsideBureau = !!item?.author_id && !authors.some(author => author.id === item.author_id);
+  const unavailableSelection = !!authorId && !authors.some(author => author.id === authorId) && authorId !== item?.author_id;
+  const originalName = item?.author ? [item.author.first_name, item.author.last_name].filter(Boolean).join(" ") : "";
+  const authorLabel = (author: NewsAuthor) => [author.first_name, author.last_name].filter(Boolean).join(" ") + (author.role_label ? " — " + author.role_label : "");
+  const authorGroups = [
+    { label: l("Bureau restreint", "Executive board"), items: authors.filter(author => author.category === "bureau_restreint") },
+    { label: l("Bureau élargi", "Extended board"), items: authors.filter(author => author.category === "bureau") },
+    { label: l("Autres membres éligibles", "Other eligible members"), items: authors.filter(author => author.category !== "bureau_restreint" && author.category !== "bureau") },
+  ];
+
+  const saveNews = async (formData: FormData) => {
+    const selectedId = formData.get("author_id");
+    if (typeof selectedId !== "string" || !selectedId || (!authors.some(author => author.id === selectedId) && selectedId !== item?.author_id)) {
+      return { error: l("Choisissez un auteur éligible avant d’enregistrer.", "Choose an eligible author before saving.") };
+    }
+    return item ? updateNews(formData) : addNews(formData);
+  };
   return (
     <div className="rounded-2xl border border-outline-variant/25 bg-surface-container-low p-4 sm:p-6">
       <div className="mb-6 border-b border-outline-variant/20 pb-5">
@@ -32,7 +76,7 @@ function NewsEditor({ item, dict, onCancel, onSuccess }: { item?: NewsItem; dict
         <h3 className="break-words font-headline text-xl font-bold">{item?.title || l("Nouvelle actualité", "New news post")}</h3>
         <p className="mt-2 text-sm text-on-surface-variant">{l("Préparez votre publication, puis choisissez de la conserver en brouillon ou de la rendre visible.", "Prepare your post, then keep it as a draft or make it visible on the website.")}</p>
       </div>
-      <AdminForm action={item ? updateNews : addNews} submitLabel={published ? l("Enregistrer et publier", "Save and publish") : l("Enregistrer le brouillon", "Save draft")} successMessage={l("Actualité enregistrée.", "News post saved.")} onCancel={onCancel} onSuccess={onSuccess}>
+      <AdminForm action={saveNews} submitLabel={published ? l("Enregistrer et publier", "Save and publish") : l("Enregistrer le brouillon", "Save draft")} successMessage={l("Actualité enregistrée.", "News post saved.")} onCancel={onCancel} onSuccess={onSuccess}>
         {item && <input type="hidden" name="id" value={item.id} />}
         <input type="hidden" name="current_image_url" value={item?.image_url || ""} />
         {!published && <input type="hidden" name="is_published" value="false" />}
@@ -47,7 +91,30 @@ function NewsEditor({ item, dict, onCancel, onSuccess }: { item?: NewsItem; dict
             </Field>
           </fieldset>
           <fieldset className="min-w-0 space-y-5">
-            <legend className="mb-4 font-headline text-base font-bold">{l("Visibilité et couverture", "Visibility and cover")}</legend>
+            <legend className="mb-4 font-headline text-base font-bold">{l("Signature, visibilité et couverture", "Author, visibility and cover")}</legend>
+            <Field
+              label={l("Auteur de l’actualité", "Post author")}
+              required
+              hint={l("Le membre choisi signe l’actualité. Cette sélection ne change pas le compte administrateur connecté.", "The selected member signs the post. This choice does not change the signed-in administrator account.")}
+            >
+              <select name="author_id" value={authorId} onChange={event => setAuthorId(event.target.value)} required className={inputClass}>
+                <option value="" disabled>{l("Choisir un membre du bureau", "Choose a board member")}</option>
+                {authorGroups.filter(group => group.items.length > 0).map(group => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.items.map(author => <option key={author.id} value={author.id}>{authorLabel(author)}</option>)}
+                  </optgroup>
+                ))}
+                {originalOutsideBureau && (
+                  <option value={item?.author_id || ""}>
+                    {originalName ? originalName + " — " + l("auteur actuel, hors bureau", "current author, outside the board") : l("Auteur actuel (hors bureau)", "Current author (outside the board)")}
+                  </option>
+                )}
+                {unavailableSelection && <option value={authorId} disabled>{l("Auteur devenu indisponible — choisissez un membre du bureau", "Author no longer available — choose a board member")}</option>}
+              </select>
+            </Field>
+            {originalOutsideBureau && <p className="rounded-lg bg-surface-container-high px-3 py-2 text-xs leading-relaxed text-on-surface-variant">{l("L’auteur historique peut être conservé. Pour réattribuer cette actualité, choisissez un membre du bureau actuel.", "You can keep the original author. To reassign this post, choose a current board member.")}</p>}
+            {authors.length === 0 && !originalOutsideBureau && <p role="status" className="rounded-lg bg-warning/10 px-3 py-2 text-xs leading-relaxed text-warning">{l("Aucun membre du bureau n’est disponible pour signer cette actualité. Ajoutez un membre au bureau avant d’enregistrer.", "No board member is available to sign this post. Add a board member before saving.")}</p>}
+
             <div className="rounded-xl border border-outline-variant/20 bg-surface-container-high/40 p-4">
               <label className="flex cursor-pointer items-start gap-3">
                 <input type="checkbox" name="is_published" value="true" checked={published} onChange={event => setPublished(event.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-primary" />
@@ -55,7 +122,7 @@ function NewsEditor({ item, dict, onCancel, onSuccess }: { item?: NewsItem; dict
               </label>
               <label className="mt-5 flex cursor-pointer items-start gap-3 border-t border-outline-variant/15 pt-4">
                 <input type="checkbox" name="is_anonymous" value="true" defaultChecked={item?.is_anonymous || false} className="mt-1 h-5 w-5 shrink-0 accent-primary" />
-                <span><span className="block text-sm font-semibold">{dict.news?.post_anonymously || l("Masquer mon nom d'auteur", "Hide my author name")}</span><span className="mt-1 block text-xs leading-relaxed text-on-surface-variant">{l("La publication sera présentée au nom du BDE.", "The post will be presented as a BDE announcement.")}</span></span>
+                <span><span className="block text-sm font-semibold">{l("Publier au nom du BDE", "Publish as the BDE")}</span><span className="mt-1 block text-xs leading-relaxed text-on-surface-variant">{l("Masque le nom de l’auteur sur les pages publiques. L’auteur sélectionné reste associé à l’actualité dans l’administration.", "Hides the author’s name on public pages. The selected author remains linked to the post in the administration area.")}</span></span>
               </label>
             </div>
             <Field label={l("Image de couverture", "Cover image")} hint={item ? l("Sans nouvelle image, la couverture actuelle est conservée.", "The existing cover is kept if you do not choose a new image.") : l("Ajoutez une image pour accompagner votre publication.", "Add an image to accompany your post.")}>
@@ -68,7 +135,7 @@ function NewsEditor({ item, dict, onCancel, onSuccess }: { item?: NewsItem; dict
   );
 }
 
-export default function NewsManager({ news, dict, embedded = false }: { news: NewsItem[]; dict: Dictionary; embedded?: boolean }) {
+export default function NewsManager({ news, dict, authors, currentMemberId, embedded = false }: { news: NewsItem[]; dict: Dictionary; authors: NewsAuthor[]; currentMemberId: string; embedded?: boolean }) {
   const en = dict.profil?.title === "My Account";
   const l = (fr: string, english: string) => en ? english : fr;
   const router = useRouter();
@@ -113,7 +180,7 @@ export default function NewsManager({ news, dict, embedded = false }: { news: Ne
         {!creating && !editingItem && <button type="button" onClick={() => { setCreating(true); setNotice(""); }} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-on-primary transition-colors hover:bg-primary/90"><span aria-hidden="true" className="material-symbols-outlined text-lg">add</span>{l("Nouvelle actualité", "New post")}</button>}
       </header>}
       {notice && <p role="status" className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary"><span aria-hidden="true" className="material-symbols-outlined text-lg">check_circle</span>{notice}</p>}
-      {creating || editingItem ? <NewsEditor key={editingItem?.id || "new"} item={editingItem} dict={dict} onCancel={closeEditor} onSuccess={() => { closeEditor(); setNotice(l("L'actualité a été enregistrée.", "The news post has been saved.")); }} /> : <>
+      {creating || editingItem ? <NewsEditor key={editingItem?.id || "new"} item={editingItem} dict={dict} authors={authors} currentMemberId={currentMemberId} onCancel={closeEditor} onSuccess={() => { closeEditor(); setNotice(l("L'actualité a été enregistrée.", "The news post has been saved.")); }} /> : <>
         <ManagerToolbar search={search} onSearch={setSearch} placeholder={l("Rechercher une actualité…", "Search news posts…")}>
           <select aria-label={l("Filtrer les actualités", "Filter news posts")} value={filter} onChange={event => setFilter(event.target.value)} className={inputClass + " sm:max-w-48"}>
             <option value="all">{l("Toutes les actualités", "All posts")}</option>

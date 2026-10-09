@@ -3,11 +3,13 @@
 import { useState, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { getPublicMemberName } from "@/utils/member-display";
 
 interface MemberNode {
   id: string;
   first_name: string;
   last_name: string;
+  hide_last_name?: boolean;
   photo_url: string | null;
   role_label: string;
   is_vp: boolean;
@@ -239,7 +241,7 @@ export default function PolesTree({ poles, labels }: PolesTreeProps) {
                   {active.vp.photo_url ? <Image src={active.vp.photo_url} alt="" fill sizes="48px" className="object-cover" /> : <span className="flex h-full w-full items-center justify-center font-bold text-on-surface-variant">{active.vp.first_name.charAt(0)}</span>}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-on-surface">{active.vp.first_name} {active.vp.last_name}</p>
+                  <p className="truncate text-sm font-bold text-on-surface">{getPublicMemberName(active.vp)}</p>
                   <p className="mt-0.5 text-[10px] uppercase tracking-wider text-on-surface-variant">{labels.map_lead}</p>
                 </div>
                 <span className="material-symbols-outlined ml-auto text-xl" style={{ color: active.color || "#83d9ff" }}>workspace_premium</span>
@@ -252,7 +254,7 @@ export default function PolesTree({ poles, labels }: PolesTreeProps) {
                     <span className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full bg-surface-container-high">
                       {member.photo_url ? <Image src={member.photo_url} alt="" fill sizes="28px" className="object-cover" /> : <span className="flex h-full w-full items-center justify-center text-[9px] font-bold text-on-surface-variant">{member.first_name.charAt(0)}</span>}
                     </span>
-                    <span className="truncate text-[11px] font-medium text-on-surface-variant group-hover:text-on-surface">{member.first_name}</span>
+                    <span className="truncate text-[11px] font-medium text-on-surface-variant group-hover:text-on-surface">{getPublicMemberName(member)}</span>
                   </Link>
                 ))}
               </div>

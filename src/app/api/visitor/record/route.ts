@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createVisitorAdminClient } from "@/utils/visitor-admin";
+import { getParisDateKey } from "@/utils/paris-time";
 
 export const runtime = "nodejs";
 
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-real-ip")?.trim() || forwarded;
   if (!ip) return NextResponse.json({ recorded: false, reason: "ip_unavailable" }, { status: 503 });
 
-  const visitDate = new Date().toISOString().slice(0, 10);
+  const visitDate = getParisDateKey();
   const visitorHash = createHmac("sha256", secret).update(visitDate).update(":").update(ip).digest("hex");
   const { error } = await admin.rpc("record_visitor_visit", {
     p_visit_date: visitDate,

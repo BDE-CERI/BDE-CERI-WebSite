@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import { formatParisDateTime } from "@/utils/paris-time";
 
 type Stats = {
   totalVisitors: number;
@@ -143,13 +144,13 @@ export default function VisitorStats({ english = false }: { english?: boolean })
 
         <div className="rounded-xl border border-outline-variant/15 px-4 py-3 text-xs leading-6 text-on-surface-variant">
           {stats.consentedOnly !== false && <p>{l("Seules les visites avec accord sont comptabilisées.", "Only visits with consent are counted.")}</p>}
-          <p>{l("Le total additionne les visites uniques par adresse IP et par jour UTC : une même personne peut être comptée un autre jour, et plusieurs personnes sur le même réseau peuvent être regroupées.", "The total counts unique visits per IP address and UTC day: a person can be counted again on another day, and several people on the same network may be grouped together.")}</p>
+          <p>{l("Le total additionne les visites uniques par adresse IP et par jour en heure de Paris : une même personne peut être comptée un autre jour, et plusieurs personnes sur le même réseau peuvent être regroupées.", "The total counts unique visits per IP address and calendar day in Paris time: a person can be counted again on another day, and several people on the same network may be grouped together.")}</p>
           <p>{l("Les visiteurs actifs sont une estimation sur les ", "Active visitors are estimated over the last ")}{number(stats.activeWindowMinutes)}{l(" dernières minutes.", " minutes.")}</p>
         </div>
       </>}
 
       <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-on-surface-variant">
-        {updatedAt && <span>{l("Dernière mise à jour : ", "Last updated: ")}{new Intl.DateTimeFormat(english ? "en-GB" : "fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(updatedAt)}</span>}
+        {updatedAt && <span>{l("Dernière mise à jour : ", "Last updated: ")}{formatParisDateTime(updatedAt, { hour: "2-digit", minute: "2-digit", second: "2-digit" }, english ? "en-GB" : "fr-FR")} {l("(heure de Paris)", "(Paris time)")}</span>}
         <span>{l("Actualisation automatique toutes les 30 s lorsque la page est visible.", "Refreshes automatically every 30 seconds while this page is visible.")}</span>
       </p>
     </section>

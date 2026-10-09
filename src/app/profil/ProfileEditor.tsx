@@ -9,7 +9,7 @@ export type MemberProfile = {
   id: string; first_name: string; last_name: string; email?: string | null; photo_url?: string | null;
   role?: string | null; role_label?: string | null; category?: string | null; pole_id?: string | null;
   bio?: string | null; responsibilities?: string | null; academic_journey?: string | null;
-  study_level?: string | null; discord?: string | null; instagram?: string | null; rank?: number | null; is_visible?: boolean | null;
+  study_level?: string | null; discord?: string | null; instagram?: string | null; rank?: number | null; is_visible?: boolean | null; hide_last_name?: boolean | null;
 };
 
 const studyLevels = ["L1", "BUT 1", "L1/2", "L2", "BUT 2", "L2/3", "L3", "BUT 3", "M1", "M2", "D1", "D2", "D3"];
@@ -44,7 +44,19 @@ export default function ProfileEditor({ member, canManage, editingOther = false,
                   <Field label={copy.first_name} required><input autoComplete="given-name" name="first_name" defaultValue={member.first_name} required maxLength={100} className={inputClass} /></Field>
                   <Field label={copy.last_name} required><input autoComplete="family-name" name="last_name" defaultValue={member.last_name} required maxLength={100} className={inputClass} /></Field>
                 </div>
-                <Field label={copy.email} hint={copy.email_hint}><input type="email" value={member.email || ""} disabled className={inputClass} /></Field>
+                <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-lowest p-4">
+                  <input type="hidden" name="hide_last_name" value="false" />
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input type="checkbox" name="hide_last_name" value="true" defaultChecked={member.hide_last_name !== false} aria-describedby={"hide-last-name-help-" + member.id} className="mt-0.5 size-4 shrink-0 accent-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary" />
+                    <span className="text-sm font-semibold leading-5">{english ? "Hide my last name on public pages" : "Masquer mon nom de famille sur les pages publiques"}</span>
+                  </label>
+                  <p id={"hide-last-name-help-" + member.id} className="ml-7 mt-2 text-xs leading-5 text-on-surface-variant">{english ? "Only your first name will appear on public pages: the team, profiles, departments and article signatures. Your last name remains available in the administration area." : "Seul votre prénom sera affiché sur les pages publiques : équipe, profils, pôles et signatures d’articles. Votre nom de famille reste disponible dans l’espace d’administration."}</p>
+                </div>
+                {editingOther ? <Field label={copy.email} hint={copy.email_hint}><input type="email" value={member.email || ""} disabled className={inputClass} /></Field> :
+                  <Link href="/profil?section=settings" className="inline-flex items-center gap-2 text-xs font-semibold text-tertiary hover:underline">
+                    <span aria-hidden="true" className="material-symbols-outlined text-base">settings</span>
+                    {english ? "Account email and sign-in settings" : "Adresse du compte et paramètres de connexion"}
+                  </Link>}
                 <div className={"grid gap-4 " + (canManage ? "sm:grid-cols-2" : "")}>
                   <Field label={copy.study_level} required>
                     <select name="study_level" defaultValue={member.study_level || ""} required className={inputClass}>

@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { getPastBoards, getPastBoardMembers } from "./actions";
+import { getPastBoards, getPastBoardMembers, type PastBoardMember } from "./actions";
+import type { getDictionary } from "@/locales/dictionaries";
+import { getPublicMemberName } from "@/utils/member-display";
 
 interface PastBoard {
   id: string;
@@ -12,16 +14,7 @@ interface PastBoard {
   cover_url?: string;
 }
 
-interface PastBoardMember {
-  id: string;
-  first_name: string;
-  last_name: string;
-  role_label: string;
-  study_year?: string;
-  photo_url?: string;
-}
-
-export default function PastBoards({ dict }: { dict: any }) {
+export default function PastBoards({ dict }: { dict: Awaited<ReturnType<typeof getDictionary>> }) {
   const [isOpen, setIsOpen] = useState(false);
   const [boards, setBoards] = useState<PastBoard[]>([]);
   const [loading, setLoading] = useState(false);
@@ -108,7 +101,7 @@ export default function PastBoards({ dict }: { dict: any }) {
                             <div key={m.id} className="flex items-center gap-4 group/member">
                               <div className="w-12 h-12 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/20 flex-shrink-0 transition-all duration-500 group-hover/member:border-primary/40">
                                 {m.photo_url ? (
-                                  <Image src={m.photo_url} alt={m.first_name} width={48} height={48} className="w-full h-full object-cover transition-all duration-500 filter grayscale group-hover/member:grayscale-0 group-hover/member:scale-105" />
+                                  <Image src={m.photo_url} alt={getPublicMemberName(m)} width={48} height={48} className="w-full h-full object-cover transition-all duration-500 filter grayscale group-hover/member:grayscale-0 group-hover/member:scale-105" />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center">
                                     <span className="material-symbols-outlined text-xs opacity-50">person</span>
@@ -117,7 +110,7 @@ export default function PastBoards({ dict }: { dict: any }) {
                               </div>
                               <div className="text-left">
                                 <p className="font-headline font-bold text-sm text-on-surface group-hover/member:text-primary transition-colors">
-                                  {m.first_name} {m.last_name}
+                                  {getPublicMemberName(m)}
                                 </p>
                                 <p className="text-[10px] uppercase tracking-wider text-on-surface-variant">
                                   {m.role_label}

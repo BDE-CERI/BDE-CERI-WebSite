@@ -81,7 +81,7 @@ export default function Header({
           })}
         </div>
 
-        {/* Right side: theme + lang + user/login */}
+        {/* Right side: theme + lang + signed-in account */}
         <div className="flex items-center space-x-4">
           {/* Theme Toggle */}
           <button
@@ -129,16 +129,7 @@ export default function Header({
                 </div>
               )}
             </Link>
-          ) : (
-            /* Icône login si pas connecté */
-            <Link
-              href="/login"
-              className="text-blue-200 hover:text-[#7bd0ff] transition-colors p-2 rounded-full hover:bg-surface-container-highest flex items-center justify-center"
-              title="Espace BDE"
-            >
-              <span className="material-symbols-outlined">admin_panel_settings</span>
-            </Link>
-          )}
+          ) : null}
         </div>
       </div>
     </nav>

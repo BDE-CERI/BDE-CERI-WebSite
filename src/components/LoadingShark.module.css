@@ -1,0 +1,145 @@
+.stage {
+  position: relative;
+  flex: 0 0 auto;
+  width: min(200px, 60vw);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  color: #53b9ea;
+  isolation: isolate;
+}
+
+.mascot {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 2;
+}
+
+.shark {
+  display: block;
+  width: 60%;
+  height: auto;
+  object-fit: contain;
+  user-select: none;
+  transform-origin: 50% 58%;
+  animation: swim 4.8s ease-in-out infinite;
+}
+
+.currents {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.currentLeft,
+.currentRight {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0.2;
+  animation: driftLeft 4.8s ease-in-out infinite;
+}
+
+.currentRight {
+  animation-name: driftRight;
+  animation-delay: -2.4s;
+}
+
+.shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 15%;
+  width: 38%;
+  height: 5%;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.13;
+  transform: translateX(-50%);
+  animation: breathe 4.8s ease-in-out infinite;
+}
+
+.bubble {
+  position: absolute;
+  width: 6px;
+  aspect-ratio: 1;
+  border: 1.2px solid currentColor;
+  border-radius: 50%;
+  opacity: 0;
+  animation: rise 5.4s ease-in-out infinite;
+}
+
+.bubbleOne {
+  right: 19%;
+  top: 65%;
+  animation-delay: -1.4s;
+}
+
+.bubbleTwo {
+  left: 22%;
+  top: 57%;
+  width: 8px;
+  animation-duration: 6.2s;
+  animation-delay: -4.1s;
+}
+
+.bubbleThree {
+  right: 33%;
+  top: 40%;
+  width: 4px;
+  animation-duration: 5.8s;
+  animation-delay: -3s;
+}
+
+.stage[data-paused="true"] * {
+  animation-play-state: paused;
+}
+
+@keyframes swim {
+  0%, 100% { transform: translateY(3px) rotate(-3deg); }
+  45% { transform: translateY(-5px) rotate(3deg); }
+  70% { transform: translateY(-2px) rotate(1deg); }
+}
+
+@keyframes driftLeft {
+  0%, 100% { transform: translateX(3px); opacity: 0.13; }
+  50% { transform: translateX(-4px); opacity: 0.3; }
+}
+
+@keyframes driftRight {
+  0%, 100% { transform: translateX(-3px); opacity: 0.13; }
+  50% { transform: translateX(4px); opacity: 0.3; }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: translateX(-50%) scaleX(1); opacity: 0.15; }
+  45% { transform: translateX(-50%) scaleX(0.82); opacity: 0.08; }
+}
+
+@keyframes rise {
+  0%, 12% { transform: translateY(8px) scale(0.7); opacity: 0; }
+  35% { opacity: 0.4; }
+  72% { opacity: 0.3; }
+  100% { transform: translateY(-35px) scale(1); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shark,
+  .currentLeft,
+  .currentRight,
+  .shadow,
+  .bubble {
+    animation: none;
+  }
+
+  .shark {
+    transform: none;
+  }
+
+  .bubble {
+    opacity: 0.25;
+  }
+}

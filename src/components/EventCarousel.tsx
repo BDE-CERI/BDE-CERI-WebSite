@@ -3,19 +3,24 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { formatParisDateTime } from "@/utils/paris-time";
+import type { getDictionary } from "@/locales/dictionaries";
 
-interface Event {
+type Dictionary = Awaited<ReturnType<typeof getDictionary>>;
+
+interface CarouselEvent {
   id: string;
   title: string;
-  category: string;
-  description: string;
-  short_description?: string;
-  image_url: string;
-  date_start: string;
-  location: string;
+  category?: string | null;
+  description?: string | null;
+  short_description?: string | null;
+  image_url?: string | null;
+  date_start?: string | null;
+  location?: string | null;
 }
 
-export default function EventCarousel({ events, dict }: { events: any[], dict: any }) {
+export default function EventCarousel({ events, dict }: { events: CarouselEvent[], dict: Dictionary }) {
+  const locale = dict.profil?.title === "My Account" ? "en-GB" : "fr-FR";
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -28,9 +33,9 @@ export default function EventCarousel({ events, dict }: { events: any[], dict: a
 
   if (!events || events.length === 0) return null;
 
-  const mainEvent = events[currentIndex];
-  const formatDate = (isoStr: string) => {
-    return new Date(isoStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const mainEvent = events[currentIndex % events.length];
+  const formatDate = (isoStr?: string | null) => {
+    return formatParisDateTime(isoStr, { month: "short", day: "numeric" }, locale);
   };
 
   return (
