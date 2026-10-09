@@ -2,22 +2,12 @@
 
 import { useEditMode } from "@/context/EditModeContext";
 
-export default function EditModeToggle({ dict }: { dict: any }) {
+export default function EditModeToggle({ dict }: { dict: { profil: { edit_mode: string } } }) {
   const { editMode, toggleEditMode } = useEditMode();
-
   return (
-    <button
-      onClick={toggleEditMode}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-        editMode ? "bg-primary" : "bg-surface-container-highest"
-      }`}
-    >
-      <span className="sr-only">{dict.profil.edit_mode}</span>
-      <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-          editMode ? "translate-x-6" : "translate-x-1"
-        }`}
-      />
+    <button type="button" role="switch" aria-checked={editMode} aria-label={dict.profil.edit_mode} onClick={toggleEditMode}
+      className={"relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tertiary " + (editMode ? "border-tertiary bg-tertiary" : "border-outline-variant/40 bg-surface-container-highest")}>
+      <span aria-hidden="true" className={"inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform " + (editMode ? "translate-x-6" : "translate-x-1")} />
     </button>
   );
 }

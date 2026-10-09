@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, DragEvent, ChangeEvent, useEffect } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import type { ChangeEvent, DragEvent, PointerEvent } from "react";
 
 interface ImageUploadProps {
   name: string;
@@ -8,424 +9,494 @@ interface ImageUploadProps {
   required?: boolean;
   aspectRatio?: number;
   circular?: boolean;
+  english?: boolean;
 }
 
-export default function ImageUpload({ name, defaultValue, required, aspectRatio, circular }: ImageUploadProps) {
-  const [preview, setPreview] = useState<string | null>(defaultValue || null);
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
+type Offset = { x: number; y: number };
 
-  // States for Cropping Modal
-  const [showCropModal, setShowCropModal] = useState(false);
-  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
-  const [cropFileName, setCropFileName] = useState<string>("");
+function getCropDimensions(width: number, height: number, ratio: number, rotation: number) {
+  const rotated = rotation % 180 !== 0;
+  const scale = Math.max(ratio / (rotated ? height : width), 1 / (rotated ? width : height));
+  return { width: width * scale, height: height * scale };
+}
+
+export default function ImageUpload({ name, defaultValue, required, aspectRatio, circular, english = false }: ImageUploadProps) {
+  const inputId = useId();
+  const titleId = useId();
+  const [syncedDefault, setSyncedDefault] = useState(defaultValue);
+  const [preview, setPreview] = useState<string | null>(defaultValue || null);
+  const [selectedName, setSelectedName] = useState("");
+  const [error, setError] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [isReading, setIsReading] = useState(false);
+  const [isSavingCrop, setIsSavingCrop] = useState(false);
+  const [cropSource, setCropSource] = useState<string | null>(null);
+  const [cropName, setCropName] = useState("");
   const [cropZoom, setCropZoom] = useState(1);
   const [cropRotation, setCropRotation] = useState(0);
-  const [cropOffset, setCropOffset] = useState({ x: 0, y: 0 });
-  const [imageDisplaySize, setImageDisplaySize] = useState({ width: 280, height: 280 });
+  const [cropOffset, setCropOffset] = useState<Offset>({ x: 0, y: 0 });
+  const [naturalSize, setNaturalSize] = useState({ width: 1, height: 1 });
 
-  // Dragging states
-  const [isCroppingDrag, setIsCroppingDrag] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [dragStartOffset, setDragStartOffset] = useState({ x: 0, y: 0 });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const cropImageRef = useRef<HTMLImageElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const committedFileRef = useRef<File | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
+  const cropUrlRef = useRef<string | null>(null);
+  const dispatchingRef = useRef(false);
+  const operationRef = useRef(0);
+  const dragRef = useRef<{ pointerId: number; x: number; y: number; offset: Offset } | null>(null);
+  const ratio = aspectRatio && Number.isFinite(aspectRatio) && aspectRatio > 0 ? Math.min(10, Math.max(0.1, aspectRatio)) : 1;
+  const dimensions = getCropDimensions(naturalSize.width, naturalSize.height, ratio, cropRotation);
+  const rotated = cropRotation % 180 !== 0;
+  const bounds = {
+    x: Math.max(0, ((rotated ? dimensions.height : dimensions.width) * cropZoom - ratio) / (2 * ratio)),
+    y: Math.max(0, ((rotated ? dimensions.width : dimensions.height) * cropZoom - 1) / 2),
+  };
 
-  // Touch states
-  const [isCroppingTouch, setIsCroppingTouch] = useState(false);
-  const [touchStart, setTouchStart] = useState({ x: 0, y: 0 });
-  const [touchStartOffset, setTouchStartOffset] = useState({ x: 0, y: 0 });
 
-  const cropImgRef = useRef<HTMLImageElement>(null);
+  const copy = english ? {
+    formatError: "Choose a JPEG, PNG, WebP, GIF or AVIF image.",
+    emptyError: "This file is empty. Choose another image.",
+    sizeError: "This image exceeds 5 MB. Choose a smaller file.",
+    preparing: "Preparing the image…",
+    preparingValidity: "Please wait while the image is prepared.",
+    cropValidity: "Confirm or cancel cropping before saving.",
+    readError: "This image could not be read. Try another file.",
+    cropError: "Cropping failed. Try again or choose another image.",
+    preview: "Preview of the selected image",
+    drop: "Drop an image here",
+    chooseBelow: "or choose a file below",
+    replace: "Replace image",
+    choose: "Choose image",
+    formats: "JPEG, PNG, WebP, GIF or AVIF · up to 5 MB.",
+    undo: "Cancel replacement",
+    remove: "Remove selected file",
+    cropTitle: "Adjust the photo",
+    cropCancel: "Cancel cropping",
+    cropHelp: "Drag the image or use the sliders to adjust the framing. The file will be saved as JPEG.",
+    cropPreview: "Crop preview",
+    zoom: "Zoom",
+    horizontal: "Horizontal position",
+    vertical: "Vertical position",
+    rotate: "Rotate by 90°",
+    reset: "Reset",
+    cancel: "Cancel",
+    save: "Confirm crop",
+  } : {
+    formatError: "Choisissez une image JPEG, PNG, WebP, GIF ou AVIF.",
+    emptyError: "Ce fichier est vide. Choisissez une autre image.",
+    sizeError: "Cette image dépasse 5 Mo. Choisissez un fichier plus léger.",
+    preparing: "Préparation de l’image…",
+    preparingValidity: "Veuillez attendre la préparation de l’image.",
+    cropValidity: "Validez ou annulez le recadrage avant d’enregistrer.",
+    readError: "Cette image ne peut pas être lue. Essayez un autre fichier.",
+    cropError: "Le recadrage a échoué. Réessayez ou choisissez une autre image.",
+    preview: "Aperçu de l’image choisie",
+    drop: "Glissez une image ici",
+    chooseBelow: "ou choisissez un fichier ci-dessous",
+    replace: "Remplacer l’image",
+    choose: "Choisir une image",
+    formats: "JPEG, PNG, WebP, GIF ou AVIF · 5 Mo maximum.",
+    undo: "Annuler le remplacement",
+    remove: "Retirer le fichier sélectionné",
+    cropTitle: "Ajuster la photo",
+    cropCancel: "Annuler le recadrage",
+    cropHelp: "Déplacez l’image ou utilisez les curseurs pour ajuster le cadrage. Le fichier sera enregistré en JPEG.",
+    cropPreview: "Aperçu du recadrage",
+    zoom: "Zoom",
+    horizontal: "Position horizontale",
+    vertical: "Position verticale",
+    rotate: "Pivoter de 90°",
+    reset: "Réinitialiser",
+    cancel: "Annuler",
+    save: "Valider le recadrage",
+  };
 
-  // Smooth dragging via global window listeners for Desktop Mouse
+  // A refreshed saved image replaces the preview only when no selection is in progress.
+  // This conditional state adjustment also avoids a delayed effect overwriting a new file.
+  if (defaultValue !== syncedDefault && !selectedName && !cropSource && !isReading && !isSavingCrop) {
+    setSyncedDefault(defaultValue);
+    setPreview(defaultValue || null);
+  }
+
   useEffect(() => {
-    if (!isCroppingDrag) return;
+    const input = fileInputRef.current;
+    const form = input?.form;
+    if (!input || !form) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const dx = e.clientX - dragStart.x;
-      const dy = e.clientY - dragStart.y;
-      setCropOffset({
-        x: dragStartOffset.x + dx,
-        y: dragStartOffset.y + dy,
-      });
-    };
-
-    const handleMouseUp = () => {
-      setIsCroppingDrag(false);
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isCroppingDrag, dragStart, dragStartOffset]);
-
-  // Smooth dragging via global window listeners for Mobile Touch
-  useEffect(() => {
-    if (!isCroppingTouch) return;
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 0) return;
-      const dx = e.touches[0].clientX - touchStart.x;
-      const dy = e.touches[0].clientY - touchStart.y;
-      setCropOffset({
-        x: touchStartOffset.x + dx,
-        y: touchStartOffset.y + dy,
-      });
-    };
-
-    const handleTouchEnd = () => {
-      setIsCroppingTouch(false);
-    };
-
-    window.addEventListener("touchmove", handleTouchMove, { passive: true });
-    window.addEventListener("touchend", handleTouchEnd);
-    return () => {
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("touchend", handleTouchEnd);
-    };
-  }, [isCroppingTouch, touchStart, touchStartOffset]);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsCroppingDrag(true);
-    setDragStart({ x: e.clientX, y: e.clientY });
-    setDragStartOffset({ ...cropOffset });
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 0) return;
-    setIsCroppingTouch(true);
-    setTouchStart({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-    setTouchStartOffset({ ...cropOffset });
-  };
-
-  const handleFile = (file: File) => {
-    if (file && file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        if (aspectRatio) {
-          // Open cropping modal
-          setCropImageSrc(result);
-          setCropFileName(file.name);
-          setCropZoom(1);
-          setCropRotation(0);
-          setCropOffset({ x: 0, y: 0 });
-          setShowCropModal(true);
-        } else {
-          // Standard preview directly
-          setPreview(result);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const onDragOver = (e: DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const onDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const onDrop = (e: DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      if (fileInputRef.current) {
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        fileInputRef.current.files = dataTransfer.files;
+    const clearSelection = (preservePreview: boolean) => {
+      operationRef.current += 1;
+      committedFileRef.current = null;
+      input.value = "";
+      input.setCustomValidity("");
+      setSelectedName("");
+      setError("");
+      setIsReading(false);
+      setIsSavingCrop(false);
+      setIsDragging(false);
+      setSyncedDefault(defaultValue);
+      if (cropUrlRef.current) URL.revokeObjectURL(cropUrlRef.current);
+      cropUrlRef.current = null;
+      dragRef.current = null;
+      setCropSource(null);
+      dialogRef.current?.close();
+      if (!preservePreview) {
+        if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = null;
+        setPreview(defaultValue || null);
       }
-      handleFile(file);
-    }
-  };
-
-  const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
-  };
-
-  const clearImage = () => {
-    setPreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const handleCropSave = () => {
-    if (!cropImageSrc || !cropImgRef.current) return;
-
-    const img = new window.Image();
-    img.src = cropImageSrc;
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = 500;
-      canvas.height = 500;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      // Fill background
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, 500, 500);
-
-      // Translate context to center of the canvas
-      ctx.translate(250, 250);
-      
-      // Apply rotation
-      ctx.rotate((cropRotation * Math.PI) / 180);
-
-      // Sizing ratio: display size was 280x280. Canvas size is 500x500.
-      const S = 500 / 280;
-
-      // Draw the image
-      const drawX = cropOffset.x * S;
-      const drawY = cropOffset.y * S;
-      const drawW = imageDisplaySize.width * S * cropZoom;
-      const drawH = imageDisplaySize.height * S * cropZoom;
-
-      ctx.drawImage(img, drawX - drawW / 2, drawY - drawH / 2, drawW, drawH);
-
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            const croppedUrl = URL.createObjectURL(blob);
-            setPreview(croppedUrl);
-
-            // Set cropped file to the file input programmatically
-            if (fileInputRef.current) {
-              const croppedFile = new File([blob], cropFileName || "profile.jpg", {
-                type: "image/jpeg",
-              });
-              const dataTransfer = new DataTransfer();
-              dataTransfer.items.add(croppedFile);
-              fileInputRef.current.files = dataTransfer.files;
-            }
-
-            // Close modal
-            setShowCropModal(false);
-            setCropImageSrc(null);
-          }
-        },
-        "image/jpeg",
-        0.9
-      );
+      // Do not emit input/change here: a successful save must leave the form clean.
     };
+
+    const onReset = () => clearSelection(false);
+    const onSaved = () => clearSelection(true);
+    form.addEventListener("reset", onReset);
+    form.addEventListener("admin:saved", onSaved);
+    return () => {
+      form.removeEventListener("reset", onReset);
+      form.removeEventListener("admin:saved", onSaved);
+    };
+  }, [defaultValue]);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (cropSource && dialog && !dialog.open) dialog.showModal();
+    return () => {
+      if (dialog?.open) dialog.close();
+    };
+  }, [cropSource]);
+
+  useEffect(() => () => {
+    operationRef.current += 1;
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    if (cropUrlRef.current) URL.revokeObjectURL(cropUrlRef.current);
+  }, []);
+
+  // The parent form receives programmatic selections just like native file selections.
+  const writeInputFile = (file: File | null) => {
+    const input = fileInputRef.current;
+    if (!input) return;
+    const transfer = new DataTransfer();
+    if (file) transfer.items.add(file);
+    input.files = transfer.files;
+    input.setCustomValidity("");
+    dispatchingRef.current = true;
+    try {
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    } finally {
+      dispatchingRef.current = false;
+    }
+  };
+
+  const commitFile = (file: File, url: string) => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = url;
+    committedFileRef.current = file;
+    setPreview(url);
+    setSelectedName(file.name);
+    setError("");
+    writeInputFile(file);
+  };
+
+  const releaseCrop = () => {
+    if (cropUrlRef.current) URL.revokeObjectURL(cropUrlRef.current);
+    cropUrlRef.current = null;
+    dragRef.current = null;
+    setCropSource(null);
+    dialogRef.current?.close();
+  };
+
+  const cancelCrop = () => {
+    if (isSavingCrop) return;
+    operationRef.current += 1;
+    writeInputFile(committedFileRef.current);
+    releaseCrop();
+    setError("");
+  };
+
+  const chooseFile = async (file: File) => {
+    const operation = ++operationRef.current;
+    setError("");
+    setIsReading(false);
+    if (!IMAGE_TYPES.includes(file.type)) {
+      writeInputFile(committedFileRef.current);
+      setError(copy.formatError);
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE || file.size === 0) {
+      writeInputFile(committedFileRef.current);
+      setError(file.size === 0 ? copy.emptyError : copy.sizeError);
+      return;
+    }
+    setIsReading(true);
+    fileInputRef.current?.setCustomValidity(copy.preparingValidity);
+    const url = URL.createObjectURL(file);
+    try {
+      const image = new window.Image();
+      image.src = url;
+      await image.decode();
+      if (operation !== operationRef.current) {
+        URL.revokeObjectURL(url);
+        return;
+      }
+      if (!image.naturalWidth || !image.naturalHeight) throw new Error("Invalid image");
+      if (aspectRatio) {
+        cropUrlRef.current = url;
+        setNaturalSize({ width: image.naturalWidth, height: image.naturalHeight });
+        setCropName(file.name);
+        setCropZoom(1);
+        setCropRotation(0);
+        setCropOffset({ x: 0, y: 0 });
+        setCropSource(url);
+        fileInputRef.current?.setCustomValidity(copy.cropValidity);
+      } else {
+        commitFile(file, url);
+      }
+    } catch {
+      URL.revokeObjectURL(url);
+      if (operation === operationRef.current) {
+        writeInputFile(committedFileRef.current);
+        setError(copy.readError);
+      }
+    } finally {
+      if (operation === operationRef.current) setIsReading(false);
+    }
+  };
+
+  const onFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (dispatchingRef.current) return;
+    const file = event.currentTarget.files?.[0];
+    if (file) void chooseFile(file);
+    else {
+      operationRef.current += 1;
+      setIsReading(false);
+      writeInputFile(committedFileRef.current);
+    }
+  };
+
+  const onDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragging(false);
+    if (isReading || isSavingCrop || cropSource) return;
+    const file = event.dataTransfer.files[0];
+    if (file) void chooseFile(file);
+  };
+
+  const undoSelection = () => {
+    operationRef.current += 1;
+    committedFileRef.current = null;
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = null;
+    setSelectedName("");
+    setPreview(defaultValue || null);
+    setError("");
+    writeInputFile(null);
+  };
+
+  const setClampedOffset = (offset: Offset) => setCropOffset({
+    x: Math.min(bounds.x, Math.max(-bounds.x, offset.x)),
+    y: Math.min(bounds.y, Math.max(-bounds.y, offset.y)),
+  });
+
+  const startDrag = (event: PointerEvent<HTMLDivElement>) => {
+    if (isSavingCrop || event.button !== 0) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, offset: cropOffset };
+  };
+
+  const moveDrag = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    const rect = viewportRef.current?.getBoundingClientRect();
+    if (!drag || drag.pointerId !== event.pointerId || !rect) return;
+    setClampedOffset({ x: drag.offset.x + (event.clientX - drag.x) / rect.width, y: drag.offset.y + (event.clientY - drag.y) / rect.height });
+  };
+
+  const finishDrag = () => { dragRef.current = null; };
+
+  const saveCrop = async () => {
+    const image = cropImageRef.current;
+    if (!image || !image.complete || isSavingCrop) return;
+    const operation = ++operationRef.current;
+    setIsSavingCrop(true);
+    setError("");
+    try {
+      const width = Math.max(1, Math.round(ratio >= 1 ? 720 : 720 * ratio));
+      const height = Math.max(1, Math.round(ratio >= 1 ? 720 / ratio : 720));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Canvas unavailable");
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, width, height);
+      context.translate(width * (0.5 + cropOffset.x), height * (0.5 + cropOffset.y));
+      context.rotate(cropRotation * Math.PI / 180);
+      const scale = height;
+      const drawWidth = dimensions.width * scale * cropZoom;
+      const drawHeight = dimensions.height * scale * cropZoom;
+      context.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+      const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((result) => result ? resolve(result) : reject(new Error("Image encoding failed")), "image/jpeg", 0.9));
+      if (operation !== operationRef.current) return;
+      const file = new File([blob], cropName.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+      commitFile(file, URL.createObjectURL(blob));
+      releaseCrop();
+    } catch {
+      setError(copy.cropError);
+    } finally {
+      if (operation === operationRef.current) setIsSavingCrop(false);
+    }
   };
 
   return (
-    <div className="space-y-2">
+    <div className="min-w-0 space-y-3">
       <div
-        onDragOver={onDragOver}
-        onDragLeave={onDragLeave}
+        onDragOver={(event) => { event.preventDefault(); setIsDragging(true); }}
+        onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsDragging(false); }}
         onDrop={onDrop}
-        onClick={() => fileInputRef.current?.click()}
-        className={`
-          relative group cursor-pointer
-          w-full aspect-video rounded-xl border-2 border-dashed transition-all
-          flex flex-col items-center justify-center overflow-hidden
-          ${isDragging 
-            ? "border-primary bg-primary/10 scale-[1.02]" 
-            : "border-outline-variant/30 bg-surface-container-high hover:border-primary/50 hover:bg-surface-container-highest"}
-        `}
+        className={"overflow-hidden rounded-xl border-2 border-dashed transition-colors " + (isDragging ? "border-primary bg-primary/10" : "border-outline-variant/30 bg-surface-container-high")}
       >
-        <input
-          ref={fileInputRef}
-          type="file"
-          name={name}
-          accept="image/*"
-          required={required && !preview}
-          onChange={onFileChange}
-          className="hidden"
-        />
-
-        {preview ? (
-          <>
-            <img src={preview} alt="Aperçu" className="w-full h-full object-cover animate-fade-in" />
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-              <span className="material-symbols-outlined text-white text-3xl">sync</span>
-              <button 
-                type="button"
-                onClick={(e) => { e.stopPropagation(); clearImage(); }}
-                className="bg-error text-on-error p-2 rounded-full shadow-lg hover:scale-110 transition-transform"
-              >
-                <span className="material-symbols-outlined">delete</span>
-              </button>
+        <div className="relative flex w-full items-center justify-center overflow-hidden" style={{ aspectRatio: aspectRatio || 16 / 9 }}>
+          {preview ? (
+            // eslint-disable-next-line @next/next/no-img-element -- Local blob previews need a native image and do not use the optimisation endpoint.
+            <img src={preview} alt={copy.preview} className={"h-full w-full object-cover " + (circular ? "rounded-full" : "")} />
+          ) : (
+            <div className="p-6 text-center">
+              <span aria-hidden="true" className="material-symbols-outlined mb-2 text-3xl text-primary">add_photo_alternate</span>
+              <p className="text-sm font-bold">{copy.drop}</p>
+              <p className="mt-1 text-xs text-on-surface-variant">{copy.chooseBelow}</p>
             </div>
-          </>
-        ) : (
-          <div className="text-center p-6">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3 text-primary">
-              <span className="material-symbols-outlined text-3xl">add_photo_alternate</span>
-            </div>
-            <p className="font-headline font-bold text-sm text-on-surface">
-              Glisser-déposer ou cliquer
-            </p>
-            <p className="text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">
-              PNG, JPG ou WebP (max 5 Mo)
-            </p>
-          </div>
-        )}
+          )}
+        </div>
+        <div className="border-t border-outline-variant/15 p-3">
+          <label htmlFor={inputId} className="mb-2 block text-sm font-bold">
+            {defaultValue ? copy.replace : copy.choose}
+          </label>
+          <input
+            ref={fileInputRef}
+            id={inputId}
+            type="file"
+            name={name}
+            accept={IMAGE_TYPES.join(",")}
+            required={required && !defaultValue}
+            aria-busy={isReading || isSavingCrop}
+            onChange={onFileChange}
+            aria-invalid={!!error}
+            aria-describedby={inputId + "-help" + (error ? " " + inputId + "-error" : "")}
+            className="block w-full min-w-0 rounded-lg text-xs text-on-surface-variant file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-2.5 file:text-xs file:font-bold file:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
+          />
+          <p id={inputId + "-help"} className="mt-2 text-xs leading-relaxed text-on-surface-variant">
+            {copy.formats}
+          </p>
+        </div>
       </div>
-
-      {/* Cropping Modal */}
-      {showCropModal && cropImageSrc && (
-        <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 backdrop-blur-md p-4"
-          onClick={() => {
-            setShowCropModal(false);
-            setCropImageSrc(null);
-            if (fileInputRef.current) fileInputRef.current.value = "";
-          }}
-        >
-          <div 
-            className="bg-surface-container-lowest opacity-100 rounded-3xl border border-outline-variant/20 max-w-md w-full shadow-2xl p-6 flex flex-col gap-6 transform transition-all duration-300 scale-100"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-outline-variant/10 pb-3">
-              <h3 className="font-headline text-lg font-bold text-on-surface flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary">crop</span>
-                Ajuster la photo
-              </h3>
-              <button 
-                type="button"
-                onClick={() => {
-                  setShowCropModal(false);
-                  setCropImageSrc(null);
-                  if (fileInputRef.current) fileInputRef.current.value = "";
-                }}
-                className="text-on-surface-variant hover:text-on-surface transition-colors"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-
-            {/* Viewport for Cropping */}
-            <div className="relative w-[280px] h-[280px] mx-auto rounded-2xl overflow-hidden bg-black/60 shadow-inner flex items-center justify-center select-none border border-outline-variant/10">
-              <img
-                ref={cropImgRef}
-                src={cropImageSrc}
-                alt="Recadrage"
-                onMouseDown={handleMouseDown}
-                onTouchStart={handleTouchStart}
-                className="select-none pointer-events-auto max-w-none"
-                style={{
-                  position: "absolute",
-                  left: "50%",
-                  top: "50%",
-                  transform: `translate(-50%, -50%) translate(${cropOffset.x}px, ${cropOffset.y}px) scale(${cropZoom}) rotate(${cropRotation}deg)`,
-                  transformOrigin: "center center",
-                  cursor: isCroppingDrag || isCroppingTouch ? "grabbing" : "grab",
-                  userSelect: "none",
-                  width: imageDisplaySize.width,
-                  height: imageDisplaySize.height,
-                }}
-                onLoad={(e) => {
-                  const img = e.currentTarget;
-                  const imgRatio = img.naturalWidth / img.naturalHeight;
-                  let displayW = 280;
-                  let displayH = 280;
-                  if (imgRatio > 1) {
-                    displayH = 280;
-                    displayW = 280 * imgRatio;
-                  } else {
-                    displayW = 280;
-                    displayH = 280 / imgRatio;
-                  }
-                  setImageDisplaySize({ width: displayW, height: displayH });
-                }}
-              />
-
-              {/* Crop Mask Overlay */}
-              <div 
-                className="absolute pointer-events-none z-10 border border-white/25"
-                style={{
-                  borderRadius: circular ? "50%" : "12px",
-                  top: "15px",
-                  left: "15px",
-                  right: "15px",
-                  bottom: "15px",
-                  boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.65)",
-                }}
-              />
-            </div>
-
-            {/* Controls */}
-            <div className="space-y-4">
-              {/* Zoom Slider */}
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-sm text-on-surface-variant">zoom_out</span>
-                <input
-                  type="range"
-                  min="1"
-                  max="3"
-                  step="0.01"
-                  value={cropZoom}
-                  onChange={(e) => setCropZoom(parseFloat(e.target.value))}
-                  className="flex-grow accent-primary cursor-pointer h-1.5 bg-surface-container-highest rounded-lg appearance-none"
-                />
-                <span className="material-symbols-outlined text-sm text-on-surface-variant">zoom_in</span>
-                <span className="text-xs font-mono font-bold text-primary w-8 text-right">
-                  {Math.round(cropZoom * 100)}%
-                </span>
-              </div>
-
-              {/* Rotate and Reset buttons */}
-              <div className="flex items-center justify-between gap-4">
-                <button
-                  type="button"
-                  onClick={() => setCropRotation((prev) => (prev + 90) % 360)}
-                  className="flex items-center gap-2 text-xs font-bold text-on-surface-variant hover:text-on-surface bg-surface-container-highest/60 hover:bg-surface-container-highest px-3 py-2 rounded-xl transition-colors border border-outline-variant/10"
-                >
-                  <span className="material-symbols-outlined text-sm">rotate_right</span>
-                  Faire pivoter (90°)
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCropZoom(1);
-                    setCropRotation(0);
-                    setCropOffset({ x: 0, y: 0 });
-                  }}
-                  className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
-                >
-                  Réinitialiser
-                </button>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 border-t border-outline-variant/10 pt-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowCropModal(false);
-                  setCropImageSrc(null);
-                  if (fileInputRef.current) fileInputRef.current.value = "";
-                }}
-                className="flex-1 bg-surface-container-highest hover:bg-surface-container-highest/80 text-on-surface font-bold py-2.5 rounded-xl text-sm transition-colors border border-outline-variant/10"
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                onClick={handleCropSave}
-                className="flex-grow-[2] bg-primary hover:bg-primary/90 text-on-primary font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-colors shadow-lg shadow-primary/20"
-              >
-                <span className="material-symbols-outlined text-sm">check</span>
-                Valider et recadrer
-              </button>
-            </div>
-          </div>
+      {isReading && <p role="status" className="text-xs text-on-surface-variant">{copy.preparing}</p>}
+      {selectedName && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="min-w-0 break-all text-xs text-on-surface-variant">{selectedName}</p>
+          <button type="button" disabled={isReading || isSavingCrop} onClick={undoSelection} className="min-h-10 rounded-lg border border-outline-variant/25 px-3 py-2 text-xs font-bold hover:bg-surface-container-high disabled:opacity-50">
+            {defaultValue ? copy.undo : copy.remove}
+          </button>
         </div>
       )}
+      {error && !cropSource && <p id={inputId + "-error"} role="alert" className="rounded-lg bg-error/10 p-3 text-sm text-error">{error}</p>}
+
+      <dialog
+        ref={dialogRef}
+        aria-labelledby={titleId}
+        aria-describedby={titleId + "-help"}
+        onCancel={(event) => { event.preventDefault(); cancelCrop(); }}
+        className="fixed inset-0 m-auto overflow-y-auto rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-4 text-on-surface shadow-2xl backdrop:bg-black/75 sm:p-6"
+        style={{ width: "min(28rem, calc(100vw - 2rem))", maxHeight: "calc(100dvh - 2rem)" }}
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 id={titleId} className="font-headline text-lg font-bold">{copy.cropTitle}</h3>
+          <button type="button" onClick={cancelCrop} disabled={isSavingCrop} aria-label={copy.cropCancel} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg hover:bg-surface-container-high disabled:opacity-50">
+            <span aria-hidden="true" className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <p id={titleId + "-help"} className="mb-4 text-xs leading-relaxed text-on-surface-variant">
+          {copy.cropHelp}
+        </p>
+        {cropSource && (
+          <div
+            ref={viewportRef}
+            onPointerDown={startDrag}
+            onPointerMove={moveDrag}
+            onPointerUp={finishDrag}
+            onPointerCancel={finishDrag}
+            className="relative mx-auto touch-none select-none overflow-hidden bg-black"
+            style={{ width: "100%", maxWidth: Math.min(300, 300 * ratio), aspectRatio: ratio, borderRadius: circular ? "50%" : "0.75rem", cursor: "grab" }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- The crop canvas needs this native image element and its decoded pixels. */}
+            <img
+              ref={cropImageRef}
+              src={cropSource}
+              alt={copy.cropPreview}
+              draggable={false}
+              className="pointer-events-none absolute max-w-none"
+              style={{
+                left: (50 + cropOffset.x * 100) + "%",
+                top: (50 + cropOffset.y * 100) + "%",
+                width: dimensions.width / ratio * 100 + "%",
+                height: dimensions.height * 100 + "%",
+                transform: "translate(-50%, -50%) rotate(" + cropRotation + "deg) scale(" + cropZoom + ")",
+                transformOrigin: "center",
+              }}
+            />
+          </div>
+        )}
+        <fieldset disabled={isSavingCrop} className="mt-5 space-y-4 disabled:opacity-60">
+          <label className="block text-xs font-bold">
+            {copy.zoom} · {Math.round(cropZoom * 100)} %
+            <input
+              type="range" min="1" max="3" step="0.01" value={cropZoom}
+              onChange={(event) => {
+                const zoom = Number(event.target.value);
+                const nextBounds = {
+                  x: Math.max(0, ((rotated ? dimensions.height : dimensions.width) * zoom - ratio) / (2 * ratio)),
+                  y: Math.max(0, ((rotated ? dimensions.width : dimensions.height) * zoom - 1) / 2),
+                };
+                setCropZoom(zoom);
+                setCropOffset((offset) => ({ x: Math.min(nextBounds.x, Math.max(-nextBounds.x, offset.x)), y: Math.min(nextBounds.y, Math.max(-nextBounds.y, offset.y)) }));
+              }}
+              className="mt-2 block w-full accent-primary"
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-4">
+            <label className="block text-xs font-bold">
+              {copy.horizontal}
+              <input type="range" min={-bounds.x} max={bounds.x || 0.001} step="0.001" value={cropOffset.x} disabled={bounds.x === 0} onChange={(event) => setClampedOffset({ ...cropOffset, x: Number(event.target.value) })} className="mt-2 block w-full accent-primary disabled:opacity-40" />
+            </label>
+            <label className="block text-xs font-bold">
+              {copy.vertical}
+              <input type="range" min={-bounds.y} max={bounds.y || 0.001} step="0.001" value={cropOffset.y} disabled={bounds.y === 0} onChange={(event) => setClampedOffset({ ...cropOffset, y: Number(event.target.value) })} className="mt-2 block w-full accent-primary disabled:opacity-40" />
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => { setCropRotation((rotation) => (rotation + 90) % 360); setCropOffset({ x: 0, y: 0 }); }} className="min-h-10 rounded-lg border border-outline-variant/25 px-3 py-2 text-xs font-bold hover:bg-surface-container-high">
+              {copy.rotate}
+            </button>
+            <button type="button" onClick={() => { setCropRotation(0); setCropZoom(1); setCropOffset({ x: 0, y: 0 }); }} className="min-h-10 rounded-lg px-3 py-2 text-xs font-bold text-primary hover:bg-primary/10">
+              {copy.reset}
+            </button>
+          </div>
+        </fieldset>
+        {error && <p id={inputId + "-error"} role="alert" className="mt-4 rounded-lg bg-error/10 p-3 text-sm text-error">{error}</p>}
+        <div className="mt-5 flex flex-wrap gap-2 border-t border-outline-variant/20 pt-4">
+          <button type="button" onClick={cancelCrop} disabled={isSavingCrop} className="min-h-11 flex-1 rounded-xl border border-outline-variant/30 px-3 py-2 text-sm font-bold disabled:opacity-50">
+            {copy.cancel}
+          </button>
+          <button type="button" onClick={() => void saveCrop()} disabled={isSavingCrop} className="min-h-11 flex-[2] rounded-xl bg-primary px-3 py-2 text-sm font-bold text-on-primary disabled:opacity-50">
+            {isSavingCrop ? copy.preparing : copy.save}
+          </button>
+        </div>
+      </dialog>
     </div>
   );
 }

@@ -47,6 +47,7 @@ export default async function Home() {
       title: "The Midnight Masquerade",
       category: "Headline Event",
       description: "Our flagship event of the semester. Formal attire required. Identities optional.",
+      short_description: null,
       date_start: new Date(new Date().setMonth(9, 31)).toISOString(),
       location: "Secret Location",
       image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuC1Csx9XytUFcnaj9-80c3AdoLyoCl09Hn3cYIXr5zFwE_ng0vT6M2wAFHhctqlYN1VAPzzczxDCRLK-arIqeAhrl7KQZ6EdMY7phY3BBI3qFbCTGAZRhquIcoobJIMnWPs2KNoKSOUs6X7BxtPSxx1EpQMG7AaQr_pfHjC8D2bVCSeCbhM9jyRB4QdORjjmDC2qaKxx_1Q98m9QKoQ_sAvjzIVWd62gbclKgX6iboqT2XNRdc4SilmWwrPDw79aU8fUgqS4olL4k6q",
@@ -56,6 +57,7 @@ export default async function Home() {
       title: "Alumni Mixer",
       category: "Mixer",
       description: "Connect with past members in an intimate, low-light setting. Drinks provided.",
+      short_description: null,
       date_start: new Date(new Date().setMonth(10, 12)).toISOString(),
       location: "CERI",
     }
@@ -63,6 +65,10 @@ export default async function Home() {
 
   const upcomingEvents = eventsData && eventsData.length > 0 ? eventsData : defaultEvents;
   const secondaryEvent = upcomingEvents[1] || upcomingEvents[0];
+  const news = (newsData ?? []).map(item => ({
+    ...item,
+    members: Array.isArray(item.members) ? item.members[0] : item.members ?? undefined,
+  }));
 
   const formatDate = (isoStr: string) => {
     return new Date(isoStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -160,7 +166,7 @@ export default async function Home() {
       </section>
 
       {/* News Section */}
-      <NewsSection news={newsData || []} dict={dict} isAdmin={isAdminNews} />
+      <NewsSection news={news} dict={dict} isAdmin={isAdminNews} />
 
       <section className="py-24 bg-surface relative overflow-hidden z-10">
         <div className="absolute inset-0 z-0">
