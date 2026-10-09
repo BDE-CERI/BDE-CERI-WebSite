@@ -81,7 +81,7 @@ body {
     background-color: var(--color-surface);
     color: var(--color-on-surface);
     font-family: var(--font-body);
-    transition: var(--transition-theme);
+    transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 .glass-panel {

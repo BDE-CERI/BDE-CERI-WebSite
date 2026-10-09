@@ -12,7 +12,6 @@ type Props = {
   email: string;
   googleLinked: boolean;
   googleEmail?: string;
-  googleReady: boolean;
   requests: AccountEmailRequest[];
   requestsUnavailable?: boolean;
   googleStatus?: string;
@@ -29,6 +28,10 @@ function requestStatus(status: AccountEmailRequest["status"], english: boolean) 
 function googleErrorMessage(code: string, english: boolean) {
   const messages: Record<string, [string, string]> = {
     google_not_configured: ["La connexion Google n’est pas encore configurée. Votre connexion habituelle reste disponible.", "Google sign-in has not been configured yet. You can still use your usual sign-in method."],
+    google_origin_not_configured: ["Le domaine du site n’est pas configuré pour Google. Le BR doit vérifier l’adresse de retour.", "This site domain is not configured for Google. The executive board needs to check the return address."],
+    google_provider_disabled: ["La connexion Google doit être activée par le BR dans Supabase.", "The executive board needs to enable Google sign-in in Supabase."],
+    google_signups_open: ["Le BR doit désactiver les inscriptions publiques dans Supabase pour autoriser la connexion Google aux comptes existants.", "The executive board must disable public sign-ups in Supabase to allow Google sign-in for existing accounts."],
+    google_service_unavailable: ["Le service Google est momentanément indisponible. Réessayez dans quelques instants.", "The Google service is temporarily unavailable. Please try again in a moment."],
     google_cancelled: ["La liaison Google a été annulée. Vous pouvez réessayer lorsque vous le souhaitez.", "Google linking was cancelled. You can try again whenever you are ready."],
     google_failed: ["La liaison Google n’a pas abouti. Réessayez dans quelques instants.", "Google could not be linked. Please try again in a moment."],
     google_invalid_flow: ["Cette demande de liaison a expiré ou n’est plus valide. Relancez-la depuis cette page.", "This linking request has expired or is no longer valid. Start again from this page."],
@@ -84,7 +87,7 @@ function EmailRequestForm({ email, english, onClose, onSent }: { email: string; 
   </>;
 }
 
-export default function AccountSettings({ email, googleLinked, googleEmail, googleReady, requests, requestsUnavailable = false, googleStatus, googleError, english = false }: Props) {
+export default function AccountSettings({ email, googleLinked, googleEmail, requests, requestsUnavailable = false, googleStatus, googleError, english = false }: Props) {
   const [requestOpen, setRequestOpen] = useState(false);
   const [recentSubmission, setRecentSubmission] = useState<{ email: string; snapshot: string } | null>(null);
   const requestButtonRef = useRef<HTMLButtonElement>(null);
@@ -121,11 +124,11 @@ export default function AccountSettings({ email, googleLinked, googleEmail, goog
         <p className="inline-flex items-center gap-2 rounded-lg bg-surface-container-high px-3 py-1.5 text-xs font-semibold"><span aria-hidden="true" className={"material-symbols-outlined text-base " + (googleLinked ? "text-tertiary" : "text-on-surface-variant")}>{googleLinked ? "check_circle" : "link_off"}</span>{googleLinked ? (english ? "Google account linked" : "Compte Google lié") : (english ? "No Google account linked" : "Aucun compte Google lié")}</p>
         {googleLinked && googleEmail && <p className="mt-3 break-all text-sm text-on-surface-variant">{googleEmail}</p>}
         <p className="mt-4 text-xs leading-6 text-on-surface-variant">{english ? "Google sign-in is reserved for existing authorized member accounts. Linking keeps your current member profile and permissions." : "La connexion Google est réservée aux comptes membres déjà autorisés. La liaison conserve votre fiche membre et vos droits actuels."}</p>
-        {!googleLinked && (googleReady ? <form ref={googleFormRef} action={linkGoogleAccount} className="mt-5" onSubmit={(event) => {
+        {!googleLinked && <form ref={googleFormRef} action={linkGoogleAccount} className="mt-5" onSubmit={(event) => {
           if (!dirtyCount || googleBypass.current) return;
           event.preventDefault();
           requestDiscard(() => { setRequestOpen(false); googleBypass.current = true; googleFormRef.current?.requestSubmit(); });
-        }}><GoogleSubmit english={english} /></form> : <div className="mt-5"><button type="button" disabled className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-outline-variant/25 px-4 py-3 text-sm font-semibold text-on-surface-variant opacity-60 sm:w-auto"><span aria-hidden="true" className="material-symbols-outlined text-lg">link</span>{english ? "Link my Google account" : "Lier mon compte Google"}</button><p className="mt-3 text-xs leading-5 text-on-surface-variant">{english ? "Google linking will be available once the board has completed its configuration." : "La liaison Google sera disponible lorsque le BR aura terminé sa configuration."}</p></div>)}
+        }}><GoogleSubmit english={english} /></form>}
       </section>
     </div>
     <section aria-labelledby="account-history-title" className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-5 sm:p-7">

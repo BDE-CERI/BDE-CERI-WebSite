@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { signInWithGoogle } from "./google-actions";
+import { getEventLoginReturnPath } from "@/utils/login-return";
 
 async function authenticateWithPassword(email: string, password: string): Promise<boolean> {
   let authenticated = false;
@@ -47,14 +48,16 @@ async function authenticateWithPassword(email: string, password: string): Promis
 }
 
 export async function login(formData: FormData) {
+  const destination = getEventLoginReturnPath(formData.get("next"), "/");
+  const loginErrorUrl = "/login?error=true" + (destination === "/" ? "" : "&next=" + encodeURIComponent(destination));
   const emailValue = formData.get("email");
   const passwordValue = formData.get("password");
   if (typeof emailValue !== "string" || typeof passwordValue !== "string" || !emailValue.trim() || !passwordValue) {
-    redirect("/login?error=true");
+    redirect(loginErrorUrl);
   }
-  if (!await authenticateWithPassword(emailValue.trim(), passwordValue)) redirect("/login?error=true");
+  if (!await authenticateWithPassword(emailValue.trim(), passwordValue)) redirect(loginErrorUrl);
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect(destination);
 }
 
 export async function loginWithGoogle() {

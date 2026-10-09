@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { createClient } from "@/utils/supabase/server";
 import { parseParisDateTimeLocal } from "@/utils/paris-time";
+import { normalizeHelloAssoCheckoutUrl } from "@/utils/event-payment";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -48,12 +49,12 @@ function integer(formData: FormData, field: string, label: string, fallback: num
   return parsed;
 }
 
-function priceInCents(formData: FormData) {
-  const value = text(formData, "price", "Le prix", 16, true).replace(",", ".");
-  if (!/^\d{1,8}(?:\.\d{1,2})?$/.test(value)) throw new ActionError("Le prix doit être positif ou nul, avec deux décimales maximum.");
+function priceInCents(formData: FormData, field = "price", label = "Le prix") {
+  const value = text(formData, field, label, 16, true).replace(",", ".");
+  if (!/^\d{1,8}(?:\.\d{1,2})?$/.test(value)) throw new ActionError(label + " doit être positif ou nul, avec deux décimales maximum.");
   const [euros, cents = ""] = value.split(".");
   const price = Number(euros) * 100 + Number(cents.padEnd(2, "0"));
-  if (price > 2147483647) throw new ActionError("Le prix est trop élevé.");
+  if (price > 2147483647) throw new ActionError(label + " est trop élevé.");
   return price;
 }
 
@@ -227,24 +228,48 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
 }
 
 function eventFields(formData: FormData) {
+  const registrationEnabled = boolean(formData, "registration_enabled");
+  const paid = registrationEnabled && boolean(formData, "registration_is_paid");
+  const registrationPrice = paid ? priceInCents(formData, "registration_price", "Le tarif d’inscription") : null;
+  if (registrationPrice !== null && registrationPrice < 1) throw new ActionError("Une inscription payante doit avoir un tarif supérieur à zéro.");
+  const checkoutUrl = paid ? normalizeHelloAssoCheckoutUrl(text(formData, "helloasso_checkout_url", "Le lien HelloAsso", 2000, true)) : null;
+  if (paid && !checkoutUrl) throw new ActionError("Renseignez un lien HTTPS vers une page de paiement helloasso.com ou www.helloasso.com.");
   return {
     title: text(formData, "title", "Le titre", 200, true),
     description: text(formData, "description", "La description", 10000, true),
-    full_content: text(formData, "full_content", "Le contenu détaillé", 100000),
+    full_content: text(formData, "full_content", "Le contenu détaillé", 150000),
     date_start: dateStart(formData),
     location: text(formData, "location", "Le lieu", 500, true),
     precise_location: text(formData, "precise_location", "L’adresse précise", 1000),
     max_capacity: integer(formData, "max_capacity", "La capacité"),
+    registration_enabled: registrationEnabled,
+    registration_is_paid: paid,
+    registration_price_cents: registrationPrice,
+    helloasso_checkout_url: checkoutUrl,
   };
+}
+
+function eventDatabaseError(error: { message: string; code?: string; details?: string } | null) {
+  if (error && (error.code === "42703" || error.code === "PGRST204")
+    && /registration_enabled|registration_is_paid|registration_price_cents|helloasso_checkout_url/i.test(error.message + " " + (error.details ?? ""))) {
+    throw new ActionError("Les options d’inscription nécessitent une mise à jour de Supabase. Appliquez les migrations 202610090007_paid_event_registrations.sql et 202610090008_event_logs_and_informative_events.sql, puis réessayez. Votre saisie reste dans ce formulaire.");
+  }
+  databaseError(error);
+}
+
+async function checkEventPaymentSchema(supabase: Supabase) {
+  const { error } = await supabase.from("events").select("registration_enabled, registration_is_paid, registration_price_cents, helloasso_checkout_url").limit(0);
+  eventDatabaseError(error);
 }
 
 export async function addEvent(formData: FormData): Promise<ActionResult> {
   return perform("addEvent", async () => {
     const { supabase } = await access("board");
     const fields = eventFields(formData);
+    await checkEventPaymentSchema(supabase);
     const imageUrl = await image(supabase, formData, "image", "event-images");
     const { error } = await supabase.from("events").insert({ ...fields, image_url: imageUrl, status: "upcoming" }).select("id").single();
-    databaseError(error);
+    eventDatabaseError(error);
     refresh(["/evenement", "/"]);
   });
 }
@@ -254,10 +279,11 @@ export async function updateEvent(formData: FormData): Promise<ActionResult> {
     const { supabase } = await access("board");
     const id = identifier(formData.get("id"));
     const fields = eventFields(formData);
+    await checkEventPaymentSchema(supabase);
     const current = await existing(supabase, "events", id);
     const imageUrl = await image(supabase, formData, "image", "event-images", current.image_url);
     const { error } = await supabase.from("events").update({ ...fields, image_url: imageUrl, updated_at: new Date().toISOString() }).eq("id", id).select("id").single();
-    databaseError(error);
+    eventDatabaseError(error);
     refresh(["/evenement", "/evenement/" + id, "/"]);
   });
 }

@@ -3,12 +3,17 @@ import "server-only";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { createServerClient } from "@supabase/ssr";
 import { cookies, headers } from "next/headers";
+import { getEventLoginReturnPath } from "@/utils/login-return";
 
 export const GOOGLE_FLOW_COOKIE = "bde_google_flow";
 export const GOOGLE_FLOW_MAX_AGE = 10 * 60;
 
 export type GoogleAuthErrorCode =
   | "google_not_configured"
+  | "google_origin_not_configured"
+  | "google_provider_disabled"
+  | "google_signups_open"
+  | "google_service_unavailable"
   | "google_cancelled"
   | "google_failed"
   | "google_invalid_flow"
@@ -18,7 +23,7 @@ export type GoogleAuthErrorCode =
   | "google_session_expired";
 
 export type GoogleAuthFlow =
-  | { nonce: string; mode: "login"; expectedUserId: null; issuedAt: number }
+  | { nonce: string; mode: "login"; expectedUserId: null; issuedAt: number; returnTo: string }
   | { nonce: string; mode: "link"; expectedUserId: string; issuedAt: number };
 
 function configuredSupabaseUrl(): URL | null {
@@ -58,11 +63,11 @@ export async function getGoogleAuthOrigin(): Promise<string | null> {
   }
 }
 
-/** Public Auth settings are checked live, independently at display, start and callback. */
-export async function getGoogleAuthReadiness(): Promise<boolean> {
+/** Check Auth settings when an OAuth flow starts or returns, not during page display. */
+export async function getGoogleAuthConfigurationError(mode: GoogleAuthFlow["mode"]): Promise<GoogleAuthErrorCode | null> {
   const base = configuredSupabaseUrl();
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!base || !key || !await getGoogleAuthOrigin()) return false;
+  if (!base || !key) return "google_not_configured";
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
@@ -74,26 +79,36 @@ export async function getGoogleAuthReadiness(): Promise<boolean> {
       signal: controller.signal,
       redirect: "error",
     });
-    if (!response.ok) return false;
+    if (!response.ok) return "google_service_unavailable";
     const payload: unknown = await response.json();
-    if (!payload || typeof payload !== "object" || Array.isArray(payload)) return false;
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) return "google_service_unavailable";
     const settings = payload as Record<string, unknown>;
     const external = settings.external;
-    return settings.disable_signup === true && !!external && typeof external === "object" && !Array.isArray(external)
-      && (external as Record<string, unknown>).google === true;
+    if (!external || typeof external !== "object" || Array.isArray(external)) return "google_service_unavailable";
+    const googleEnabled = (external as Record<string, unknown>).google;
+    if (googleEnabled === false) return "google_provider_disabled";
+    if (googleEnabled !== true) return "google_service_unavailable";
+
+    // Linking uses the authenticated member's existing Auth identity; it cannot create a user.
+    // Public OAuth sign-in must still prevent account creation at the Auth service.
+    if (mode === "login") {
+      if (settings.disable_signup === false) return "google_signups_open";
+      if (settings.disable_signup !== true) return "google_service_unavailable";
+    }
+    return null;
   } catch {
-    return false;
+    return "google_service_unavailable";
   } finally {
     clearTimeout(timeout);
   }
 }
 
-export function createGoogleAuthFlow(mode: "login"): GoogleAuthFlow;
+export function createGoogleAuthFlow(mode: "login", returnTo?: string): GoogleAuthFlow;
 export function createGoogleAuthFlow(mode: "link", expectedUserId: string): GoogleAuthFlow;
-export function createGoogleAuthFlow(mode: "login" | "link", expectedUserId?: string): GoogleAuthFlow {
+export function createGoogleAuthFlow(mode: "login" | "link", identityOrReturnTo?: string): GoogleAuthFlow {
   const common = { nonce: randomBytes(32).toString("base64url"), issuedAt: Date.now() };
-  if (mode === "link" && expectedUserId) return { ...common, mode, expectedUserId };
-  return { ...common, mode: "login", expectedUserId: null };
+  if (mode === "link" && identityOrReturnTo) return { ...common, mode, expectedUserId: identityOrReturnTo };
+  return { ...common, mode: "login", expectedUserId: null, returnTo: getEventLoginReturnPath(identityOrReturnTo) };
 }
 
 export function encodeGoogleAuthFlow(flow: GoogleAuthFlow): string {
@@ -109,7 +124,7 @@ export function parseGoogleAuthFlow(value: string | undefined): GoogleAuthFlow |
     if (typeof flow.nonce !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(flow.nonce) || typeof flow.issuedAt !== "number" || !Number.isSafeInteger(flow.issuedAt)) return null;
     const age = Date.now() - flow.issuedAt;
     if (age < 0 || age > GOOGLE_FLOW_MAX_AGE * 1000) return null;
-    if (flow.mode === "login" && flow.expectedUserId === null) return { nonce: flow.nonce, issuedAt: flow.issuedAt, mode: "login", expectedUserId: null };
+    if (flow.mode === "login" && flow.expectedUserId === null) return { nonce: flow.nonce, issuedAt: flow.issuedAt, mode: "login", expectedUserId: null, returnTo: getEventLoginReturnPath(flow.returnTo) };
     if (flow.mode === "link" && typeof flow.expectedUserId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(flow.expectedUserId)) {
       return { nonce: flow.nonce, issuedAt: flow.issuedAt, mode: "link", expectedUserId: flow.expectedUserId };
     }
@@ -123,13 +138,16 @@ export function matchesGoogleAuthNonce(flow: GoogleAuthFlow, nonce: string | nul
   return !!nonce && /^[A-Za-z0-9_-]{43}$/.test(nonce) && timingSafeEqual(Buffer.from(flow.nonce), Buffer.from(nonce));
 }
 
-export function googleAuthErrorPath(mode: GoogleAuthFlow["mode"], code: GoogleAuthErrorCode): string {
-  return mode === "link" ? "/profil?section=settings&google_error=" + code : "/login?error=" + code;
+export function googleAuthErrorPath(mode: GoogleAuthFlow["mode"], code: GoogleAuthErrorCode, returnTo?: string): string {
+  if (mode === "link") return "/profil?section=settings&google_error=" + code;
+  const destination = getEventLoginReturnPath(returnTo);
+  return "/login?error=" + code + (destination === "/profil" ? "" : "&next=" + encodeURIComponent(destination));
 }
 
 export function googleAuthProviderError(value: unknown): GoogleAuthErrorCode {
   switch (value) {
     case "access_denied": return "google_cancelled";
+    case "provider_disabled": return "google_provider_disabled";
     case "signup_disabled":
     case "email_exists":
     case "identity_already_exists": return "google_access_denied";

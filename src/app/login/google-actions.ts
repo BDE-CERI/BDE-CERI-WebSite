@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { getEventLoginReturnPath } from "@/utils/login-return";
 import {
   GOOGLE_FLOW_COOKIE,
   GOOGLE_FLOW_MAX_AGE,
@@ -9,7 +10,7 @@ import {
   createGoogleAuthFlow,
   encodeGoogleAuthFlow,
   getGoogleAuthOrigin,
-  getGoogleAuthReadiness,
+  getGoogleAuthConfigurationError,
   googleAuthErrorPath,
   googleAuthProviderError,
   isTrustedGoogleAuthorizeUrl,
@@ -18,9 +19,11 @@ import {
 
 type StartResult = { url: string } | { error: GoogleAuthErrorCode; sessionEnded?: boolean };
 
-async function startGoogleFlow(mode: "login" | "link"): Promise<StartResult> {
+async function startGoogleFlow(mode: "login" | "link", returnTo?: string): Promise<StartResult> {
   const origin = await getGoogleAuthOrigin();
-  if (!origin || !await getGoogleAuthReadiness()) return { error: "google_not_configured" };
+  if (!origin) return { error: "google_origin_not_configured" };
+  const configurationError = await getGoogleAuthConfigurationError(mode);
+  if (configurationError) return { error: configurationError };
 
   try {
     const supabase = await createGoogleAuthClient();
@@ -38,7 +41,7 @@ async function startGoogleFlow(mode: "login" | "link"): Promise<StartResult> {
       expectedUserId = user.id;
     }
 
-    const flow = mode === "link" && expectedUserId ? createGoogleAuthFlow("link", expectedUserId) : createGoogleAuthFlow("login");
+    const flow = mode === "link" && expectedUserId ? createGoogleAuthFlow("link", expectedUserId) : createGoogleAuthFlow("login", returnTo);
     const callback = new URL("/auth/callback", origin);
     callback.searchParams.set("flow", flow.nonce);
     const cookieStore = await cookies();
@@ -72,9 +75,10 @@ async function startGoogleFlow(mode: "login" | "link"): Promise<StartResult> {
   }
 }
 
-export async function signInWithGoogle() {
-  const result = await startGoogleFlow("login");
-  redirect("url" in result ? result.url : googleAuthErrorPath("login", result.error));
+export async function signInWithGoogle(formData?: FormData) {
+  const returnTo = getEventLoginReturnPath(formData instanceof FormData ? formData.get("next") : undefined);
+  const result = await startGoogleFlow("login", returnTo);
+  redirect("url" in result ? result.url : googleAuthErrorPath("login", result.error, returnTo));
 }
 
 export async function linkGoogleAccount() {

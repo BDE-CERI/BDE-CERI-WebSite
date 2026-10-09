@@ -1,7 +1,9 @@
 import { login } from "./actions";
 import { signInWithGoogle } from "./google-actions";
+import GoogleSignInButton from "./GoogleSignInButton";
+import { getEventLoginReturnPath } from "@/utils/login-return";
 import { getDictionary } from "@/locales/dictionaries";
-import { getGoogleAuthReadiness, type GoogleAuthErrorCode } from "@/utils/google-auth";
+import type { GoogleAuthErrorCode } from "@/utils/google-auth";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -12,13 +14,18 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const [dict, params, googleReady] = await Promise.all([getDictionary(), searchParams, getGoogleAuthReadiness()]);
+  const [dict, params] = await Promise.all([getDictionary(), searchParams]);
   const english = dict.profil.title === "My Account";
+  const returnPath = getEventLoginReturnPath(params.next, "/");
   const l = (fr: string, en: string) => english ? en : fr;
   const googleErrors: Record<GoogleAuthErrorCode, string> = {
     google_not_configured: l("La connexion Google n’est pas encore configurée pour cet espace. Utilisez votre adresse e-mail et votre mot de passe.", "Google sign-in is not configured for this workspace yet. Use your email and password."),
+    google_origin_not_configured: l("Le domaine du site n’est pas configuré pour la connexion Google. Le BR doit vérifier l’adresse de retour.", "This site domain is not configured for Google sign-in. The executive board needs to check the return address."),
+    google_provider_disabled: l("La connexion Google doit être activée par le BR dans Supabase.", "The executive board needs to enable Google sign-in in Supabase."),
+    google_signups_open: l("Pour autoriser Google aux comptes BDE existants, le BR doit désactiver les inscriptions publiques dans Supabase.", "To allow Google sign-in for existing BDE accounts, the executive board must disable public sign-ups in Supabase."),
+    google_service_unavailable: l("Le service de connexion Google est momentanément indisponible. Réessayez dans quelques instants.", "The Google sign-in service is temporarily unavailable. Please try again in a moment."),
     google_cancelled: l("La connexion Google a été annulée. Vous pouvez réessayer.", "Google sign-in was cancelled. You can try again."),
     google_failed: l("La connexion Google n’a pas abouti. Réessayez ou utilisez votre mot de passe.", "Google sign-in could not be completed. Try again or use your password."),
     google_invalid_flow: l("Cette demande de connexion a expiré ou n’est plus valide. Recommencez depuis cette page.", "This sign-in request has expired or is no longer valid. Start again from this page."),
@@ -45,21 +52,15 @@ export default async function LoginPage({
         {errorMessage && <div role="alert" className="mb-6 flex items-start gap-2 rounded-lg border border-error/30 bg-error-container/20 px-4 py-3 text-sm font-medium text-error"><span aria-hidden="true" className="material-symbols-outlined text-lg">error</span><span>{errorMessage}</span></div>}
 
         <form action={signInWithGoogle}>
-          <button type="submit" disabled={!googleReady} aria-describedby="google-login-help" className="flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-outline-variant/30 bg-surface-container-high px-4 py-3 text-sm font-bold text-on-surface transition-colors hover:bg-surface-container-highest disabled:cursor-not-allowed disabled:opacity-50">
-            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 48 48">
-              <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3A12 12 0 1 1 32.6 14l5.7-5.7A20 20 0 1 0 44 24c0-1.2-.1-2.4-.4-3.5Z" />
-              <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8A12 12 0 0 1 32.6 14l5.7-5.7A20 20 0 0 0 6.3 14.7Z" />
-              <path fill="#4CAF50" d="M24 44a20 20 0 0 0 13.4-5.2l-6.2-5.2a12 12 0 0 1-18.6-5.7L6 33a20 20 0 0 0 18 11Z" />
-              <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3a12 12 0 0 1-4.1 5.6l6.2 5.2A20 20 0 0 0 44 24c0-1.2-.1-2.4-.4-3.5Z" />
-            </svg>
-            {l("Se connecter avec Google", "Sign in with Google")}
-          </button>
-          <p id="google-login-help" className="mt-3 text-center text-xs leading-relaxed text-on-surface-variant">{googleReady ? l("Utilisez le compte Google associé à votre compte BDE.", "Use the Google account linked to your BDE account.") : l("La connexion Google nécessite encore une configuration. La connexion par mot de passe est disponible.", "Google sign-in still needs to be configured. Password sign-in is available.")}</p>
+          <input type="hidden" name="next" value={returnPath} />
+          <GoogleSignInButton english={english} />
+          <p id="google-login-help" className="mt-3 text-center text-xs leading-relaxed text-on-surface-variant">{l("Utilisez le compte Google associé à votre compte BDE. Si nécessaire, liez-le d’abord depuis les paramètres de votre compte.", "Use the Google account linked to your BDE account. If needed, link it first in your account settings.")}</p>
         </form>
 
         <div className="my-6 flex items-center gap-3 text-xs text-on-surface-variant"><span className="h-px flex-1 bg-outline-variant/20" /><span>{l("ou avec votre mot de passe", "or with your password")}</span><span className="h-px flex-1 bg-outline-variant/20" /></div>
 
         <form action={login}>
+          <input type="hidden" name="next" value={returnPath} />
           <div className="space-y-6">
             <div className="space-y-2">
               <label htmlFor="email" className="font-label text-xs uppercase tracking-wider text-on-surface-variant">{dict.login.email}</label>

@@ -64,7 +64,7 @@ export default function Header({ dict, lang, user, member }: {
   const accountName = member ? [member.first_name, member.last_name].filter(Boolean).join(" ") : "";
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-outline-variant/15 bg-surface/85 pt-[env(safe-area-inset-top)] shadow-lg backdrop-blur-xl lg:pt-0">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-outline-variant/15 bg-surface pt-[env(safe-area-inset-top)] shadow-md lg:bg-surface/85 lg:shadow-lg lg:backdrop-blur-xl lg:pt-0">
       <nav aria-label={lang === "en" ? "Main navigation" : "Navigation principale"} className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <Link href="/" aria-label={lang === "en" ? "BDE CERI — Home" : "BDE CERI — Accueil"} className="group flex shrink-0 items-center gap-2 font-headline text-lg font-bold tracking-tight text-on-surface outline-offset-4 sm:gap-3 sm:text-xl">
           <Image src="/logos/BDE-CERI-logo.png" alt="" width={40} height={40} className="size-10 object-contain transition-transform motion-reduce:transition-none group-hover:scale-105" />

@@ -8,6 +8,10 @@ import type { Metadata } from "next";
 import { JsonLd } from "@/components/StructuredData";
 import { createSeoMetadata } from "@/utils/seo";
 import { formatParisDateTime } from "@/utils/paris-time";
+import { getEventRegistrationStatus } from "@/utils/event-registrations";
+import EventRegistration from "../EventRegistration";
+import RichTextContent from "@/components/RichTextContent";
+import { formatEventPrice, normalizeHelloAssoCheckoutUrl } from "@/utils/event-payment";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -48,14 +52,27 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   const eventDetail = await readEventDetail(id);
   if (!eventDetail) notFound();
   const { event, eventStatus } = eventDetail;
+  const supabase = await createClient();
+  const [registration, { data: { user } }] = await Promise.all([
+    getEventRegistrationStatus(id),
+    supabase.auth.getUser(),
+  ]);
   const detailedContent = typeof event.full_content === "string" ? event.full_content.trim() : "";
 
+  const eventPrice = event.registration_is_paid === true && Number.isSafeInteger(event.registration_price_cents) && event.registration_price_cents > 0 ? event.registration_price_cents as number : null;
+  const paymentUrl = normalizeHelloAssoCheckoutUrl(event.helloasso_checkout_url);
   const eventStructuredData = {
     "@context": "https://schema.org",
     "@type": "Event",
     name: event.title,
     description: event.description,
     startDate: event.date_start,
+    offers: eventPrice !== null && paymentUrl ? {
+      "@type": "Offer",
+      price: (eventPrice / 100).toFixed(2),
+      priceCurrency: "EUR",
+      url: paymentUrl,
+    } : undefined,
     image: event.image_url ? [event.image_url] : undefined,
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     eventStatus,
@@ -100,7 +117,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-transparent"></div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-8 w-full pb-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 w-full pb-12">
           <Link href="/evenement" className="text-secondary flex items-center gap-2 mb-8 hover:gap-3 transition-all font-bold text-sm uppercase tracking-widest">
             <span className="material-symbols-outlined">arrow_back</span>
             {dict.events.return_to_events}
@@ -110,7 +127,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             <span className="bg-tertiary/20 text-tertiary px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase backdrop-blur-md border border-tertiary/30">
               {event.category || dict.events.event_fallback}
             </span>
-            <h1 className="headline-display text-5xl md:text-7xl font-bold text-on-surface tracking-tighter">
+            <h1 className="headline-display break-words text-4xl sm:text-5xl md:text-7xl font-bold text-on-surface tracking-tighter">
               {event.title}
             </h1>
             <div className="flex flex-wrap gap-6 text-on-surface-variant font-label">
@@ -122,6 +139,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
                 <span className="material-symbols-outlined text-primary">location_on</span>
                 {event.location}
               </div>
+              {eventPrice !== null && <div className="flex items-center gap-2 font-semibold text-tertiary"><span aria-hidden="true" className="material-symbols-outlined">confirmation_number</span>{formatEventPrice(eventPrice, lang === "en")} {lang === "en" ? "per person" : "par personne"}</div>}
               {event.max_capacity && (
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-primary">groups</span>
@@ -134,7 +152,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       </section>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 lg:grid-cols-12 gap-16 mt-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 grid grid-cols-1 lg:grid-cols-12 gap-16 mt-16">
         <div className="lg:col-span-8 space-y-12 text-on-surface/90">
           <section className="prose prose-invert max-w-none">
             <p className="text-xl font-body leading-relaxed opacity-80 italic">
@@ -143,7 +161,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           </section>
           {detailedContent && (
             <section aria-label={lang === "en" ? "Additional event details" : "Détails supplémentaires de l’événement"} className="prose prose-invert max-w-none">
-              <div className="whitespace-pre-wrap font-body leading-loose text-lg">{detailedContent}</div>
+              <RichTextContent content={detailedContent} className="font-body leading-loose text-lg" />
             </section>
           )}
 
@@ -167,7 +185,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
         {/* Sidebar / Quick Access */}
         <aside className="lg:col-span-4 space-y-8">
-          <div className="glass-panel p-8 rounded-3xl ghost-border overflow-hidden relative">
+          <div className="glass-panel p-5 sm:p-8 rounded-3xl ghost-border overflow-hidden relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-[40px] -z-10 translate-x-1/2 -translate-y-1/2"></div>
             <h3 className="font-headline text-2xl font-bold mb-6">{dict.common.information}</h3>
             
@@ -195,10 +213,17 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
               </div>
             </div>
 
-            <button className="w-full bg-primary text-on-primary font-bold py-4 rounded-2xl mt-10 hover:shadow-lg hover:shadow-primary/20 transition-all">
-              {dict.events.register_button}
-            </button>
-            <p className="text-[10px] text-center mt-4 opacity-40 uppercase tracking-widest">{dict.common.sign_in_to_register}</p>
+            {event.registration_enabled !== false
+              ? <EventRegistration
+                  key={id + ":" + JSON.stringify(registration.status) + ":" + !!user}
+                  eventId={id}
+                  initialStatus={registration.status}
+                  signedIn={!!user}
+                  english={lang === "en"}
+                />
+              : registration.status?.registered
+                ? <EventRegistration key={id + ":existing:" + !!user} eventId={id} initialStatus={registration.status} signedIn={!!user} english={lang === "en"} />
+                : <p className="rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-3 text-sm leading-6 text-on-surface-variant">{lang === "en" ? "Informational event — registration is not required." : "Événement informatif — aucune inscription n’est requise."}</p>}
           </div>
 
           <div className="p-8 border border-outline-variant/20 rounded-3xl bg-surface-container-lowest/30 backdrop-blur-sm">

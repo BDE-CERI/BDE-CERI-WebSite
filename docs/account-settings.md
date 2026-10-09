@@ -7,7 +7,7 @@
 - **Continuer avec Google**, sur /login : connexion réservée aux utilisateurs Auth déjà existants et aux fiches membres déjà liées par auth_user_id.
 - Les demandes sont internes à l’administration. Aucun email n’est envoyé automatiquement par ce workflow.
 
-Les pages affichent les dates en heure de Paris et sont disponibles en français et en anglais.
+Les pages affichent les dates en heure de Paris et sont disponibles en français et en anglais. Les boutons de connexion et de liaison Google restent actionnables : leur affichage ne dépend plus d’une lecture préalable des réglages Supabase. La configuration et les droits sont vérifiés côté serveur au clic, puis au retour de Google.
 
 ## 1. Installer les fonctions SQL
 
@@ -25,7 +25,9 @@ Une personne ne lit que ses demandes. Le bureau restreint peut les consulter et 
 
 Dans **Supabase → Authentication → Sign In / Providers**, désactiver **Allow new users to sign up** et laisser les inscriptions anonymes désactivées. Activer **Allow manual linking** pour le bouton de liaison.
 
-Quand les inscriptions sont fermées, seuls les utilisateurs Auth existants peuvent se connecter. Cette règle doit rester fermée en production. Le site consulte les réglages Auth réels avant le départ vers Google et au retour ; si Google est désactivé, si les inscriptions sont ouvertes ou si la lecture échoue, le flux est refusé. [Configuration Supabase](https://supabase.com/docs/guides/auth/general-configuration)
+Quand les inscriptions sont fermées, seuls les utilisateurs Auth existants peuvent se connecter. Cette règle doit rester fermée en production. Pour une connexion depuis /login, le serveur vérifie avant le départ vers Google et au retour que le fournisseur Google est activé et que les inscriptions sont fermées. Un problème de configuration produit un message explicite après le clic, sans désactiver le bouton lors de l’affichage. [Configuration Supabase](https://supabase.com/docs/guides/auth/general-configuration)
+
+La liaison depuis Paramètres utilise un contrôle distinct : elle exige Google activé, une session valide et une fiche membre déjà liée. Le retour doit conserver exactement le même UUID Auth. Elle ne nécessite pas que les inscriptions globales soient fermées, car elle ajoute une identité au compte existant. Cela ne change pas l’exigence de fermeture des inscriptions pour la connexion Google depuis /login.
 
 Dans **Authentication → Hooks**, ajouter un hook **Before User Created**, de type fonction Postgres, et choisir **public.bde_before_user_created_google_guard**. L’enregistrement de la fonction SQL seul n’active pas le hook. Le hook rejette toute création via Google avant insertion du compte ; il laisse passer les autres fournisseurs, dont les invitations email administratives. Il apporte une protection supplémentaire si les réglages d’inscription sont modifiés. [Hook officiel](https://supabase.com/docs/guides/auth/auth-hooks/before-user-created-hook)
 
@@ -51,7 +53,7 @@ Dans l’environnement de production, définir l’origine HTTPS officielle, par
 
     NEXT_PUBLIC_SITE_URL=https://bdeceri.fr
 
-La connexion Google reste indisponible en production si cette variable manque ou est invalide. Ne pas y mettre une route, des identifiants ou des paramètres. Redémarrer le serveur après un changement d’environnement. L’origine configurée doit correspondre au domaine ouvert dans le navigateur : un alias www ou une URL de prévisualisation différente est refusé avant la création des cookies du flux.
+En production, une variable absente ou invalide entraîne une erreur d’origine au clic sur Google. Ne pas y mettre une route, des identifiants ou des paramètres. Redémarrer le serveur après un changement d’environnement. L’origine configurée doit correspondre au domaine ouvert dans le navigateur : un alias www ou une URL de prévisualisation différente est refusé avant la création des cookies du flux.
 
 Dans **Supabase → Authentication → URL Configuration** :
 
@@ -77,6 +79,17 @@ Le proxy Next.js 16 dans src/proxy.ts renouvelle les sessions avec getClaims et 
 Le retour OAuth échange un code PKCE, vérifie le flux temporaire et les droits, puis ouvre une session Auth. Aucun insert, update ou upsert sur les tables du site n’est exécuté par la connexion Google. Aucun rapprochement métier par email ne se produit dans ce flux. Les jetons d’accès au compte Google ne sont pas conservés dans la session du site.
 
 Le rattachement historique d’une fiche membre non liée par adresse email a été déplacé vers la connexion explicite par mot de passe. Pour un utilisateur invité dont la fiche n’est pas encore liée, effectuer cette première connexion ou renseigner auth_user_id administrativement avant d’utiliser Google.
+
+### Comprendre les messages de configuration Google
+
+Le bouton reste disponible et le serveur indique la cause d’un refus :
+
+- **Origine du site incorrecte** : vérifier NEXT_PUBLIC_SITE_URL et ouvrir le domaine correspondant ; en développement, utiliser localhost, 127.0.0.1 ou ::1.
+- **Fournisseur Google désactivé** : activer Google et renseigner ses identifiants dans Supabase.
+- **Inscriptions ouvertes** : fermer Allow new users to sign up pour utiliser la connexion depuis /login. Ce contrôle ne bloque pas la liaison à un compte membre déjà connecté.
+- **Service d’authentification indisponible** : réessayer lorsque Supabase et la connexion réseau sont disponibles. Un échec de lecture des réglages ne permet pas de contourner les contrôles.
+
+L’activation du fournisseur, les réglages des inscriptions et l’installation du hook se font dans le projet Supabase hébergé ; modifier les fichiers locaux ne les applique pas.
 
 ## 6. Traiter une demande de changement d’adresse
 

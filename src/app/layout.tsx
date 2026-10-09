@@ -7,6 +7,7 @@ import RootHeader from "@/components/RootHeader";
 import RootFooter from "@/components/RootFooter";
 import StructuredData from "@/components/StructuredData";
 import CookieConsent from "@/components/CookieConsent";
+import MaterialSymbolsStylesheet from "@/components/MaterialSymbolsStylesheet";
 import { Manrope, Space_Grotesk } from "next/font/google";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
@@ -79,10 +80,6 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: "document.documentElement.lang = /(?:^|;\\s*)bde_lang=en(?:;|$)/.test(document.cookie) ? 'en' : 'fr';" }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-          rel="stylesheet"
-        />
         <script dangerouslySetInnerHTML={{
           __html: `
             if ('serviceWorker' in navigator && ${process.env.NODE_ENV === "production"}) {
@@ -110,6 +107,7 @@ export default async function RootLayout({
             <Suspense fallback={<div aria-hidden="true" className="fixed inset-x-0 top-0 z-50 h-20 border-b border-outline-variant/10 bg-surface/70 backdrop-blur-xl" />}>
               <RootHeader />
             </Suspense>
+            <MaterialSymbolsStylesheet />
             <CookieConsent />
             <main className="flex-grow pt-[calc(5rem+env(safe-area-inset-top))] lg:pt-20">
               {children}

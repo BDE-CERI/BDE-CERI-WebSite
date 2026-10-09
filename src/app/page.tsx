@@ -1,14 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Suspense } from "react";
+import HomeShowcase from "@/components/HomeShowcase";
 import { getDictionary, getLang } from "@/locales/dictionaries";
-import { createClient } from "@/utils/supabase/server";
-import { getCurrentUserContext } from "@/utils/supabase/current-user";
-import EventCarousel from "@/components/EventCarousel";
-import NewsSection from "@/components/NewsSection";
 import InteractiveBackground from "@/components/InteractiveBackground";
 import { createSeoMetadata } from "@/utils/seo";
-import { formatParisDateTime } from "@/utils/paris-time";
-import { getPublicMemberLastName } from "@/utils/member-display";
 
 export const metadata = createSeoMetadata({
   path: "/",
@@ -17,89 +13,16 @@ export const metadata = createSeoMetadata({
 });
 
 export default async function Home() {
-  const [dict, lang, supabase] = await Promise.all([getDictionary(), getLang(), createClient()]);
-  const dateLocale = lang === "en" ? "en-GB" : "fr-FR";
-  
-  const [{ data: eventsData }, { data: newsData }, { member }] = await Promise.all([
-    supabase
-      .from("events")
-      .select("id, title, category, description, short_description, image_url, date_start, location")
-      .eq("status", "upcoming")
-      .gte("date_start", new Date().toISOString())
-      .order("date_start", { ascending: true })
-      .limit(5),
-    supabase
-      .from("news")
-      .select("*, members(*)")
-      .eq("is_published", true)
-      .order("published_at", { ascending: false })
-      .limit(4),
-    getCurrentUserContext(),
-  ]);
-
-  const isBR = member?.category === "bureau_restreint" ||
-    ["president", "tresorier", "secretaire", "vp_general"].includes(member?.role || "");
-  const isCOMMember = member?.member_assignments?.some(assignment => {
-    const pole = Array.isArray(assignment.poles) ? assignment.poles[0] : assignment.poles;
-    return typeof pole?.name === "string" && /(?:communication|\bcom\b)/i.test(pole.name);
-  });
-  const isAdminNews = Boolean(isBR || isCOMMember);
-
-  const defaultEvents = [
-    {
-      id: "1",
-      title: "The Midnight Masquerade",
-      category: "Headline Event",
-      description: "Our flagship event of the semester. Formal attire required. Identities optional.",
-      short_description: null,
-      date_start: new Date(new Date().setMonth(9, 31)).toISOString(),
-      location: "Secret Location",
-      image_url: "https://lh3.googleusercontent.com/aida-public/AB6AXuC1Csx9XytUFcnaj9-80c3AdoLyoCl09Hn3cYIXr5zFwE_ng0vT6M2wAFHhctqlYN1VAPzzczxDCRLK-arIqeAhrl7KQZ6EdMY7phY3BBI3qFbCTGAZRhquIcoobJIMnWPs2KNoKSOUs6X7BxtPSxx1EpQMG7AaQr_pfHjC8D2bVCSeCbhM9jyRB4QdORjjmDC2qaKxx_1Q98m9QKoQ_sAvjzIVWd62gbclKgX6iboqT2XNRdc4SilmWwrPDw79aU8fUgqS4olL4k6q",
-    },
-    {
-      id: "2",
-      title: "Alumni Mixer",
-      category: "Mixer",
-      description: "Connect with past members in an intimate, low-light setting. Drinks provided.",
-      short_description: null,
-      date_start: new Date(new Date().setMonth(10, 12)).toISOString(),
-      location: "CERI",
-    }
-  ];
-
-  const upcomingEvents = eventsData && eventsData.length > 0 ? eventsData : defaultEvents;
-  const secondaryEvent = upcomingEvents[1] || upcomingEvents[0];
-  const news = (newsData ?? []).map(item => {
-    const author = Array.isArray(item.members) ? item.members[0] : item.members;
-    return {
-      id: item.id,
-      title: item.title,
-      content: item.content,
-      image_url: item.image_url || undefined,
-      published_at: item.published_at,
-      is_anonymous: Boolean(item.is_anonymous),
-      // Serialize only the public identity, never a hidden surname or member record.
-      members: item.is_anonymous || !author ? undefined : {
-        first_name: author.first_name || "",
-        last_name: getPublicMemberLastName(author),
-        hide_last_name: author.hide_last_name !== false,
-      },
-    };
-  });
-
-  const formatDate = (isoStr: string) => formatParisDateTime(isoStr, { month: "short", day: "numeric" }, dateLocale);
-  const formatTime = (isoStr: string) => formatParisDateTime(isoStr, { hour: "2-digit", minute: "2-digit" }, dateLocale);
-
-  // Google Form Link (Placeholder as requested)
+  const [dict, lang] = await Promise.all([getDictionary(), getLang()]);
   const googleFormUrl = "https://forms.gle/placeholder";
 
   return (
     <>
-      <section className="relative min-h-[921px] flex items-center justify-center overflow-hidden bg-surface">
+      <section className="relative min-h-[calc(100svh-5rem)] md:min-h-[921px] flex items-center justify-center overflow-hidden bg-surface">
         <div className="absolute inset-0 z-0">
           <InteractiveBackground />
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-container rounded-full mix-blend-screen filter blur-[100px] opacity-50 animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-[30rem] h-[30rem] bg-tertiary-container rounded-full mix-blend-screen filter blur-[120px] opacity-40"></div>
+          <div className="absolute top-1/4 left-1/4 hidden md:block w-96 h-96 bg-primary-container rounded-full mix-blend-screen filter blur-[100px] opacity-50 animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 hidden md:block w-[30rem] h-[30rem] bg-tertiary-container rounded-full mix-blend-screen filter blur-[120px] opacity-40"></div>
         </div>
         <div className="relative z-10 max-w-7xl mx-auto px-6 w-full flex flex-col md:flex-row items-center justify-between gap-16">
           <div className="w-full md:w-1/2 flex flex-col items-start space-y-8">
@@ -139,20 +62,19 @@ export default async function Home() {
                     <div className="glass-panel rounded-2xl overflow-hidden shadow-2xl border border-outline-variant/20">
                          <div className="h-[400px] relative">
                              <Image 
-                                src={upcomingEvents[0]?.image_url || "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=1000"} 
-                                alt="Event" 
+                                src="/og-bde-ceri.jpg"
+                                alt=""
                                 fill
-                                priority
-                                loading="eager"
+                                loading="lazy"
                                 className="object-cover opacity-60"
-                                sizes="(max-width: 768px) 100vw, 400px"
+                                sizes="400px"
                                 suppressHydrationWarning
                              />
                              <div className="absolute inset-0 bg-gradient-to-t from-surface-container-highest to-transparent"></div>
                              <div className="absolute bottom-6 left-6 right-6">
                                  <span className="bg-tertiary text-on-tertiary text-[10px] font-bold px-2 py-0.5 rounded uppercase mb-2 inline-block">{dict.home.flash_event}</span>
-                                <h3 className="text-xl font-headline font-bold text-white mb-1">{upcomingEvents[0]?.title}</h3>
-                                <p className="text-xs text-white/70 line-clamp-2">{upcomingEvents[0]?.description}</p>
+                                <h3 className="text-xl font-headline font-bold text-white mb-1">{dict.home.discover_events}</h3>
+                                <p className="text-xs text-white/70 line-clamp-2">{dict.home.description}</p>
                              </div>
                          </div>
                     </div>
@@ -178,52 +100,9 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* News Section */}
-      <NewsSection news={news} dict={dict} isAdmin={isAdminNews} />
-
-      <section className="py-24 bg-surface relative overflow-hidden z-10">
-        <div className="absolute inset-0 z-0">
-           <InteractiveBackground />
-        </div>
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
-            <div>
-              <h2 className="text-sm font-label uppercase tracking-[0.1em] text-on-surface-variant mb-2">{dict.home.roster_title}</h2>
-              <h3 className="text-4xl font-headline font-bold text-on-surface tracking-tight">{dict.home.discover_events}</h3>
-            </div>
-            <Link href="/evenement" className="text-sm font-label font-medium text-tertiary hover:text-white transition-colors flex items-center space-x-1">
-              <span>{dict.home.view_all_events}</span>
-              <span className="material-symbols-outlined text-sm">arrow_forward</span>
-            </Link>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <EventCarousel events={upcomingEvents} dict={dict} />
-            
-            {/* Secondary Event Sidebar */}
-            <div className="reveal-card rounded-xl p-6 relative flex flex-col justify-between min-h-[400px] border border-outline-variant/10 bg-surface-container-low/30">
-              <div>
-                <div className="w-12 h-12 rounded-lg bg-surface-container-lowest flex items-center justify-center mb-6 ghost-border-bottom">
-                  <span className="material-symbols-outlined text-primary">groups</span>
-                </div>
-                <h4 className="text-xl font-headline font-bold text-on-surface mb-2">{secondaryEvent.title}</h4>
-                <p className="text-sm font-body text-on-surface-variant">{secondaryEvent.short_description || secondaryEvent.description}</p>
-              </div>
-              <div className="mt-8 space-y-3">
-                <div className="flex items-center justify-between text-sm text-on-surface-variant bg-surface-container-lowest px-4 py-3 rounded-lg ghost-border-bottom">
-                  <span>{formatDate(secondaryEvent.date_start)}</span>
-                  <span>{formatTime(secondaryEvent.date_start)}</span>
-                </div>
-                <Link href={`/evenement/${secondaryEvent.id}`} className="block">
-                  <button className="w-full py-3 rounded-lg border border-outline-variant/30 text-on-surface font-label text-sm hover:bg-tertiary hover:text-on-tertiary transition-all">
-                    RSVP
-                  </button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <Suspense fallback={<section aria-hidden="true" className="min-h-[28rem] bg-surface-container-lowest px-4 py-16 sm:px-6"><div className="mx-auto max-w-7xl"><div className="mx-auto mb-10 h-8 w-56 animate-pulse rounded-lg bg-surface-container-high"/><div className="h-72 animate-pulse rounded-2xl bg-surface-container-high sm:h-96"/></div></section>}>
+        <HomeShowcase dict={dict} lang={lang} />
+      </Suspense>
     </>
   );
 }

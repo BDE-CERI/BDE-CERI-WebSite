@@ -5,7 +5,7 @@ import {
   GOOGLE_FLOW_COOKIE,
   createGoogleAuthClient,
   getGoogleAuthOrigin,
-  getGoogleAuthReadiness,
+  getGoogleAuthConfigurationError,
   googleAuthErrorPath,
   googleAuthProviderError,
   matchesGoogleAuthNonce,
@@ -30,10 +30,12 @@ export async function GET(request: Request) {
     response.headers.set("Expires", "0");
     return response;
   };
-  const fail = (code: GoogleAuthErrorCode, sessionEnded = false) => redirectTo(googleAuthErrorPath(sessionEnded ? "login" : flow?.mode || "login", code));
+  const fail = (code: GoogleAuthErrorCode, sessionEnded = false) => redirectTo(googleAuthErrorPath(sessionEnded ? "login" : flow?.mode || "login", code, flow?.mode === "login" ? flow.returnTo : undefined));
 
   if (!flow || !matchesGoogleAuthNonce(flow, url.searchParams.get("flow"))) return fail("google_invalid_flow");
-  if (!origin || !await getGoogleAuthReadiness()) return fail("google_not_configured");
+  if (!origin) return fail("google_origin_not_configured");
+  const configurationError = await getGoogleAuthConfigurationError(flow.mode);
+  if (configurationError) return fail(configurationError);
   if (url.searchParams.has("error")) return fail(googleAuthProviderError(url.searchParams.get("error_code") || url.searchParams.get("error")));
   const code = url.searchParams.get("code");
   if (!code || code.length > 2048) return fail("google_invalid_flow");
@@ -81,7 +83,7 @@ export async function GET(request: Request) {
       return fail(member.error ? "google_failed" : "google_access_denied", true);
     }
     revalidatePath("/", "layout");
-    const destination = flow.mode === "link" ? "/profil?section=settings&google_status=linked" : "/profil";
+    const destination = flow.mode === "link" ? "/profil?section=settings&google_status=linked" : flow.returnTo;
     return redirectTo(destination);
   } catch {
     if (supabase) await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);

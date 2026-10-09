@@ -6,7 +6,11 @@ import Image from "next/image";
 import type { getDictionary } from "@/locales/dictionaries";
 import { addEvent, updateEvent, deleteEvent } from "./actions";
 import ImageUpload from "@/components/ImageUpload";
+import RichTextEditor from "@/components/RichTextEditor";
+import EventRegistrations from "./EventRegistrations";
+import EventRegistrationLogs from "./EventRegistrationLogs";
 import { formatParisDateTime, parseParisDateTimeLocal, toParisDateTimeLocal } from "@/utils/paris-time";
+import { formatEventPrice } from "@/utils/event-payment";
 import { AdminForm, ConfirmDeleteButton, EmptyState, Field, ManagerToolbar, inputClass } from "./AdminUI";
 
 type Dictionary = Awaited<ReturnType<typeof getDictionary>>;
@@ -22,10 +26,18 @@ interface EventItem {
   max_capacity?: number;
   image_url?: string;
   status: string;
+  registration_enabled?: boolean;
+  registration_is_paid?: boolean;
+  registration_price_cents?: number | null;
+  helloasso_checkout_url?: string | null;
 }
 
 
 function EventEditor({ event, dict, onCancel, onSuccess }: { event?: EventItem; dict: Dictionary; onCancel: () => void; onSuccess: () => void }) {
+  const [registrationEnabled, setRegistrationEnabled] = useState(event?.registration_enabled !== false);
+  const [isPaid, setIsPaid] = useState(event?.registration_is_paid === true);
+  const [registrationPrice, setRegistrationPrice] = useState(event?.registration_price_cents != null ? (event.registration_price_cents / 100).toFixed(2) : "");
+  const [checkoutUrl, setCheckoutUrl] = useState(event?.helloasso_checkout_url || "");
   const en = dict.profil?.title === "My Account";
   const l = (fr: string, english: string) => en ? english : fr;
   const save = async (formData: FormData) => {
@@ -61,7 +73,7 @@ function EventEditor({ event, dict, onCancel, onSuccess }: { event?: EventItem; 
               <textarea name="description" defaultValue={event?.description || ""} required rows={3} className={inputClass + " resize-y"} />
             </Field>
             <Field label={l("Programme et informations détaillées", "Programme and details")} hint={l("Précisez les horaires, le programme, les tarifs ou les modalités d'inscription.", "Include the schedule, programme, prices or registration instructions.")}>
-              <textarea name="full_content" defaultValue={event?.full_content || ""} rows={8} className={inputClass + " resize-y"} />
+              <RichTextEditor name="full_content" label={l("Contenu détaillé", "Detailed text")} initialValue={event?.full_content || ""} english={en} />
             </Field>
           </fieldset>
           <fieldset className="min-w-0 space-y-4">
@@ -78,6 +90,32 @@ function EventEditor({ event, dict, onCancel, onSuccess }: { event?: EventItem; 
             <Field label={l("Nombre maximal de participants", "Maximum participants")} hint={l("Laissez vide si aucune limite n'est prévue.", "Leave blank if there is no participant limit.")}>
               <input name="max_capacity" type="number" min={1} step={1} defaultValue={event?.max_capacity ?? ""} className={inputClass} />
             </Field>
+            <fieldset className="space-y-4 rounded-xl border border-outline-variant/25 bg-surface-container-high/40 p-4">
+              <legend className="px-2 text-sm font-bold text-on-surface">{l("Inscriptions", "Registration")}</legend>
+              <label className="flex min-h-11 cursor-pointer items-start gap-3">
+                <input name="registration_enabled" type="checkbox" value="true" checked={registrationEnabled} onChange={(change) => setRegistrationEnabled(change.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-secondary" />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2 text-sm font-semibold text-on-surface"><span aria-hidden="true" className="material-symbols-outlined text-lg text-secondary">event_note</span>{l("Événement informatif, sans inscription", "Informational event, no registration")}</span>
+                  <span className="mt-1 block text-xs leading-5 text-on-surface-variant">{l("Désactive le formulaire public. Les inscriptions déjà prises et leur historique sont conservés.", "Hides the public signup form. Existing registrations and their history are kept.")}</span>
+                </span>
+              </label>
+              <label className="flex min-h-11 cursor-pointer items-start gap-3">
+                <input name="registration_is_paid" type="checkbox" value="true" checked={isPaid} disabled={!registrationEnabled} onChange={(change) => setIsPaid(change.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-tertiary disabled:cursor-not-allowed disabled:opacity-50" />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2 text-sm font-semibold text-on-surface"><span aria-hidden="true" className="material-symbols-outlined text-lg text-tertiary">confirmation_number</span>{l("Inscription payante", "Paid registration")}</span>
+                  <span className="mt-1 block text-xs leading-5 text-on-surface-variant">{l("Activez pour demander un paiement via HelloAsso. Sinon, l'inscription est gratuite.", "Enable to request payment through HelloAsso. Otherwise, registration is free.")}</span>
+                </span>
+              </label>
+              <div className="grid min-w-0 gap-4 sm:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] xl:grid-cols-1">
+                <Field label={l("Tarif par personne (€)", "Price per person (€)")} required={isPaid && registrationEnabled}>
+                  <input name="registration_price" type="number" min="0.01" step="0.01" value={registrationPrice} onChange={(change) => setRegistrationPrice(change.target.value)} required={isPaid && registrationEnabled} disabled={!isPaid || !registrationEnabled} className={inputClass} placeholder="5.00" inputMode="decimal" />
+                </Field>
+                <Field label={l("Lien du checkout HelloAsso", "HelloAsso checkout link")} required={isPaid && registrationEnabled} hint={l("Collez le lien public du formulaire de paiement de cet événement.", "Paste the public payment form link for this event.")}>
+                  <input name="helloasso_checkout_url" type="url" value={checkoutUrl} onChange={(change) => setCheckoutUrl(change.target.value)} required={isPaid && registrationEnabled} disabled={!isPaid || !registrationEnabled} maxLength={2000} className={inputClass} placeholder="https://www.helloasso.com/..." />
+                </Field>
+              </div>
+              {isPaid && registrationEnabled && <p className="flex items-start gap-2 rounded-lg bg-tertiary/10 p-3 text-xs leading-5 text-on-surface-variant"><span aria-hidden="true" className="material-symbols-outlined mt-0.5 shrink-0 text-base text-tertiary">info</span><span>{l("Le tarif du formulaire HelloAsso doit correspondre à ce montant. Les paiements sont à vérifier dans HelloAsso.", "The HelloAsso form price must match this amount. Payments must be checked in HelloAsso.")}</span></p>}
+            </fieldset>
             <Field label={l("Image de couverture", "Cover image")} hint={event ? l("Sans nouvelle image, la couverture actuelle est conservée.", "The existing cover is kept if you do not choose a new image.") : l("Choisissez une image lisible qui représente l'événement.", "Choose a clear image that represents the event.")}>
               <ImageUpload name="image" english={en} defaultValue={event?.image_url} />
             </Field>
@@ -95,6 +133,9 @@ export default function EventManager({ dict, initialEvents, embedded = false }: 
   const events = initialEvents;
   const [now] = useState(() => Date.now());
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [registrationsId, setRegistrationsId] = useState<string | null>(null);
+  const [logsId, setLogsId] = useState<string | null>(null);
+  const [logsAll, setLogsAll] = useState(false);
   const [creating, setCreating] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
@@ -105,6 +146,18 @@ export default function EventManager({ dict, initialEvents, embedded = false }: 
     return (!query || [event.title, event.description, event.location].some(value => value?.toLocaleLowerCase().includes(query))) && (filter === "all" || (filter === "upcoming" ? upcoming : !upcoming));
   });
   const editingEvent = events.find(event => event.id === editingId);
+  const registrationsEvent = events.find(event => event.id === registrationsId);
+  const logsEvent = events.find(event => event.id === logsId);
+  const closeRegistrations = (logs = false) => {
+    const eventId = logs ? (logsAll ? null : logsId) : registrationsId;
+    setRegistrationsId(null);
+    setLogsId(null);
+    if (logs) setLogsAll(false);
+    requestAnimationFrame(() => {
+      const target = document.getElementById(logs ? logsAll ? "event-logs-all-button" : "event-logs-button-" + eventId : "event-registrations-button-" + eventId) || (embedded ? document.getElementById("admin-section-title") : headingRef.current);
+      target?.focus({ preventScroll: true });
+    });
+  };
   const closeEditor = () => { setEditingId(null); setCreating(false); requestAnimationFrame(() => (embedded ? document.getElementById("admin-section-title") : headingRef.current)?.focus()); };
   const dateLabel = (date: string) => {
     return formatParisDateTime(date, { dateStyle: "medium", timeStyle: "short" }, en ? "en-GB" : "fr-FR") || l("Date non renseignée", "Date unavailable");
@@ -112,17 +165,20 @@ export default function EventManager({ dict, initialEvents, embedded = false }: 
 
   return (
     <section className="space-y-5" aria-label={l("Gestion des événements", "Event management")}>
-      {(!embedded || (!creating && !editingEvent)) && <header className={"flex flex-col gap-4 sm:flex-row sm:items-start " + (embedded ? "sm:justify-end" : "sm:justify-between")}>
+      {(!embedded || (!creating && !editingEvent && !registrationsEvent && !logsEvent && !logsAll)) && <header className={"flex flex-col gap-4 sm:flex-row sm:items-start " + (embedded ? "sm:justify-end" : "sm:justify-between")}>
         {!embedded && <div className="min-w-0">
           <h2 ref={headingRef} tabIndex={-1} className="font-headline text-2xl font-bold">{l("Événements", "Events")}</h2>
           <p className="mt-1 text-sm text-on-surface-variant">{l("Organisez les rendez-vous du BDE et leurs informations pratiques.", "Manage BDE events and their practical information.")}</p>
         </div>}
-        {!creating && !editingEvent && <button type="button" onClick={() => { setCreating(true); setNotice(""); }} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-sm font-bold text-on-secondary transition-colors hover:bg-secondary/90">
+        {!creating && !editingEvent && !registrationsEvent && !logsEvent && !logsAll && <div className="flex flex-wrap items-center gap-2">
+          <button id="event-logs-all-button" type="button" onClick={() => { setLogsAll(true); setNotice(""); }} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-outline-variant/30 px-3 py-2 text-sm font-semibold text-on-surface-variant hover:bg-surface-container-high"><span aria-hidden="true" className="material-symbols-outlined text-lg">history</span>{l("Historique global", "All history")}</button>
+          <button type="button" onClick={() => { setCreating(true); setNotice(""); }} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-secondary px-4 py-2.5 text-sm font-bold text-on-secondary transition-colors hover:bg-secondary/90">
           <span aria-hidden="true" className="material-symbols-outlined text-lg">add</span>{l("Nouvel événement", "New event")}
-        </button>}
+          </button>
+        </div>}
       </header>}
       {notice && <p role="status" className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary"><span aria-hidden="true" className="material-symbols-outlined text-lg">check_circle</span>{notice}</p>}
-      {creating || editingEvent ? <EventEditor key={editingEvent?.id || "new"} event={editingEvent} dict={dict} onCancel={closeEditor} onSuccess={() => { closeEditor(); setNotice(l("L'événement a été enregistré.", "The event has been saved.")); }} /> : <>
+      {creating || editingEvent ? <EventEditor key={editingEvent?.id || "new"} event={editingEvent} dict={dict} onCancel={closeEditor} onSuccess={() => { closeEditor(); setNotice(l("L'événement a été enregistré.", "The event has been saved.")); }} /> : registrationsEvent ? <EventRegistrations key={registrationsEvent.id} event={registrationsEvent} english={en} onClose={() => closeRegistrations()} /> : logsAll ? <EventRegistrationLogs key="all-events" event={null} english={en} onClose={() => closeRegistrations(true)} /> : logsEvent ? <EventRegistrationLogs key={logsEvent.id} event={logsEvent} english={en} onClose={() => closeRegistrations(true)} /> : <>
         <ManagerToolbar search={search} onSearch={setSearch} placeholder={l("Rechercher un titre ou un lieu…", "Search by title or location…")}>
           <select aria-label={l("Filtrer les événements", "Filter events")} value={filter} onChange={e => setFilter(e.target.value)} className={inputClass + " sm:max-w-48"}>
             <option value="all">{l("Tous les événements", "All events")}</option>
@@ -144,11 +200,16 @@ export default function EventManager({ dict, initialEvents, embedded = false }: 
               </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant/15 pt-3">
-              <span className="rounded-full bg-secondary/10 px-2.5 py-1 text-xs font-semibold text-secondary">{new Date(event.date_start).getTime() >= now ? l("À venir", "Upcoming") : l("Passé", "Past")}</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-secondary/10 px-2.5 py-1 text-xs font-semibold text-secondary">{new Date(event.date_start).getTime() >= now ? l("À venir", "Upcoming") : l("Passé", "Past")}</span>
+                <span className={"inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold " + (event.registration_enabled === false ? "bg-surface-container-high text-on-surface-variant" : event.registration_is_paid ? "bg-tertiary/10 text-tertiary" : "bg-surface-container-high text-on-surface-variant")}><span aria-hidden="true" className="material-symbols-outlined text-sm">{event.registration_enabled === false ? "event_note" : event.registration_is_paid ? "confirmation_number" : "check_circle"}</span>{event.registration_enabled === false ? l("Informatif", "Informational") : event.registration_is_paid ? event.registration_price_cents != null ? formatEventPrice(event.registration_price_cents, en) : l("Payant", "Paid") : l("Gratuit", "Free")}</span>
+              </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Link href={"/evenement/" + event.id} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-on-surface-variant hover:bg-surface-container-high"><span aria-hidden="true" className="material-symbols-outlined text-lg">open_in_new</span>{l("Voir", "View")}</Link>
+                <button id={"event-registrations-button-" + event.id} type="button" onClick={() => { setRegistrationsId(event.id); setNotice(""); }} aria-label={l("Consulter les inscrits à ", "View registrations for ") + event.title} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-secondary/25 px-3 py-2 text-sm font-semibold text-secondary hover:bg-secondary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tertiary"><span aria-hidden="true" className="material-symbols-outlined text-lg">groups</span>{l("Inscrits", "Registrations")}</button>
+                <button id={"event-logs-button-" + event.id} type="button" onClick={() => { setLogsId(event.id); setNotice(""); }} aria-label={l("Consulter le journal de ", "View event history for ") + event.title} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-outline-variant/30 px-3 py-2 text-sm font-semibold text-on-surface-variant hover:bg-surface-container-high focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tertiary"><span aria-hidden="true" className="material-symbols-outlined text-lg">history</span>{l("Journal", "History")}</button>
                 <button type="button" onClick={() => { setEditingId(event.id); setNotice(""); }} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-secondary/10 px-3 py-2 text-sm font-semibold text-secondary hover:bg-secondary/20"><span aria-hidden="true" className="material-symbols-outlined text-lg">edit</span>{l("Modifier", "Edit")}</button>
-                <ConfirmDeleteButton action={() => deleteEvent(event.id)} title={l("Supprimer cet événement ?", "Delete this event?")} description={l("« " + event.title + " » sera définitivement supprimé du site.", "“" + event.title + "” will be permanently deleted from the website.")} label={l("Supprimer", "Delete")} onSuccess={() => { setNotice(l("Événement supprimé.", "Event deleted.")); }} />
+                <ConfirmDeleteButton action={() => deleteEvent(event.id)} title={l("Supprimer cet événement ?", "Delete this event?")} description={l("« " + event.title + " » et ses inscriptions actives seront supprimés. Le journal des mouvements restera disponible au bureau.", "“" + event.title + "” and its active registrations will be deleted. The activity log will remain available to the board.")} label={l("Supprimer", "Delete")} onSuccess={() => { setNotice(l("Événement supprimé.", "Event deleted.")); }} />
               </div>
             </div>
           </article>)}

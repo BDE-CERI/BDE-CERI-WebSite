@@ -18,7 +18,6 @@ import { signOut } from "./actions";
 import AccountSettings from "./AccountSettings";
 import AccountRequests from "./AccountRequests";
 import type { AccountEmailRequest } from "@/types/account-settings";
-import { getGoogleAuthReadiness } from "@/utils/google-auth";
 
 export const metadata: Metadata = { title: "Espace de travail du BDE", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -139,16 +138,13 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
   } else if (activeSection === "profile") {
     content = <ProfileEditor english={dict.profil.title === "My Account"} key={member.id} member={member} canManage={isBoard} copy={copy} />;
   } else if (activeSection === "settings") {
-    const [requests, googleReady] = await Promise.all([
-      supabase.from("member_email_change_requests")
-        .select("id, member_id, requested_by, current_email, requested_email, reason, status, created_at, reviewed_at, review_response")
-        .eq("requested_by", user.id).order("created_at", { ascending: false }).limit(50),
-      getGoogleAuthReadiness(),
-    ]);
+    const requests = await supabase.from("member_email_change_requests")
+      .select("id, member_id, requested_by, current_email, requested_email, reason, status, created_at, reviewed_at, review_response")
+      .eq("requested_by", user.id).order("created_at", { ascending: false }).limit(50);
     const googleIdentity = user.identities?.find((identity) => identity.provider === "google");
     content = <AccountSettings english={dict.profil.title === "My Account"} email={user.email || member.email || ""}
       googleLinked={!!googleIdentity} googleEmail={typeof googleIdentity?.identity_data?.email === "string" ? googleIdentity.identity_data.email : undefined}
-      googleReady={googleReady} requests={(requests.data || []) as AccountEmailRequest[]} requestsUnavailable={!!requests.error}
+      requests={(requests.data || []) as AccountEmailRequest[]} requestsUnavailable={!!requests.error}
       googleStatus={readParam("google_status")} googleError={readParam("google_error")} />;
   } else if (activeSection === "account_requests") {
     const selection = "id, member_id, requested_by, current_email, requested_email, reason, status, created_at, reviewed_at, review_response, requester:members(first_name, last_name)";
