@@ -49,17 +49,6 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
   const [showChauffleetModal, setShowChauffleetModal] = useState(false);
   const [dontShowChauffleetAgain, setDontShowChauffleetAgain] = useState(false);
 
-  useEffect(() => {
-    if (bootState === "app-open") {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
-    return () => {
-      document.body.style.overflow = "auto";
-    };
-  }, [bootState]);
-
   const selectedNews = news?.find((n) => n.id === selectedId) || news?.[0];
 
   const formatDate = (dateStr: string) => {
@@ -113,7 +102,7 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
         {/* The Monitor Simulation */}
         <div className="relative mx-auto flex flex-col items-center group w-full">
           {/* Bezel */}
-          <div className="relative bg-[#1a1a1a] p-1.5 md:p-3 rounded-[1.5rem] shadow-[0_50px_100px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.05)] border border-white/5 w-full max-w-7xl aspect-[16/9] flex flex-col scale-[1.02] overflow-hidden">
+          <div className="relative bg-[#1a1a1a] p-1.5 md:p-3 rounded-[1.5rem] shadow-[0_50px_100px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.05)] border border-white/5 w-full max-w-7xl aspect-[4/5] sm:aspect-[4/3] md:aspect-[16/9] flex flex-col scale-[1.02] overflow-hidden">
 
             {/* ROG Style Gravure (Behind the screen container) */}
             <div className="absolute inset-0 pointer-events-none opacity-5 select-none overflow-hidden">
@@ -192,7 +181,7 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                       }}
                     >
                       {/* Desktop Icons */}
-                      <div className="p-8 grid grid-cols-1 gap-12 content-start w-32">
+                      <div className="p-4 md:p-8 grid grid-cols-3 md:grid-cols-1 gap-3 md:gap-12 content-start w-full md:w-32">
                         <button
                           onClick={() => setBootState("app-open")}
                           className="flex flex-col items-center gap-2 group"
@@ -246,13 +235,13 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                     >
                       <div className="w-full h-full flex flex-col bg-surface overflow-hidden">
                         {/* Window Header */}
-                        <div className="h-10 bg-[#1a1a1a] flex items-center px-4 justify-between border-b border-white/5">
+                        <div className="h-12 shrink-0 bg-[#1a1a1a] flex items-center px-4 justify-between border-b border-white/5 md:h-10">
                           <div className="flex items-center gap-2">
                             <span className="material-symbols-outlined text-tertiary text-sm">mail</span>
                             <span className="text-[10px] font-bold uppercase tracking-widest text-white/60">{dict.news.inbox}</span>
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => setBootState("desktop")} className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-surface-container-highest hover:bg-red-500/20 text-on-surface-variant hover:text-red-500 transition-all group/close">
+                            <button onClick={() => setBootState("desktop")} className="flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-3 py-1 rounded-md bg-surface-container-highest md:min-h-0 md:min-w-0 hover:bg-red-500/20 text-on-surface-variant hover:text-red-500 transition-all group/close">
                               <span className="text-[10px] font-bold uppercase tracking-widest hidden md:inline">{dict.news.exit}</span>
                               <span className="material-symbols-outlined text-sm">close</span>
                             </button>
@@ -260,9 +249,21 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                         </div>
 
                         {/* Window Content (The Reader) */}
-                        <div className="flex flex-grow overflow-hidden bg-surface">
+                        <div className="flex min-h-0 flex-grow flex-col overflow-hidden bg-surface md:flex-row">
+                          <label className="block shrink-0 border-b border-outline-variant/10 bg-surface-container-low/30 p-3 md:hidden">
+                            <span className="sr-only">{dict.news.inbox}</span>
+                            <select
+                              value={selectedNews?.id ?? ""}
+                              onChange={(event) => setSelectedId(event.target.value)}
+                              disabled={news.length === 0}
+                              className="min-h-11 w-full min-w-0 rounded-lg border border-outline-variant/30 bg-surface-container-high px-3 text-sm text-on-surface outline-none focus-visible:ring-2 focus-visible:ring-tertiary disabled:opacity-60"
+                            >
+                              {news.length === 0 && <option value="">{dict.news.empty_inbox}</option>}
+                              {news.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+                            </select>
+                          </label>
                           {/* Sidebar Feed */}
-                          <aside className="w-[30%] border-r border-outline-variant/10 flex flex-col bg-surface-container-low/30 overflow-y-auto custom-scrollbar">
+                          <aside className="hidden border-r border-outline-variant/10 flex-col bg-surface-container-low/30 overflow-y-auto custom-scrollbar md:flex md:w-[30%] md:shrink-0">
                             {news.length === 0 && (
                               <p className="p-5 text-xs leading-relaxed text-on-surface-variant">{dict.news.empty_inbox}</p>
                             )}
@@ -302,14 +303,14 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                           </aside>
 
                           {/* Main Content */}
-                          <main className="flex-grow p-6 md:p-12 lg:p-16 overflow-y-auto custom-scrollbar bg-surface relative">
+                          <main className="min-h-0 min-w-0 flex-1 p-4 md:p-12 lg:p-16 overflow-y-auto custom-scrollbar bg-surface relative">
                             <div className="max-w-4xl mx-auto">
                               {selectedNews ? (
                                 <>
-                              <header className="mb-12 pb-12 border-b border-outline-variant/10">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 transition-transform hover:scale-105 overflow-hidden">
+                              <header className="mb-6 pb-6 border-b border-outline-variant/10 md:mb-12 md:pb-12">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 md:mb-8">
+                                  <div className="flex min-w-0 items-center gap-3">
+                                    <div className="w-12 h-12 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary border border-primary/20 transition-transform hover:scale-105 overflow-hidden">
                                       {selectedNews.is_anonymous ? (
                                         <span className="material-symbols-outlined text-2xl">visibility_off</span>
                                       ) : selectedNews.members?.photo_url ? (
@@ -320,13 +321,13 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                                         <span className="material-symbols-outlined text-2xl">person</span>
                                       )}
                                     </div>
-                                    <div className="flex flex-col">
-                                      <div className="flex items-center gap-1">
-                                        <span className="text-sm font-bold text-on-surface">
+                                    <div className="flex min-w-0 flex-col">
+                                      <div className="flex flex-wrap items-center gap-1">
+                                        <span className="break-words text-sm font-bold text-on-surface">
                                           {selectedNews.is_anonymous ? dict.news.author_hidden : (selectedNews.members ? getPublicMemberName(selectedNews.members) : "BDE CERI")}
                                         </span>
                                         {!selectedNews.is_anonymous && (
-                                          <span className="text-xs text-on-surface-variant opacity-60 italic">&lt;presse@bde-ceri.fr&gt;</span>
+                                          <span className="break-all text-xs text-on-surface-variant opacity-60 italic">&lt;presse@bde-ceri.fr&gt;</span>
                                         )}
                                       </div>
                                       <p className="text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">{dict.news.to_members}</p>
@@ -337,7 +338,7 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                                   </div>
                                 </div>
 
-                                <h2 className="text-4xl md:text-5xl lg:text-6xl font-headline font-bold text-on-surface tracking-tight leading-[1.1] mb-2 selection:bg-tertiary selection:text-on-tertiary drop-shadow-sm">
+                                <h2 className="break-words text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-headline font-bold text-on-surface tracking-tight leading-[1.1] mb-2 selection:bg-tertiary selection:text-on-tertiary drop-shadow-sm">
                                   {selectedNews.title}
                                 </h2>
                               </header>
@@ -367,8 +368,8 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                                   )}
 
                                   {/* Right Column: Text */}
-                                  <div className="flex-grow min-w-0 text-lg md:text-xl font-body leading-[1.7] text-on-surface/90 selection:bg-tertiary selection:text-on-tertiary">
-                                    <p className="first-letter:text-7xl md:first-letter:text-8xl first-letter:font-bold first-letter:text-tertiary first-letter:mr-4 first-letter:float-left first-letter:leading-[0.85] first-letter:font-headline whitespace-pre-wrap break-words pt-1">
+                                  <div className="flex-grow min-w-0 text-base sm:text-lg md:text-xl font-body leading-[1.7] text-on-surface/90 selection:bg-tertiary selection:text-on-tertiary">
+                                    <p className="first-letter:text-5xl sm:first-letter:text-7xl md:first-letter:text-8xl first-letter:font-bold first-letter:text-tertiary first-letter:mr-4 first-letter:float-left first-letter:leading-[0.85] first-letter:font-headline whitespace-pre-wrap break-words pt-1">
                                       {selectedNews.content}
                                     </p>
                                   </div>

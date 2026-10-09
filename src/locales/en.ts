@@ -25,6 +25,13 @@ export const en = {
     member_count: "{count} member(s)"
   },
   header: {
+    home_description: "Campus life and the latest updates.",
+    poles_description: "Discover our teams and their projects.",
+    esport_description: "Tournaments, teams and gaming meetups.",
+    events_description: "Find your next student event.",
+    team_description: "Meet the people behind the BDE.",
+    shop_description: "Visit the Tavern and the BDE shop.",
+    contact_description: "Ideas or questions? Get in touch.",
     home: "Home",
     poles: "Teams",
     events: "Events",

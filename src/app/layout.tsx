@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { EditModeProvider } from "@/context/EditModeContext";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -11,6 +11,12 @@ import { Manrope, Space_Grotesk } from "next/font/google";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk", display: "swap" });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://bdeceri.fr"),
@@ -97,7 +103,7 @@ export default async function RootLayout({
           `
         }} />
       </head>
-      <body className={`${manrope.variable} ${spaceGrotesk.variable} antialiased min-h-[1024px] flex flex-col selection:bg-tertiary/30 selection:text-tertiary bg-surface text-on-surface`}>
+      <body className={`${manrope.variable} ${spaceGrotesk.variable} antialiased min-h-dvh flex flex-col pb-[calc(6.25rem+env(safe-area-inset-bottom))] lg:pb-0 selection:bg-tertiary/30 selection:text-tertiary bg-surface text-on-surface`}>
         <ThemeProvider>
           <EditModeProvider>
             <StructuredData />
@@ -105,7 +111,7 @@ export default async function RootLayout({
               <RootHeader />
             </Suspense>
             <CookieConsent />
-            <main className="flex-grow pt-20">
+            <main className="flex-grow pt-[calc(5rem+env(safe-area-inset-top))] lg:pt-20">
               {children}
             </main>
             <Suspense fallback={<div aria-hidden="true" className="h-48 bg-surface-container-low" />}>

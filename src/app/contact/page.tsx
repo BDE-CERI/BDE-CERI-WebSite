@@ -70,7 +70,7 @@ export default async function Contact() {
             </div>
 
             {/* Canaux Officiels */}
-            <div className="glass-panel p-10 rounded-3xl border border-outline-variant/10 shadow-xl space-y-8">
+            <div className="glass-panel p-5 sm:p-10 rounded-3xl border border-outline-variant/10 shadow-xl space-y-8">
                <div>
                   <h2 className="text-2xl font-headline font-bold mb-2">{dict.contact.channels_title}</h2>
                  <p className="text-sm text-on-surface-variant leading-relaxed">
@@ -140,8 +140,8 @@ export default async function Contact() {
                      href="mailto:bde-ceri@univ-avignon.fr"
                      className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant/10 text-on-surface font-bold hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
                    >
-                     <span>bde-ceri@univ-avignon.fr</span>
-                     <span className="material-symbols-outlined text-sm">mail</span>
+                     <span className="min-w-0 break-all">bde-ceri@univ-avignon.fr</span>
+                     <span className="material-symbols-outlined shrink-0 text-sm">mail</span>
                    </a>
                  </div>
 

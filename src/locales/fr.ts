@@ -25,6 +25,13 @@ export const fr = {
     member_count: "{count} personne(s)"
   },
   header: {
+    home_description: "Les nouvelles et la vie du campus.",
+    poles_description: "Des projets et des équipes à rejoindre.",
+    esport_description: "Tournois, équipes et rendez-vous gaming.",
+    events_description: "Les sorties et prochains rendez-vous.",
+    team_description: "Les personnes qui font vivre le BDE.",
+    shop_description: "La Taverne et les articles du BDE.",
+    contact_description: "Une idée, une question ? Échangeons.",
     home: "Accueil",
     poles: "Pôles",
     events: "Événements",

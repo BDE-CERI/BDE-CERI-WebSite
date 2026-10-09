@@ -196,7 +196,7 @@ export default async function PoleDetail({ params }: { params: Promise<{ id: str
                 <span className="material-symbols-outlined text-tertiary">groups</span>
                 {dict.poles.team_heading}
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                 {finalVp && (
                    <Link href={`/equipe/${finalVp.id}`} className="group relative">
                     <div className="absolute -inset-0.5 bg-linear-to-br from-tertiary/40 to-primary/40 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>

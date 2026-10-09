@@ -75,11 +75,11 @@ export default async function Evenements() {
     <div className="flex-grow pt-12 pb-24 px-4 sm:px-8 max-w-7xl mx-auto w-full flex flex-col gap-24 relative overflow-hidden">
       <SharkWallpaper />
       {/* Hero Section */}
-      <header className="relative w-full rounded-xl overflow-hidden glass-panel border-b border-outline-variant/15 p-12 md:p-24 flex flex-col items-center justify-center text-center">
+      <header className="relative w-full rounded-xl overflow-hidden glass-panel border-b border-outline-variant/15 px-5 py-10 sm:p-12 md:p-24 flex flex-col items-center justify-center text-center">
         <div className="absolute inset-0 bg-gradient-to-br from-surface-container-low to-surface-container-lowest opacity-80 -z-10"></div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-tertiary/5 rounded-full blur-[100px] -z-10"></div>
         <p className="font-label text-on-surface-variant tracking-[0.1em] uppercase text-sm mb-4">{dict.events.discover_night}</p>
-        <h1 className="headline-display text-5xl md:text-7xl font-bold mb-6 text-gradient">{dict.events.title}</h1>
+        <h1 className="headline-display text-4xl sm:text-5xl md:text-7xl font-bold mb-6 text-gradient">{dict.events.title}</h1>
         <p className="font-body text-lg text-on-surface/80 max-w-2xl mx-auto leading-relaxed">
           {dict.events.description}
         </p>

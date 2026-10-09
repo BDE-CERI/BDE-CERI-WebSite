@@ -1,9 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 
 type Choice = "accepted" | "rejected" | null;
+
+function subscribeToLanguage(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
+  return () => observer.disconnect();
+}
+
+const englishSnapshot = () => document.documentElement.lang.startsWith("en");
+const serverEnglishSnapshot = () => false;
 
 function BrookieIcon() {
   return (
@@ -24,17 +33,15 @@ export default function CookieConsent() {
   const [choice, setChoice] = useState<Choice>(null);
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [donationUrl, setDonationUrl] = useState("");
-  const [isEnglish, setIsEnglish] = useState(false);
+  const donationUrl = process.env.NEXT_PUBLIC_HELLOASSO_DONATION_URL ?? "";
+  const isEnglish = useSyncExternalStore(subscribeToLanguage, englishSnapshot, serverEnglishSnapshot);
 
   useEffect(() => {
-    setIsEnglish(document.documentElement.lang.startsWith("en"));
     fetch("/api/cookie-consent", { cache: "no-store" })
       .then((response) => response.json())
       .then((data: { choice?: Choice }) => setChoice(data.choice ?? null))
       .catch(() => setChoice(null))
       .finally(() => setReady(true));
-    setDonationUrl(process.env.NEXT_PUBLIC_HELLOASSO_DONATION_URL ?? "");
   }, []);
 
   useEffect(() => {
@@ -72,7 +79,7 @@ export default function CookieConsent() {
   return (
     <aside
       aria-label={isEnglish ? "Brookie preferences" : "Préférences de brookies"}
-      className="fixed inset-x-3 bottom-3 z-[100] mx-auto max-w-3xl rounded-2xl border border-outline-variant/30 bg-surface-container-high p-4 shadow-2xl md:inset-x-6 md:bottom-5 md:p-5"
+      className="fixed inset-x-3 bottom-[calc(6.25rem+env(safe-area-inset-bottom)+0.75rem)] z-[100] mx-auto max-h-[calc(100dvh-11rem-env(safe-area-inset-bottom)-env(safe-area-inset-top))] max-w-3xl overflow-y-auto overscroll-contain rounded-2xl border border-outline-variant/30 bg-surface-container-high p-4 shadow-2xl md:inset-x-6 md:p-5 lg:bottom-5 lg:max-h-[calc(100dvh-2.5rem)]"
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0 flex-1">
@@ -103,14 +110,14 @@ export default function CookieConsent() {
           <button
             disabled={saving}
             onClick={() => void saveChoice("rejected")}
-            className="flex-1 whitespace-nowrap rounded-xl bg-primary px-3 py-2.5 text-xs font-bold text-on-primary transition hover:brightness-110 disabled:opacity-50"
+            className="min-h-11 flex-1 whitespace-nowrap rounded-xl bg-primary px-3 py-2.5 text-xs font-bold text-on-primary transition hover:brightness-110 disabled:opacity-50"
           >
             {isEnglish ? "Reject analytics" : "Refuser les stats"}
           </button>
           <button
             disabled={saving}
             onClick={() => void saveChoice("accepted")}
-            className="flex-1 whitespace-nowrap rounded-xl bg-primary px-3 py-2.5 text-xs font-bold text-on-primary transition hover:brightness-110 disabled:opacity-50"
+            className="min-h-11 flex-1 whitespace-nowrap rounded-xl bg-primary px-3 py-2.5 text-xs font-bold text-on-primary transition hover:brightness-110 disabled:opacity-50"
           >
             {isEnglish ? "Accept analytics" : "Accepter les stats"}
           </button>
