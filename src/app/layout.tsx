@@ -11,6 +11,7 @@ import CookieConsent from "@/components/CookieConsent";
 import MaterialSymbolsStylesheet from "@/components/MaterialSymbolsStylesheet";
 import LocalStatusWidgetServer from "@/components/LocalStatusWidgetServer";
 import { Manrope, Space_Grotesk } from "next/font/google";
+import { getLang } from "@/locales/dictionaries";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk", display: "swap" });
@@ -76,6 +77,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const english = (await getLang()) === "en";
   return (
     <html lang="fr" className="dark" suppressHydrationWarning>
       <head>
@@ -109,10 +111,10 @@ export default async function RootLayout({
             <Suspense fallback={<div aria-hidden="true" className="fixed inset-x-0 top-0 z-50 h-20 border-b border-outline-variant/10 bg-surface/70 backdrop-blur-xl" />}>
               <RootHeader />
             </Suspense>
+            <CookieConsent english={english} />
             <MaterialSymbolsStylesheet />
-            <CookieConsent />
             <Suspense fallback={null}><LocalStatusWidgetServer /></Suspense>
-            <main className="flex-grow pt-[calc(5rem+env(safe-area-inset-top))] lg:pt-20">
+            <main className="grow pt-[calc(5rem+env(safe-area-inset-top))] lg:pt-20">
               {children}
             </main>
             <Suspense fallback={<div aria-hidden="true" className="h-48 bg-surface-container-low" />}>

@@ -76,7 +76,7 @@ export default async function Contact() {
             
             {/* Interactive Map */}
             <div className="reveal-card h-100 rounded-3xl relative overflow-hidden group">
-               <LazyInteractiveMap position={mapPosition} canEdit={canEditMap} english={lang === "en"} />
+               <LazyInteractiveMap position={mapPosition} />
                <div className="absolute top-6 left-6 z-1000 p-4 glass-panel rounded-2xl border border-tertiary/20 shadow-2xl max-w-xs group-hover:-translate-y-1 transition-transform">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-8 h-8 rounded-lg bg-tertiary flex items-center justify-center text-on-tertiary">
@@ -139,7 +139,7 @@ export default async function Contact() {
                      href={instagramUrl} 
                      target="_blank" 
                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-linear-to-tr from-primary via-tertiary to-secondary text-on-tertiary font-bold hover:shadow-[0_0_15px_rgba(123,208,255,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
+                     className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-linear-to-tr from-primary via-tertiary to-secondary text-on-tertiary font-bold hover:shadow-[0_0_15px_rgba(123,208,255,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
                    >
                       <span>{dict.contact.instagram_button}</span>
                      <span className="material-symbols-outlined text-sm">north_east</span>

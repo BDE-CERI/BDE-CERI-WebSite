@@ -51,7 +51,8 @@ export const en = {
     sales: "Terms of sale",
     privacy: "Privacy",
     cookies: "Brookies",
-    cookie_settings: "Brookie settings"
+    cookie_settings: "Brookie settings",
+    experience: "User experience"
   },
   home: {
     welcome: "Welcome to",
@@ -241,6 +242,7 @@ export const en = {
     size_selected: "Selected size",
     taverne_section: "The Tavern",
     taverne_desc: "Drinks & snacks available at the desk.",
+    enter_tavern: "Explore the Tavern",
     branding_section: "BDE Collection",
     branding_desc: "Exclusive hoodies, merch, and surprises.",
     drinks: "Drinks",

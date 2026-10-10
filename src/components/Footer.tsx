@@ -1,8 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import CookieSettingsButton from "@/components/CookieSettingsButton";
+import type { fr } from "@/locales/fr";
 
-export default function Footer({ dict }: { dict: any }) {
+export default function Footer({ dict }: { dict: typeof fr }) {
   return (
     <footer className="w-full py-12 border-t border-white/5 bg-[#070d1f] relative z-20">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-8 max-w-7xl mx-auto">
@@ -49,6 +50,7 @@ export default function Footer({ dict }: { dict: any }) {
           <Link href="/cgv" className="font-body text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors">{dict.footer.sales}</Link>
           <Link href="/confidentialite" className="font-body text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors">{dict.footer.privacy}</Link>
           <Link href="/cookies" className="font-body text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors">{dict.footer.cookies}</Link>
+          <Link href="/experience" className="font-body text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors">{dict.footer.experience}</Link>
           <CookieSettingsButton>{dict.footer.cookie_settings}</CookieSettingsButton>
         </div>
       </div>

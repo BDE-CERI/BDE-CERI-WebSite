@@ -51,7 +51,8 @@ export const fr = {
     sales: "Conditions de vente",
     privacy: "Confidentialité",
     cookies: "Brookies",
-    cookie_settings: "Préférences Brookies"
+    cookie_settings: "Préférences Brookies",
+    experience: "Expérience utilisateur"
   },
   home: {
     welcome: "Bienvenue au",
@@ -241,6 +242,7 @@ export const fr = {
     size_selected: "Taille sélectionnée",
     taverne_section: "La Taverne",
     taverne_desc: "Boissons & snacks en direct de notre local.",
+    enter_tavern: "Découvrir la Taverne",
     branding_section: "Collection BDE",
     branding_desc: "Hoodies, goodies et surprises aux couleurs du CERI.",
     drinks: "Boissons",

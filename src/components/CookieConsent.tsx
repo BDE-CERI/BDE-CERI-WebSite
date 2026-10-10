@@ -1,18 +1,9 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 type Choice = "accepted" | "rejected" | null;
-
-function subscribeToLanguage(onChange: () => void) {
-  const observer = new MutationObserver(onChange);
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
-  return () => observer.disconnect();
-}
-
-const englishSnapshot = () => document.documentElement.lang.startsWith("en");
-const serverEnglishSnapshot = () => false;
 
 function BrookieIcon() {
   return (
@@ -28,13 +19,14 @@ function BrookieIcon() {
   );
 }
 
-export default function CookieConsent() {
+export default function CookieConsent({ english: isEnglish = false }: { english?: boolean }) {
   const pathname = usePathname();
   const [choice, setChoice] = useState<Choice>(null);
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const bannerRef = useRef<HTMLElement>(null);
   const donationUrl = process.env.NEXT_PUBLIC_HELLOASSO_DONATION_URL ?? "";
-  const isEnglish = useSyncExternalStore(subscribeToLanguage, englishSnapshot, serverEnglishSnapshot);
 
   useEffect(() => {
     fetch("/api/cookie-consent", { cache: "no-store" })
@@ -53,22 +45,46 @@ export default function CookieConsent() {
   useEffect(() => {
     if (choice !== "accepted") return;
     const record = () => {
-      void fetch("/api/visitor/record", { method: "POST", credentials: "same-origin" });
+      void fetch("/api/visitor/record", { method: "POST", credentials: "same-origin" }).catch(() => undefined);
     };
     record();
     const interval = window.setInterval(record, 60_000);
     return () => window.clearInterval(interval);
   }, [choice, pathname]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const banner = ready && choice === null ? bannerRef.current : null;
+    if (!banner) {
+      root.style.setProperty("--brookie-banner-height", "0px");
+      return;
+    }
+
+    const updateHeight = () => root.style.setProperty("--brookie-banner-height", `${banner.getBoundingClientRect().height}px`);
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(banner);
+    return () => {
+      observer.disconnect();
+      root.style.setProperty("--brookie-banner-height", "0px");
+    };
+  }, [choice, ready]);
+
   async function saveChoice(nextChoice: "accepted" | "rejected") {
     setSaving(true);
+    setSaveError(false);
     try {
       const response = await fetch("/api/cookie-consent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ choice: nextChoice }),
       });
-      if (response.ok) setChoice(nextChoice);
+      if (response.ok) {
+        setChoice(nextChoice);
+        window.dispatchEvent(new Event("bde:cookie-consent-saved"));
+      } else setSaveError(true);
+    } catch {
+      setSaveError(true);
     } finally {
       setSaving(false);
     }
@@ -78,8 +94,9 @@ export default function CookieConsent() {
 
   return (
     <aside
+      ref={bannerRef}
       aria-label={isEnglish ? "Brookie preferences" : "Préférences de brookies"}
-      className="fixed inset-x-3 bottom-[calc(6.25rem+env(safe-area-inset-bottom)+0.75rem)] z-[100] mx-auto max-h-[calc(100dvh-11rem-env(safe-area-inset-bottom)-env(safe-area-inset-top))] max-w-3xl overflow-y-auto overscroll-contain rounded-2xl border border-outline-variant/30 bg-surface-container-high p-4 shadow-2xl md:inset-x-6 md:p-5 lg:bottom-5 lg:max-h-[calc(100dvh-2.5rem)]"
+      className="fixed inset-x-3 bottom-[calc(6.25rem+env(safe-area-inset-bottom)+0.75rem)] z-100 mx-auto max-h-[calc(100dvh-11rem-env(safe-area-inset-bottom)-env(safe-area-inset-top))] max-w-3xl overflow-y-auto overscroll-contain rounded-2xl border border-outline-variant/30 bg-surface-container-high p-4 shadow-2xl md:inset-x-6 md:p-5 lg:bottom-5 lg:max-h-[calc(100dvh-2.5rem)]"
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="min-w-0 flex-1">
@@ -106,7 +123,7 @@ export default function CookieConsent() {
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-wrap gap-2 md:max-w-[15rem] md:justify-end">
+        <div className="flex shrink-0 flex-wrap gap-2 md:max-w-60 md:justify-end">
           <button
             disabled={saving}
             onClick={() => void saveChoice("rejected")}
@@ -123,6 +140,8 @@ export default function CookieConsent() {
           </button>
         </div>
       </div>
+
+      {saveError && <p role="alert" className="mt-3 text-xs text-error">{isEnglish ? "Your choice could not be saved. Check your connection and try again." : "Votre choix n’a pas pu être enregistré. Vérifiez votre connexion puis réessayez."}</p>}
 
       {donationUrl && (
         <p className="mt-2 text-[11px] text-on-surface-variant">
