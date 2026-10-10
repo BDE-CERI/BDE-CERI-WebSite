@@ -45,6 +45,7 @@ export const en = {
   footer: {
     crafted: "© 2026 BDE CERI. Made by the team.",
     connect: "Follow us",
+    join: "Join us",
     resources: "Useful links",
     download_app: "Our app",
     terms: "Terms of use",
@@ -58,6 +59,10 @@ export const en = {
     welcome: "Welcome to",
     subtitle: "By CERI students, for CERI students.",
     description: "BDE CERI brings campus to life with events, projects, and ways to connect. See what’s happening and get involved.",
+    about_title: "What is BDE CERI?",
+    about_description: "A student association that creates events, brings its groups together, and keeps campus life moving all year. Discover the projects that connect us and the people behind them.",
+    about_poles: "Explore our groups",
+    about_team: "Meet the team",
     join_us: "Get involved",
     join_title: "Want to join us?",
     join_description: "Bring your energy, ideas, or curiosity. BDE CERI is built together with CERI students.",

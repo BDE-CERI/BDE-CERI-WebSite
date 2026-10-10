@@ -45,6 +45,7 @@ export const fr = {
   footer: {
     crafted: "© 2026 BDE CERI. Conçu par l’équipe.",
     connect: "Nous suivre",
+    join: "Nous rejoindre",
     resources: "Liens utiles",
     download_app: "Notre application",
     terms: "Conditions d’utilisation",
@@ -58,6 +59,10 @@ export const fr = {
     welcome: "Bienvenue au",
     subtitle: "Le BDE des étudiants du CERI, par les étudiants.",
     description: "Le BDE du CERI fait vivre le campus avec des événements, des projets et des moments de partage. Découvre ce qui se passe et rejoins-nous !",
+    about_title: "Le BDE CERI, c’est quoi ?",
+    about_description: "Une association étudiante qui imagine des événements, anime les pôles et fait vivre le campus toute l’année. Découvre les projets qui nous rassemblent et les personnes qui les font avancer.",
+    about_poles: "Explorer les pôles",
+    about_team: "Rencontrer l’équipe",
     join_us: "Nous rejoindre",
     join_title: "Envie de nous rejoindre ?",
     join_description: "Propose ton énergie, tes idées ou simplement ta curiosité : le BDE se construit avec les étudiantes et étudiants du CERI.",

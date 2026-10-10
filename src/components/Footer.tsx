@@ -5,8 +5,8 @@ import type { fr } from "@/locales/fr";
 
 export default function Footer({ dict }: { dict: typeof fr }) {
   return (
-    <footer className="w-full py-12 border-t border-white/5 bg-[#070d1f] relative z-20">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-8 max-w-7xl mx-auto">
+    <footer className="w-full py-12 border-t border-white/5 bg-surface-container-lowest relative z-20">
+      <div className="grid grid-cols-1 gap-8 px-8 max-w-7xl mx-auto sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col space-y-4">
           <div className="flex items-center gap-3">
             <Image 
@@ -29,12 +29,6 @@ export default function Footer({ dict }: { dict: typeof fr }) {
             href="#"
             className="font-body text-xs tracking-wide text-[#dce1fb]/60 opacity-80 hover:opacity-100 hover:text-white transition-colors"
           >
-            Facebook
-          </Link>
-          <Link
-            href="#"
-            className="font-body text-xs tracking-wide text-[#dce1fb]/60 opacity-80 hover:opacity-100 hover:text-white transition-colors"
-          >
             Instagram
           </Link>
           <Link
@@ -44,8 +38,16 @@ export default function Footer({ dict }: { dict: typeof fr }) {
             LinkedIn
           </Link>
         </div>
-        <div className="flex flex-col space-y-3 md:items-end">
-          <span className="text-xs font-label uppercase tracking-widest text-[#dce1fb]/40 mb-2 md:text-right">{dict.footer.resources || "Liens utiles"}</span>
+        <div className="flex flex-col space-y-3">
+          <span className="text-xs font-label uppercase tracking-widest text-[#dce1fb]/40 mb-2">{dict.footer.join}</span>
+          <a href="https://discord.gg/bde-ceri" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-body text-xs tracking-wide text-[#dce1fb]/70 opacity-90 transition-colors hover:text-white hover:opacity-100">
+            <span aria-hidden="true" className="material-symbols-outlined text-base text-[#5865F2]">forum</span>
+            Discord
+            <span className="sr-only">(ouvre un nouvel onglet)</span>
+          </a>
+        </div>
+        <div className="flex flex-col space-y-3 lg:items-end">
+          <span className="text-xs font-label uppercase tracking-widest text-[#dce1fb]/40 mb-2 lg:text-right">{dict.footer.resources || "Liens utiles"}</span>
           <Link href="/cgu" className="font-body text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors">{dict.footer.terms}</Link>
           <Link href="/cgv" className="font-body text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors">{dict.footer.sales}</Link>
           <Link href="/confidentialite" className="font-body text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors">{dict.footer.privacy}</Link>

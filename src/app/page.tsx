@@ -128,6 +128,26 @@ export default async function Home() {
         </div>
       </section>
 
+      <section className="relative z-10 overflow-hidden border-y border-outline-variant/10 bg-surface-container-low px-4 py-16 sm:px-6 sm:py-20">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+          <div>
+            <p className="mb-3 text-xs font-bold uppercase tracking-[.18em] text-tertiary">BDE CERI · Avignon</p>
+            <h2 className="font-headline text-3xl font-bold tracking-tight text-on-surface sm:text-4xl">{dict.home.about_title}</h2>
+          </div>
+          <div className="flex flex-col items-start gap-6">
+            <p className="max-w-3xl text-base leading-7 text-on-surface-variant sm:text-lg">{dict.home.about_description}</p>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/poles" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-outline-variant/20 bg-surface-container px-5 py-3 text-sm font-bold text-on-surface transition hover:border-tertiary/50 hover:bg-surface-container-high">
+                {dict.home.about_poles}<span aria-hidden="true" className="material-symbols-outlined text-lg text-tertiary">arrow_forward</span>
+              </Link>
+              <Link href="/equipe" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-outline-variant/20 bg-surface-container px-5 py-3 text-sm font-bold text-on-surface transition hover:border-tertiary/50 hover:bg-surface-container-high">
+                {dict.home.about_team}<span aria-hidden="true" className="material-symbols-outlined text-lg text-tertiary">groups</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <Suspense fallback={<section aria-hidden="true" className="min-h-[28rem] bg-surface-container-lowest px-4 py-16 sm:px-6"><div className="mx-auto max-w-7xl"><div className="mx-auto mb-10 h-8 w-56 animate-pulse rounded-lg bg-surface-container-high"/><div className="h-72 animate-pulse rounded-2xl bg-surface-container-high sm:h-96"/></div></section>}>
         <HomeShowcase dict={dict} lang={lang} />
       </Suspense>
