@@ -52,11 +52,11 @@ export default function Header({ dict, lang, user, member }: {
 
   const links: NavigationLink[] = [
     { href: "/", label: dict.header.home, icon: "home", description: dict.header.home_description },
+    { href: "/evenement", label: dict.header.events, icon: "event", description: dict.header.events_description },
+    { href: "/boutique", label: dict.header.tavern, icon: "storefront", description: dict.header.shop_description },
     { href: "/poles", label: dict.header.poles, icon: "hub", description: dict.header.poles_description },
     { href: "/esport", label: "eSport", icon: "sports_esports", description: dict.header.esport_description },
-    { href: "/evenement", label: dict.header.events, icon: "event", description: dict.header.events_description },
     { href: "/equipe", label: dict.header.team, icon: "groups", description: dict.header.team_description },
-    { href: "/boutique", label: dict.header.tavern, icon: "storefront", description: dict.header.shop_description },
     { href: "/contact", label: dict.header.contact, icon: "forum", description: dict.header.contact_description },
   ];
   const isActive = (href: string) => pathname === href || (href !== "/" && pathname.startsWith(href + "/"));

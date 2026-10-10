@@ -4,11 +4,13 @@ import { Fragment, useEffect, useRef, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { signOut } from "./actions";
+import { markAdminNotificationsRead } from "./notification-actions";
 import EditModeToggle from "./EditModeToggle";
 import { AdminWorkspaceProvider, useAdminWorkspace, type AdminMessages } from "./AdminUI";
 
-export type WorkspaceSection = { id: string; label: string; description: string; icon: string; count?: number; group?: string };
+export type WorkspaceSection = { id: string; label: string; description: string; icon: string; count?: number; notifications?: number; group?: string };
 
 type Props = {
   copy: AdminMessages & Record<string, string>;
@@ -17,6 +19,7 @@ type Props = {
   member: { first_name: string; last_name: string; photo_url?: string | null; role_label?: string | null };
   accessLabel: string;
   canEditSite: boolean;
+  english: boolean;
   dict: Parameters<typeof EditModeToggle>[0]["dict"];
   signOutLabel: string;
   targetMemberId?: string;
@@ -31,8 +34,9 @@ function SignOutButton({ label }: { label: string }) {
   </button>;
 }
 
-function Workspace({ copy, sections, activeSection, member, accessLabel, canEditSite, dict, signOutLabel, targetMemberId, editId, children }: Props) {
+function Workspace({ copy, sections, activeSection, member, accessLabel, canEditSite, english, dict, signOutLabel, targetMemberId, editId, children }: Props) {
   const { dirtyCount, requestDiscard } = useAdminWorkspace();
+  const router = useRouter();
   const signOutRef = useRef<HTMLFormElement>(null);
   const bypassSignOut = useRef(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -42,6 +46,15 @@ function Workspace({ copy, sections, activeSection, member, accessLabel, canEdit
     if (previousSection.current !== activeSection) headingRef.current?.focus({ preventScroll: true });
     previousSection.current = activeSection;
   }, [activeSection]);
+  useEffect(() => {
+    if (activeSection !== "events" && activeSection !== "news" && activeSection !== "poles" && activeSection !== "account_requests" && activeSection !== "badges") return;
+    let active = true;
+    void markAdminNotificationsRead(activeSection).then(result => {
+      if (active && "success" in result) router.refresh();
+    });
+    return () => { active = false; };
+  }, [activeSection, router]);
+  const newLabel = english ? "new" : "nouveau(x)";
   const hrefFor = (id: string) => {
     const params = new URLSearchParams({ section: id });
     if (id === "members" && targetMemberId) params.set("edit_member_id", targetMemberId);
@@ -97,6 +110,7 @@ function Workspace({ copy, sections, activeSection, member, accessLabel, canEdit
                   <span aria-hidden="true" className="material-symbols-outlined text-lg">{section.icon}</span>
                   <span>{section.label}</span>
                   {section.count !== undefined && <span className="ml-auto rounded-lg bg-surface-container-high/70 px-1.5 py-0.5 text-[10px] tabular-nums">{section.count}</span>}
+                  {!!section.notifications && <span title={`${section.notifications} ${newLabel}`} aria-label={`${section.notifications} ${newLabel}`} className="rounded-full bg-error px-1.5 py-0.5 text-[10px] font-bold leading-4 tabular-nums text-on-error shadow-sm">{section.notifications > 99 ? "99+" : section.notifications}</span>}
                 </Link>
                 </Fragment>
               ))}

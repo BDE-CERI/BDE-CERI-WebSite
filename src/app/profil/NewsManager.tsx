@@ -126,7 +126,7 @@ function NewsEditor({
               </label>
             </div>
             <Field label={l("Image de couverture", "Cover image")} hint={item ? l("Sans nouvelle image, la couverture actuelle est conservée.", "The existing cover is kept if you do not choose a new image.") : l("Ajoutez une image pour accompagner votre publication.", "Add an image to accompany your post.")}>
-              <ImageUpload name="image" english={en} defaultValue={item?.image_url} />
+              <ImageUpload name="image" english={en} defaultValue={item?.image_url} aspectRatio={16 / 9} />
             </Field>
           </fieldset>
         </div>

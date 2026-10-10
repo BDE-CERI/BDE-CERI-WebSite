@@ -48,11 +48,11 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 Le suivi de fréquentation est activé uniquement après consentement. Ajoutez ces variables à votre environnement local et à l’hébergement (ne publiez jamais les valeurs secrètes) :
 
-- SUPABASE_SERVICE_ROLE_KEY : clé service role du projet Supabase, uniquement côté serveur.
+- SUPABASE_SERVICE_ROLE_KEY (ou SUPABASE_SECRET_KEY) : clé serveur du projet Supabase, uniquement côté serveur.
 - VISITOR_HASH_SECRET : secret aléatoire dédié (au moins 32 octets) utilisé pour produire les empreintes HMAC quotidiennes.
 - NEXT_PUBLIC_HELLOASSO_DONATION_URL : lien direct vers le formulaire HelloAsso de don de 1 € (optionnel).
 
-Appliquez ensuite supabase/migrations/202610080001_visitor_analytics.sql au projet Supabase via les migrations du CLI ou l’éditeur SQL. Les statistiques se trouvent dans l’espace membre du bureau restreint.
+Appliquez ensuite supabase/migrations/202610080001_visitor_analytics.sql et supabase/migrations/202610090002_visitor_paris_timezone.sql au projet Supabase via les migrations du CLI ou l’éditeur SQL. Les statistiques se trouvent dans l’espace membre du bureau restreint. Voir aussi [le guide de dépannage des statistiques](docs/admin-notifications-and-stats.md).
 
 Les coordonnées de l’éditeur et de l’hébergeur, les informations de conservation et les règles propres aux ventes HelloAsso dans les pages juridiques doivent être vérifiées et complétées avant publication définitive.
 

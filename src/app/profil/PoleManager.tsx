@@ -61,7 +61,7 @@ function PoleEditor({ pole, defaultOrder, dict, onCancel, onSuccess }: { pole?: 
               </div>
             </Field>
             <Field label={l("Image de couverture", "Cover image")} hint={pole ? l("Sans nouvelle image, la couverture actuelle est conservée.", "The existing cover is kept if you do not choose a new image.") : l("Une couverture est facultative ; choisissez une image qui représente la mission du pôle.", "A cover is optional; choose an image that represents the team's mission.")}>
-              <ImageUpload name="image" english={en} defaultValue={pole?.image_url || undefined} />
+              <ImageUpload name="image" english={en} defaultValue={pole?.image_url || undefined} aspectRatio={16 / 9} />
             </Field>
             <p className="rounded-xl border border-outline-variant/20 bg-surface-container-high/40 p-4 text-xs leading-relaxed text-on-surface-variant">{l("Pour changer les responsables ou les membres du pôle, utilisez les affectations dans la rubrique ", "To change the team leader or members, use assignments in the ")}<Link href="/profil?section=members" className="font-semibold text-primary underline underline-offset-4">{l("Membres", "Members")}</Link>{l(".", " section.")}</p>
           </fieldset>

@@ -7,12 +7,15 @@ import type { Metadata } from "next";
 import { createSeoMetadata } from "@/utils/seo";
 import { getPublicMemberName } from "@/utils/member-display";
 import ProfileSocialLinks from "@/components/ProfileSocialLinks";
+import MemberAwards, { MembershipStatus, type MemberAward } from "@/components/MemberHonors";
 
 type PoleRelation = { name: string | null };
 type AssignmentRow = {
   id: string;
   role: string | null;
+  role_label?: string | null;
   is_vp: boolean | null;
+  created_at?: string | null;
   poles: PoleRelation | PoleRelation[] | null;
 };
 
@@ -21,8 +24,10 @@ type MemberProfileRow = {
   first_name: string | null;
   last_name: string | null;
   hide_last_name?: boolean | null;
+  membership_paid?: boolean | null;
   is_visible: boolean | null;
   role_label: string | null;
+  role_description?: string | null;
   photo_url?: string | null;
   bio?: string | null;
   description?: string | null;
@@ -61,7 +66,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   
   const fullName = getPublicMemberName(member);
   const title = `${fullName} | ${member.role_label}`;
-  const desc = (member.bio || `Découvrez le profil de ${fullName}, ${member.role_label} au BDE CERI.`).replace(/\s+/g, " ").slice(0, 160);
+  const desc = (member.bio || member.role_description || `Découvrez le profil de ${fullName}, ${member.role_label} au BDE CERI.`).replace(/\s+/g, " ").slice(0, 160);
   
   return createSeoMetadata({
     path: `/equipe/${id}`,
@@ -99,23 +104,15 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
     notFound();
   }
 
-  // Fetch Historical Roles (Ancien Bureau)
-  // We match by names as there is no direct foreign key for now
-  const { data: history } = await supabase
-    .from("ancien_bureau_members")
-    .select(`
-      *,
-      ancien_bureau (
-        academic_year,
-        theme
-      )
-    `)
-    .eq("first_name", member.first_name)
-    .eq("last_name", member.last_name)
-    .order("created_at", { ascending: false })
-    .returns<HistoryRow[]>();
+  const badgePromise = supabase.from("member_badges").select("id, event_name, award, team_name, academic_year").eq("member_id", member.id).order("academic_year", { ascending: false }).order("created_at", { ascending: false });
+  const historyPromise = supabase.from("ancien_bureau_members").select("*, ancien_bureau(academic_year, theme)").eq("first_name", member.first_name).eq("last_name", member.last_name).order("created_at", { ascending: false }).returns<HistoryRow[]>();
+  const [{ data: badgeRows }, { data: history }] = await Promise.all([badgePromise, historyPromise]);
+  const validAwards = new Set(["first", "second", "third", "jury_choice"]);
+  const memberAwards = (badgeRows || []).filter(row => validAwards.has(row.award)).map(row => ({ ...row, award: row.award as MemberAward["award"] }));
 
-  const assignments = normalizeList(member.member_assignments).map(assignment => ({ ...assignment, poles: normalizeRelation(assignment.poles) }));
+  const assignments = normalizeList(member.member_assignments)
+    .map(assignment => ({ ...assignment, poles: normalizeRelation(assignment.poles) }))
+    .sort((a, b) => Number(b.is_vp) - Number(a.is_vp) || (a.created_at || "").localeCompare(b.created_at || ""));
   const historyRecords = (history || []).map(record => ({ ...record, ancien_bureau: normalizeRelation(record.ancien_bureau) }));
   const socialLinks = member.social_links || {};
   const publicName = getPublicMemberName(member);
@@ -156,9 +153,11 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
             <div>
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
                 <div>
-                  <h1 className="text-4xl md:text-6xl font-headline font-bold text-on-surface tracking-tight mb-2">
-                    {publicName}
-                  </h1>
+                  <div className="mb-3 flex flex-wrap items-center gap-3">
+                    <h1 className="text-4xl md:text-6xl font-headline font-bold text-on-surface tracking-tight">{publicName}</h1>
+                    <MembershipStatus paid={member.membership_paid === true} english={dict.profil.title === "My Account"} />
+                  </div>
+                  <MemberAwards awards={memberAwards} english={dict.profil.title === "My Account"} />
                   <p className="text-lg text-primary font-label font-bold uppercase tracking-widest flex items-center gap-2">
                     {getRoleIcon(member.role_label) && (
                       <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -167,6 +166,7 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
                     )}
                     {member.role_label}
                   </p>
+                  {member.role_description && <p className="mt-3 max-w-2xl text-sm leading-6 text-on-surface-variant">{member.role_description}</p>}
                 </div>
                 <div className="px-4 py-2 bg-surface-container-highest rounded-full border border-outline-variant/15 text-xs font-bold text-on-surface-variant">
                   {member.study_level || dict.team.student_at_ceri}
@@ -199,7 +199,7 @@ export default async function MemberProfile({ params }: { params: Promise<{ id: 
                            {assignments.map((a) => (
                               <div key={a.id} className="flex flex-col">
                                  <span className="text-xs font-bold text-on-surface">{dict.common.pole} {a.poles?.name}</span>
-                                 <span className="text-xs text-on-surface-variant">{a.role} {a.is_vp && "(VP)"}</span>
+                                 <span className="text-xs text-on-surface-variant">{a.role_label || a.role} {a.is_vp && "(VP)"}</span>
                               </div>
                            ))}
                         </div>

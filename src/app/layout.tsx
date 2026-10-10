@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "leaflet/dist/leaflet.css";
 import { EditModeProvider } from "@/context/EditModeContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { Suspense } from "react";
@@ -8,6 +9,7 @@ import RootFooter from "@/components/RootFooter";
 import StructuredData from "@/components/StructuredData";
 import CookieConsent from "@/components/CookieConsent";
 import MaterialSymbolsStylesheet from "@/components/MaterialSymbolsStylesheet";
+import LocalStatusWidgetServer from "@/components/LocalStatusWidgetServer";
 import { Manrope, Space_Grotesk } from "next/font/google";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
@@ -109,6 +111,7 @@ export default async function RootLayout({
             </Suspense>
             <MaterialSymbolsStylesheet />
             <CookieConsent />
+            <Suspense fallback={null}><LocalStatusWidgetServer /></Suspense>
             <main className="flex-grow pt-[calc(5rem+env(safe-area-inset-top))] lg:pt-20">
               {children}
             </main>

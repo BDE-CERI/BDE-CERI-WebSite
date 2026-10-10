@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { signInWithGoogle } from "./google-actions";
 import { getEventLoginReturnPath } from "@/utils/login-return";
+import { hasSiteAdminAccess } from "@/utils/member-roles";
 
 async function authenticateWithPassword(email: string, password: string): Promise<boolean> {
   let authenticated = false;
@@ -57,7 +58,11 @@ export async function login(formData: FormData) {
   }
   if (!await authenticateWithPassword(emailValue.trim(), passwordValue)) redirect(loginErrorUrl);
   revalidatePath("/", "layout");
-  redirect(destination);
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  const { data: member } = auth.user ? await supabase.from("members").select("category, role, is_dev").eq("auth_user_id", auth.user.id).maybeSingle() : { data: null };
+  const needsMfa = hasSiteAdminAccess(member?.category, member?.role, member?.is_dev);
+  redirect(needsMfa ? "/auth/mfa?next=" + encodeURIComponent(destination) : destination);
 }
 
 export async function loginWithGoogle() {

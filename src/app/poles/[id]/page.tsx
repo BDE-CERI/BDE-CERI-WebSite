@@ -66,7 +66,7 @@ export default async function PoleDetail({ params }: { params: Promise<{ id: str
   // 3. Fetch Secondary VP and Members (assignments)
   const { data: assignments } = await supabase
     .from("member_assignments")
-    .select("role, is_vp, members(*)")
+    .select("role, role_label, is_vp, created_at, members(*)")
     .eq("pole_id", id);
 
   // 4. Merge and Deduplicate
@@ -82,11 +82,9 @@ export default async function PoleDetail({ params }: { params: Promise<{ id: str
     if (!m || !m.is_visible) return;
 
     if (a.is_vp) {
-      if (!finalVp) finalVp = m;
+      if (!finalVp || finalVp.id === m.id) finalVp = { ...m, display_role: a.role_label || `Vice-Président ${pole.name}` };
     } else {
-      if (!memberMap.has(m.id)) {
-        memberMap.set(m.id, { ...m, display_role: a.role });
-      }
+      memberMap.set(m.id, { ...m, display_role: a.role_label || a.role || m.role_label });
     }
   });
 

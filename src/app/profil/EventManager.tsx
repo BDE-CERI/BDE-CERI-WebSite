@@ -20,7 +20,8 @@ interface EventItem {
   title: string;
   description: string;
   full_content?: string;
-  date_start: string;
+  date_start: string | null;
+  date_is_tbd?: boolean;
   location: string;
   precise_location?: string;
   max_capacity?: number;
@@ -34,22 +35,25 @@ interface EventItem {
 
 
 function EventEditor({ event, dict, onCancel, onSuccess }: { event?: EventItem; dict: Dictionary; onCancel: () => void; onSuccess: () => void }) {
-  const [registrationEnabled, setRegistrationEnabled] = useState(event?.registration_enabled !== false);
+  const [registrationEnabled, setRegistrationEnabled] = useState(event?.date_is_tbd ? false : event?.registration_enabled !== false);
+  const [dateIsTbd, setDateIsTbd] = useState(event?.date_is_tbd === true);
   const [isPaid, setIsPaid] = useState(event?.registration_is_paid === true);
   const [registrationPrice, setRegistrationPrice] = useState(event?.registration_price_cents != null ? (event.registration_price_cents / 100).toFixed(2) : "");
   const [checkoutUrl, setCheckoutUrl] = useState(event?.helloasso_checkout_url || "");
   const en = dict.profil?.title === "My Account";
   const l = (fr: string, english: string) => en ? english : fr;
   const save = async (formData: FormData) => {
-    const localValue = String(formData.get("date_start") || "");
-    const parsed = parseParisDateTimeLocal(localValue);
-    if ("error" in parsed) return { error: parsed.error === "nonexistent"
-      ? l("Cette heure n’existe pas à Paris lors du passage à l’heure d’été. Choisissez une autre heure.", "This time does not exist in Paris when daylight saving time starts. Choose another time.")
-      : l("Choisissez une date et une heure valides.", "Choose a valid date and time.") };
-    // Keep an unchanged event’s exact instant, including the second occurrence
-    // of a repeated autumn hour and any seconds not displayed in the input.
-    const unchanged = event && localValue === toParisDateTimeLocal(event.date_start);
-    formData.set("date_start", unchanged ? new Date(event.date_start).toISOString() : parsed.iso);
+    const dateIsTbd = formData.get("date_is_tbd") === "true";
+    if (dateIsTbd) formData.set("date_start", "");
+    else {
+      const localValue = String(formData.get("date_start") || "");
+      const parsed = parseParisDateTimeLocal(localValue);
+      if ("error" in parsed) return { error: parsed.error === "nonexistent"
+        ? l("Cette heure n’existe pas à Paris lors du passage à l’heure d’été. Choisissez une autre heure.", "This time does not exist in Paris when daylight saving time starts. Choose another time.")
+        : l("Choisissez une date et une heure valides.", "Choose a valid date and time.") };
+      const unchanged = event && localValue === toParisDateTimeLocal(event.date_start);
+      formData.set("date_start", unchanged && event.date_start ? new Date(event.date_start).toISOString() : parsed.iso);
+    }
     return event ? updateEvent(formData) : addEvent(formData);
   };
 
@@ -78,8 +82,13 @@ function EventEditor({ event, dict, onCancel, onSuccess }: { event?: EventItem; 
           </fieldset>
           <fieldset className="min-w-0 space-y-4">
             <legend className="mb-4 font-headline text-base font-bold">{l("Organisation et visuel", "Logistics and image")}</legend>
-            <Field label={l("Date et heure de début", "Start date and time")} required hint={l("Heure de Paris (UTC+2 en été, UTC+1 en hiver). Une nouvelle heure répétée au passage à l’heure d’hiver utilise sa première occurrence.", "Paris time (UTC+2 in summer, UTC+1 in winter). A newly selected repeated hour at the autumn clock change uses its first occurrence.")}>
-              <input name="date_start" type="datetime-local" defaultValue={toParisDateTimeLocal(event?.date_start)} required className={inputClass + " min-w-0"} />
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-high/40 p-3">
+              <input name="date_is_tbd" type="checkbox" value="true" checked={dateIsTbd} onChange={change => setDateIsTbd(change.target.checked)} className="mt-1 size-4 shrink-0 accent-tertiary" />
+              <span><span className="block text-sm font-semibold">{l("Prochainement — date à préciser", "Coming soon — date to be announced")}</span><span className="mt-1 block text-xs leading-5 text-on-surface-variant">{l("L’événement sera publié sans date ni heure précises. Les inscriptions resteront fermées.", "The event will be published without a specific date or time. Registration will stay closed.")}</span></span>
+            </label>
+            <input type="hidden" name="date_is_tbd" value="false" />
+            <Field label={l("Date et heure de début", "Start date and time")} required={!dateIsTbd} hint={dateIsTbd ? l("Cette date restera masquée jusqu’à sa définition.", "The date will remain hidden until it is set.") : l("Heure de Paris (UTC+2 en été, UTC+1 en hiver).", "Paris time (UTC+2 in summer, UTC+1 in winter).")}>
+              <input name="date_start" type="datetime-local" defaultValue={toParisDateTimeLocal(event?.date_start)} required={!dateIsTbd} disabled={dateIsTbd} className={inputClass + " min-w-0"} />
             </Field>
             <Field label={l("Lieu", "Location")} required>
               <input name="location" defaultValue={event?.location || ""} required maxLength={200} className={inputClass} placeholder={l("Ex. : Campus Jean-Henri Fabre", "E.g. Jean-Henri Fabre campus")} />
@@ -93,14 +102,14 @@ function EventEditor({ event, dict, onCancel, onSuccess }: { event?: EventItem; 
             <fieldset className="space-y-4 rounded-xl border border-outline-variant/25 bg-surface-container-high/40 p-4">
               <legend className="px-2 text-sm font-bold text-on-surface">{l("Inscriptions", "Registration")}</legend>
               <label className="flex min-h-11 cursor-pointer items-start gap-3">
-                <input name="registration_enabled" type="checkbox" value="true" checked={registrationEnabled} onChange={(change) => setRegistrationEnabled(change.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-secondary" />
+                <input name="registration_enabled" type="checkbox" value="true" checked={dateIsTbd ? false : registrationEnabled} disabled={dateIsTbd} onChange={(change) => setRegistrationEnabled(change.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-secondary" />
                 <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2 text-sm font-semibold text-on-surface"><span aria-hidden="true" className="material-symbols-outlined text-lg text-secondary">event_note</span>{l("Événement informatif, sans inscription", "Informational event, no registration")}</span>
-                  <span className="mt-1 block text-xs leading-5 text-on-surface-variant">{l("Désactive le formulaire public. Les inscriptions déjà prises et leur historique sont conservés.", "Hides the public signup form. Existing registrations and their history are kept.")}</span>
+                  <span className="flex items-center gap-2 text-sm font-semibold text-on-surface"><span aria-hidden="true" className="material-symbols-outlined text-lg text-secondary">event_note</span>{l("Inscriptions ouvertes", "Registration is open")}</span>
+                  <span className="mt-1 block text-xs leading-5 text-on-surface-variant">{l("Décochez cette case pour publier un événement informatif sans inscription. Les inscriptions et leur historique sont conservés.", "Uncheck this to publish an informational event without signup. Existing registrations and their history are kept.")}</span>
                 </span>
               </label>
               <label className="flex min-h-11 cursor-pointer items-start gap-3">
-                <input name="registration_is_paid" type="checkbox" value="true" checked={isPaid} disabled={!registrationEnabled} onChange={(change) => setIsPaid(change.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-tertiary disabled:cursor-not-allowed disabled:opacity-50" />
+                <input name="registration_is_paid" type="checkbox" value="true" checked={isPaid} disabled={!registrationEnabled || dateIsTbd} onChange={(change) => setIsPaid(change.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-tertiary disabled:cursor-not-allowed disabled:opacity-50" />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2 text-sm font-semibold text-on-surface"><span aria-hidden="true" className="material-symbols-outlined text-lg text-tertiary">confirmation_number</span>{l("Inscription payante", "Paid registration")}</span>
                   <span className="mt-1 block text-xs leading-5 text-on-surface-variant">{l("Activez pour demander un paiement via HelloAsso. Sinon, l'inscription est gratuite.", "Enable to request payment through HelloAsso. Otherwise, registration is free.")}</span>
@@ -117,7 +126,7 @@ function EventEditor({ event, dict, onCancel, onSuccess }: { event?: EventItem; 
               {isPaid && registrationEnabled && <p className="flex items-start gap-2 rounded-lg bg-tertiary/10 p-3 text-xs leading-5 text-on-surface-variant"><span aria-hidden="true" className="material-symbols-outlined mt-0.5 shrink-0 text-base text-tertiary">info</span><span>{l("Le tarif du formulaire HelloAsso doit correspondre à ce montant. Les paiements sont à vérifier dans HelloAsso.", "The HelloAsso form price must match this amount. Payments must be checked in HelloAsso.")}</span></p>}
             </fieldset>
             <Field label={l("Image de couverture", "Cover image")} hint={event ? l("Sans nouvelle image, la couverture actuelle est conservée.", "The existing cover is kept if you do not choose a new image.") : l("Choisissez une image lisible qui représente l'événement.", "Choose a clear image that represents the event.")}>
-              <ImageUpload name="image" english={en} defaultValue={event?.image_url} />
+              <ImageUpload name="image" english={en} defaultValue={event?.image_url} aspectRatio={16 / 9} />
             </Field>
           </fieldset>
         </div>
@@ -142,7 +151,7 @@ export default function EventManager({ dict, initialEvents, embedded = false }: 
   const [notice, setNotice] = useState("");
   const query = search.trim().toLocaleLowerCase();
   const visible = events.filter(event => {
-    const upcoming = new Date(event.date_start).getTime() >= now;
+    const upcoming = event.date_is_tbd === true || (event.date_start !== null && new Date(event.date_start).getTime() >= now);
     return (!query || [event.title, event.description, event.location].some(value => value?.toLocaleLowerCase().includes(query))) && (filter === "all" || (filter === "upcoming" ? upcoming : !upcoming));
   });
   const editingEvent = events.find(event => event.id === editingId);
@@ -159,9 +168,7 @@ export default function EventManager({ dict, initialEvents, embedded = false }: 
     });
   };
   const closeEditor = () => { setEditingId(null); setCreating(false); requestAnimationFrame(() => (embedded ? document.getElementById("admin-section-title") : headingRef.current)?.focus()); };
-  const dateLabel = (date: string) => {
-    return formatParisDateTime(date, { dateStyle: "medium", timeStyle: "short" }, en ? "en-GB" : "fr-FR") || l("Date non renseignée", "Date unavailable");
-  };
+  const dateLabel = (date: string | null, tbd = false) => tbd ? l("Prochainement", "Coming soon") : date ? formatParisDateTime(date, { dateStyle: "medium", timeStyle: "short" }, en ? "en-GB" : "fr-FR") || l("Date non renseignée", "Date unavailable") : l("Date non renseignée", "Date unavailable");
 
   return (
     <section className="space-y-5" aria-label={l("Gestion des événements", "Event management")}>
@@ -195,13 +202,13 @@ export default function EventManager({ dict, initialEvents, embedded = false }: 
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="break-words font-bold text-on-surface">{event.title}</h3>
-                <p className="mt-1 text-sm text-on-surface-variant">{dateLabel(event.date_start)}</p>
+                <p className="mt-1 text-sm text-on-surface-variant">{dateLabel(event.date_start, event.date_is_tbd)}</p>
                 <p className="mt-1 break-words text-xs text-on-surface-variant">{event.location}</p>
               </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant/15 pt-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-secondary/10 px-2.5 py-1 text-xs font-semibold text-secondary">{new Date(event.date_start).getTime() >= now ? l("À venir", "Upcoming") : l("Passé", "Past")}</span>
+                <span className="rounded-full bg-secondary/10 px-2.5 py-1 text-xs font-semibold text-secondary">{event.date_is_tbd ? l("Prochainement", "Coming soon") : event.date_start && new Date(event.date_start).getTime() >= now ? l("À venir", "Upcoming") : l("Passé", "Past")}</span>
                 <span className={"inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold " + (event.registration_enabled === false ? "bg-surface-container-high text-on-surface-variant" : event.registration_is_paid ? "bg-tertiary/10 text-tertiary" : "bg-surface-container-high text-on-surface-variant")}><span aria-hidden="true" className="material-symbols-outlined text-sm">{event.registration_enabled === false ? "event_note" : event.registration_is_paid ? "confirmation_number" : "check_circle"}</span>{event.registration_enabled === false ? l("Informatif", "Informational") : event.registration_is_paid ? event.registration_price_cents != null ? formatEventPrice(event.registration_price_cents, en) : l("Payant", "Paid") : l("Gratuit", "Free")}</span>
               </div>
               <div className="flex flex-wrap items-center gap-2">

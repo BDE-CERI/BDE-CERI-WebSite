@@ -23,12 +23,13 @@ export async function POST(request: NextRequest) {
   const admin = createVisitorAdminClient();
   const secret = process.env.VISITOR_HASH_SECRET;
   if (!admin || !secret) {
-    return NextResponse.json({ recorded: false, reason: "analytics_not_configured" }, { status: 503 });
+    console.error("Opt-in visitor analytics are not configured:", { adminClient: !!admin, hashSecret: !!secret });
+    return NextResponse.json({ recorded: false, reason: "analytics_not_configured", code: "analytics_not_configured" }, { status: 503 });
   }
 
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   const ip = request.headers.get("x-real-ip")?.trim() || forwarded;
-  if (!ip) return NextResponse.json({ recorded: false, reason: "ip_unavailable" }, { status: 503 });
+  if (!ip) return NextResponse.json({ recorded: false, reason: "ip_unavailable", code: "visitor_ip_unavailable" }, { status: 503 });
 
   const visitDate = getParisDateKey();
   const visitorHash = createHmac("sha256", secret).update(visitDate).update(":").update(ip).digest("hex");
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
   });
   if (error) {
     console.error("Could not record an opted-in visit:", error.message);
-    return NextResponse.json({ recorded: false }, { status: 503 });
+    return NextResponse.json({ recorded: false, code: "visit_record_failed" }, { status: 503 });
   }
 
   return NextResponse.json({ recorded: true }, { status: 200, headers: { "Cache-Control": "no-store" } });

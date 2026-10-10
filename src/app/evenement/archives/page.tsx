@@ -67,7 +67,7 @@ export default async function Archives() {
                 </div>
                 <div className="p-6">
                   <h3 className="text-xl font-headline font-bold text-on-surface mb-2">{event.title}</h3>
-                  <p className="text-sm text-on-surface-variant line-clamp-2 italic">
+                  <p className="text-sm text-on-surface-variant line-clamp-5 italic">
                     « {event.description} »
                   </p>
                 </div>

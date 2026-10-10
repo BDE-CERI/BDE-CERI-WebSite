@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
+import { hasSiteAdminAccess } from "@/utils/member-roles";
 import {
   GOOGLE_FLOW_COOKIE,
   createGoogleAuthClient,
@@ -77,14 +78,15 @@ export async function GET(request: Request) {
     }
 
     // OAuth never claims a profile by email and never changes business tables.
-    const member = await supabase.from("members").select("id").eq("auth_user_id", user.id).maybeSingle();
+    const member = await supabase.from("members").select("id, category, role, is_dev").eq("auth_user_id", user.id).maybeSingle();
     if (member.error || !member.data) {
       await supabase.auth.signOut({ scope: "local" });
       return fail(member.error ? "google_failed" : "google_access_denied", true);
     }
     revalidatePath("/", "layout");
     const destination = flow.mode === "link" ? "/profil?section=settings&google_status=linked" : flow.returnTo;
-    return redirectTo(destination);
+    const needsMfa = flow.mode === "login" && hasSiteAdminAccess(member.data.category, member.data.role, member.data.is_dev);
+    return redirectTo(needsMfa ? "/auth/mfa?next=" + encodeURIComponent(destination) : destination);
   } catch {
     if (supabase) await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
     return fail("google_failed", !!supabase);

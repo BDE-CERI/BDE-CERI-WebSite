@@ -293,7 +293,7 @@ function ProductForm({
               </fieldset>
             )}
             <Field label={copy.image} hint={copy.imageHint}>
-              <ImageUpload name="image" defaultValue={item?.image_url} english={english} />
+              <ImageUpload name="image" defaultValue={item?.image_url} english={english} aspectRatio={1} />
             </Field>
           </div>
         </div>

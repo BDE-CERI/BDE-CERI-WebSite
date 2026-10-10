@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import SizePicker from "./SizePicker";
 import BuyButton from "../BuyButton";
 import { createSeoMetadata } from "@/utils/seo";
+import { getLocalOfficeData, getLocalOfficeStatus } from "@/utils/local-office";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -35,7 +36,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const dict = await getDictionary();
-  const supabase = await createClient();
+  const [supabase, localOffice] = await Promise.all([createClient(), getLocalOfficeData()]);
+  const english = dict.profil.title === "My Account";
+  const localStatus = getLocalOfficeStatus(localOffice, new Date(), english);
 
   // Try to find in branding products first
   let { data: product, error } = await supabase
@@ -168,7 +171,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
             </section>
           </div>
 
-          <BuyButton productId={product.id} stock={product.stock} />
+          <BuyButton productId={product.id} stock={product.stock} isTaverne={!isBranding} isOpen={localStatus.isOpen} closedMessage={localStatus.message} english={english} />
         </div>
       </div>
     </div>

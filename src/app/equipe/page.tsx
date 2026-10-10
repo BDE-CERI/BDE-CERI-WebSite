@@ -9,8 +9,8 @@ import { createSeoMetadata } from "@/utils/seo";
 import { getPublicMemberName } from "@/utils/member-display";
 
 type PoleRelation = { name: string | null };
-type TeamAssignmentRow = { role: string | null; poles?: PoleRelation | PoleRelation[] | null };
-type TeamAssignment = { role: string | null; poles: PoleRelation | null };
+type TeamAssignmentRow = { role: string | null; role_label?: string | null; is_vp?: boolean | null; created_at?: string | null; poles?: PoleRelation | PoleRelation[] | null };
+type TeamAssignment = { role: string | null; role_label?: string | null; is_vp?: boolean | null; created_at?: string | null; poles: PoleRelation | null };
 
 type TeamMemberRow = {
   id: string;
@@ -84,7 +84,7 @@ async function TeamGrid({ lang, currentYear }: { lang: string; currentYear: stri
 
   const { data: membersData } = await supabase
     .from("members")
-    .select("*, member_assignments(role, poles(name))")
+    .select("*, member_assignments(role, role_label, is_vp, created_at, poles(name))")
     .eq("is_visible", true)
     .or(`current_academic_year.eq.${currentYear},category.eq.membre_honneur`)
     .order("rank", { ascending: true })
@@ -136,8 +136,11 @@ async function TeamGrid({ lang, currentYear }: { lang: string; currentYear: stri
     ...member,
     member_assignments: normalizeList(member.member_assignments).map(assignment => ({
       role: assignment.role,
+      role_label: assignment.role_label,
+      is_vp: assignment.is_vp,
+      created_at: assignment.created_at,
       poles: normalizeRelation(assignment.poles),
-    })),
+    })).sort((a, b) => Number(b.is_vp) - Number(a.is_vp) || (a.created_at || "").localeCompare(b.created_at || "")),
   }));
 
   const isFr = lang === "fr";
@@ -229,7 +232,7 @@ async function TeamGrid({ lang, currentYear }: { lang: string; currentYear: stri
                     key={i}
                     className="text-[9px] px-1.5 py-0.5 rounded-md bg-surface-container-highest text-on-surface-variant border border-outline-variant/10 uppercase font-bold tracking-tighter"
                   >
-                    {a.role}
+                    {a.role_label || a.role}
                   </span>
                 ))}
               </div>
@@ -291,7 +294,7 @@ async function TeamGrid({ lang, currentYear }: { lang: string; currentYear: stri
                   key={i}
                   className="text-[8px] px-1 py-0.5 rounded bg-surface-container-highest text-on-surface-variant border border-outline-variant/10 uppercase font-bold"
                 >
-                  {a.role}
+                  {a.role_label || a.role}
                 </span>
               ))}
             </div>

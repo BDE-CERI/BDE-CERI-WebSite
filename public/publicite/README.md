@@ -1,0 +1,1 @@
+Déposez ici les visuels de campagne de la boutique (JPG, PNG, WebP, AVIF, GIF ou SVG), puis redéployez le site. La bannière de l'accueil les affichera à la place du visuel provisoire. Plusieurs images activent un carrousel.

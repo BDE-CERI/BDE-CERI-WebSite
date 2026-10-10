@@ -58,13 +58,20 @@ export const en = {
     subtitle: "By CERI students, for CERI students.",
     description: "BDE CERI brings campus to life with events, projects, and ways to connect. See what’s happening and get involved.",
     join_us: "Get involved",
+    join_title: "Want to join us?",
+    join_description: "Bring your energy, ideas, or curiosity. BDE CERI is built together with CERI students.",
+    join_contact: "Explore the recruitment drive",
     discover_events: "Upcoming events",
     semester: "A new year at CERI",
     flash_event: "Featured event",
     next_experience: "Coming up",
     featured_event_desc: "Join us to explore technology, creativity, and student life.",
     roster_title: "Around CERI",
-    view_all_events: "View all events"
+    view_all_events: "View all events",
+    shop_promo_eyebrow: "The CERI pirate hideout",
+    shop_promo_title: "All hands on deck for snack attacks!",
+    shop_promo_desc: "Set course for the Tavern to stock up on drinks and snacks. Every purchase fills the BDE treasure chest… and helps keep the campus kraken away!",
+    shop_promo_action: "Let’s set sail!"
   },
   events: {
     discover_night: "See you on campus soon?",
@@ -81,7 +88,9 @@ export const en = {
     max_places: "places maximum",
     details_empty: "No additional details are available yet.",
     gallery: "Event gallery",
-    register_button: "Register for this event"
+    register_button: "Register for this event",
+    coming_soon: "Coming soon",
+    empty_upcoming: "No upcoming events at the moment."
   },
   team: {
     invitation: "Meet the BDE team",
@@ -185,7 +194,28 @@ export const en = {
     weekdays: "Monday to Friday",
     lunch_break: "Lunch break",
     open: "Open",
-    hours_note: "Opening hours may vary depending on team availability."
+    local_presence: "Member on site",
+    local_possible: "Possible opening hours",
+    local_closed_possible: "The local may remain closed when no board member is available.",
+    hours_note: "Opening hours may vary depending on team availability.",
+    recruitment: {
+      title: "Join BDE CERI",
+      description: "Want to take part in campus life, share ideas, or help with projects? Tell us about yourself through our recruitment form.",
+      information_title: "Before filling out the form",
+      information: "The information you submit will be used by BDE CERI to review your enquiry and contact you about it. The form is hosted by Google and will open in a new tab. Please avoid sharing sensitive information.",
+      consent: "I have read and agree to the information above.",
+      open_form: "Open the recruitment form",
+      form_unavailable: "The recruitment form will be available soon. You can email us at bde-ceri@univ-avignon.fr.",
+      faq_title: "Frequently asked questions",
+      faq_description: "A few answers before you get in touch.",
+      faqs: [
+        { question: "Who can join the BDE?", answer: "CERI students can offer to help and learn about the association’s activities.", href: "", link_label: "" },
+        { question: "Do I need previous experience?", answer: "No. Motivation, curiosity, and a desire to get involved matter more than previous experience.", href: "", link_label: "" },
+        { question: "How much time should I expect to commit?", answer: "It depends on the role and your availability. You can discuss the needs and schedule with the team.", href: "", link_label: "" },
+        { question: "Can I ask a question before applying?", answer: "Of course. Email us at bde-ceri@univ-avignon.fr or contact us through our social channels.", href: "", link_label: "" },
+        { question: "Can I ask you a question in person at the lounge?", answer: "Yes, if the lounge is open and a BDE member is there. Check the", href: "#horaires-local", link_label: "lounge hours" },
+      ]
+    }
   },
   login: {
     title: "Staff Hub",
@@ -195,10 +225,11 @@ export const en = {
     error: "Oops, invalid credentials."
   },
   boutique: {
-    title: "The Store",
-    description: "Browse BDE CERI products and place your order directly through HelloAsso.",
-    badge: "Official BDE CERI store",
+    title: "La Taverne du CERI",
+    description: "The BDE CERI shop: a friendly break at the lounge between classes, while supporting student life.",
+    badge: "The CERI student counter",
     shop_name: "La Taverne du CERI",
+    store_descriptor: "The BDE CERI shop",
     secure_checkout: "Orders and payments securely handled by HelloAsso",
     association: "BDE CERI Avignon",
     open_helloasso: "Open the shop on HelloAsso",
@@ -250,7 +281,7 @@ export const en = {
       "events": "Events",
       "news": "News",
       "poles": "Teams",
-      "shop": "Local catalogue",
+      "local": "Local hours",
       "stats": "Site traffic",
       "full_access": "Executive board",
       "news_access": "Communications",
@@ -265,8 +296,10 @@ export const en = {
       "events_desc": "Prepare upcoming events and update existing ones.",
       "news_desc": "Write, review, and publish news for the site.",
       "poles_desc": "Keep team introductions, images, and colours up to date.",
-      "shop_desc": "Manage products saved on this site.",
+      "local_desc": "Adjust opening hours, post shifts, and assign keyholders.",
       "stats_desc": "View site traffic measured with visitors’ consent.",
+      "badges": "Awards",
+      "badges_desc": "Manage awards displayed on public member profiles.",
       "welcome": "Hello {name}",
       "quick_access": "Management areas",
       "personal_area": "Your profile and introduction",
@@ -370,7 +403,7 @@ export const en = {
     publish_first: "Publish the first update",
     exit: "Exit",
     external_link: "External Redirection",
-    external_warning: "You are being redirected to <strong>chauffleet.com</strong>. We are not responsible for external content.",
+    external_warning: "You are being redirected to {domain}. We are not responsible for external content.",
     dont_show_again: "Don't show this warning again",
     cancel: "Cancel",
     ok: "OK",

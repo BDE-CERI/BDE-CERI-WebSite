@@ -49,7 +49,9 @@ export default function ImageUpload({ name, defaultValue, required, aspectRatio,
   const dispatchingRef = useRef(false);
   const operationRef = useRef(0);
   const dragRef = useRef<{ pointerId: number; x: number; y: number; offset: Offset } | null>(null);
-  const ratio = aspectRatio && Number.isFinite(aspectRatio) && aspectRatio > 0 ? Math.min(10, Math.max(0.1, aspectRatio)) : 1;
+  // Every uploaded image is cropped before it enters the form. The default matches
+  // the wide cards used for events, poles and news; profile/shop uploads override it.
+  const ratio = aspectRatio && Number.isFinite(aspectRatio) && aspectRatio > 0 ? Math.min(10, Math.max(0.1, aspectRatio)) : 16 / 9;
   const dimensions = getCropDimensions(naturalSize.width, naturalSize.height, ratio, cropRotation);
   const rotated = cropRotation % 180 !== 0;
   const bounds = {
@@ -245,18 +247,14 @@ export default function ImageUpload({ name, defaultValue, required, aspectRatio,
         return;
       }
       if (!image.naturalWidth || !image.naturalHeight) throw new Error("Invalid image");
-      if (aspectRatio) {
-        cropUrlRef.current = url;
-        setNaturalSize({ width: image.naturalWidth, height: image.naturalHeight });
-        setCropName(file.name);
-        setCropZoom(1);
-        setCropRotation(0);
-        setCropOffset({ x: 0, y: 0 });
-        setCropSource(url);
-        fileInputRef.current?.setCustomValidity(copy.cropValidity);
-      } else {
-        commitFile(file, url);
-      }
+      cropUrlRef.current = url;
+      setNaturalSize({ width: image.naturalWidth, height: image.naturalHeight });
+      setCropName(file.name);
+      setCropZoom(1);
+      setCropRotation(0);
+      setCropOffset({ x: 0, y: 0 });
+      setCropSource(url);
+      fileInputRef.current?.setCustomValidity(copy.cropValidity);
     } catch {
       URL.revokeObjectURL(url);
       if (operation === operationRef.current) {

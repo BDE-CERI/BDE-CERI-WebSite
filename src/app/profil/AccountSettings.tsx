@@ -3,6 +3,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useFormStatus } from "react-dom";
 import { linkGoogleAccount } from "@/app/login/google-actions";
+import MfaSettings from "./MfaSettings";
 import type { AccountEmailRequest } from "@/types/account-settings";
 import { formatParisDateTime } from "@/utils/paris-time";
 import { requestEmailChange } from "./account-actions";
@@ -16,6 +17,8 @@ type Props = {
   requestsUnavailable?: boolean;
   googleStatus?: string;
   googleError?: string;
+  mfaRequired?: boolean;
+  mfaRecommended?: boolean;
   english?: boolean;
 };
 
@@ -87,7 +90,7 @@ function EmailRequestForm({ email, english, onClose, onSent }: { email: string; 
   </>;
 }
 
-export default function AccountSettings({ email, googleLinked, googleEmail, requests, requestsUnavailable = false, googleStatus, googleError, english = false }: Props) {
+export default function AccountSettings({ email, googleLinked, googleEmail, requests, requestsUnavailable = false, googleStatus, googleError, mfaRequired = false, mfaRecommended = false, english = false }: Props) {
   const [requestOpen, setRequestOpen] = useState(false);
   const [recentSubmission, setRecentSubmission] = useState<{ email: string; snapshot: string } | null>(null);
   const requestButtonRef = useRef<HTMLButtonElement>(null);
@@ -131,6 +134,7 @@ export default function AccountSettings({ email, googleLinked, googleEmail, requ
         }}><GoogleSubmit english={english} /></form>}
       </section>
     </div>
+    <MfaSettings required={mfaRequired} recommended={mfaRecommended} english={english} />
     <section aria-labelledby="account-history-title" className="rounded-3xl border border-outline-variant/20 bg-surface-container-low p-5 sm:p-7">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3"><div><h3 id="account-history-title" className="font-headline text-lg font-bold">{english ? "My email change requests" : "Mes demandes de changement d’adresse"}</h3><p className="mt-1 text-xs leading-5 text-on-surface-variant">{english ? "Your 50 most recent requests and the board’s responses. Dates are shown in Paris time." : "Vos 50 dernières demandes et les réponses du bureau restreint. Les dates sont affichées à l’heure de Paris."}</p></div><span className="rounded-lg bg-surface-container-high px-2 py-1 text-xs tabular-nums">{requests.length}</span></div>
       {requestsUnavailable ? <p className="text-sm leading-6 text-on-surface-variant">{english ? "Your request history is temporarily unavailable." : "L’historique de vos demandes est temporairement indisponible."}</p> : requests.length === 0 ? <EmptyState icon="mark_email_read" title={english ? "No requests yet" : "Aucune demande pour le moment"} description={english ? "Your requests and the board’s responses will appear here." : "Vos demandes et les réponses du BR apparaîtront ici."} /> : <ol className="space-y-3">

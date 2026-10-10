@@ -1,12 +1,12 @@
-# Inscriptions aux événements
+﻿# Inscriptions aux événements
 
 ## Installation dans Supabase
 
-Le code local ne crée pas la table dans le projet hébergé. Après avoir appliqué [la migration 003](../supabase/migrations/202610090003_pole_management.sql), ouvrez **Supabase → SQL Editor → New Query**, collez tout le contenu de [202610090006_event_registrations.sql](../supabase/migrations/202610090006_event_registrations.sql), puis cliquez sur **Run**. Rechargez ensuite le site et l'administration.
+Le code local ne crée pas les tables ni les fonctions dans le projet hébergé. Dans Supabase, ouvrez SQL Editor, créez une requête, collez le contenu de supabase/migrations/202610100001_event_system_setup.sql, puis cliquez sur Run. Le script vérifie que les protections des rôles et des profils membres sont déjà installées.
 
-La migration peut être réappliquée. Elle suppose que les tables `events`, `members` avec `auth_user_id` et `auth.users` utilisent des identifiants UUID. Elle ajoute `events.max_capacity` si ce champ manque et recharge le cache PostgREST. Aucune clé `service_role` n'est nécessaire aux inscriptions.
+Le script peut être réappliqué sans ajouter de doublons. Il suppose que les tables events, members avec auth_user_id et auth.users utilisent des identifiants UUID. Il ajoute les colonnes manquantes et recharge le cache PostgREST. Aucune clé service_role n’est nécessaire.
 
-Pour les inscriptions payantes, appliquez [202610090007_paid_event_registrations.sql](../supabase/migrations/202610090007_paid_event_registrations.sql) après les migrations 003 et 006. Puis appliquez [202610090008_event_logs_and_informative_events.sql](../supabase/migrations/202610090008_event_logs_and_informative_events.sql) après 007. La migration 007 ajoute le tarif HelloAsso; la migration 008 ajoute les événements informatifs et le journal d’activité. Les événements existants gardent les inscriptions activées par défaut. Les tarifs déjà stockés restent inchangés. Aucun accès API HelloAsso n’est nécessaire.
+Le même script configure les inscriptions payantes, les événements informatifs et le journal d’activité. Les événements existants gardent les inscriptions activées par défaut, les inscriptions déjà enregistrées restent gratuites et leurs données sont conservées. Aucun accès API HelloAsso n’est nécessaire.
 
 ## Parcours du membre
 
@@ -30,7 +30,7 @@ L’annulation avant le début libère la place et supprime la ligne d’inscrip
 
 ## Consultation par les administrateurs
 
-Dans **Profil → Événements** (`/profil?section=events`), le bouton **Inscrits**, à côté de **Voir**, ouvre la liste privée de l’événement. Le bouton **Journal** affiche les inscriptions et désinscriptions de l’événement, horodatées en heure de Paris. **Historique global** affiche les mouvements de tous les événements, y compris ceux supprimés. Les mouvements sont paginés par groupes de 100, du plus récent au plus ancien. Les actions effectuées avant l’installation de la migration 008 ne peuvent pas être reconstituées. Le journal est visible uniquement au bureau restreint. Il conserve le titre de l’événement, même après une désinscription ou une suppression d’événement. Le nom est lu depuis le profil actif et n’est pas recopié dans le journal; si le profil est supprimé, l’identifiant membre est anonymisé. Il ne contient ni email ni adresse IP. La liste affiche les membres, leur date d'inscription, une recherche par nom et une pagination. Chaque ligne indique **Gratuit** ou **Paiement à vérifier · montant**, selon les conditions enregistrées lors de l’inscription. Ce badge n’atteste jamais d’un paiement : le contrôle se fait dans HelloAsso.
+Dans **Profil → Événements** (`/profil?section=events`), le bouton **Inscrits**, à côté de **Voir**, ouvre la liste privée de l’événement. Le bouton **Journal** affiche les inscriptions et désinscriptions de l’événement, horodatées en heure de Paris. **Historique global** affiche les mouvements de tous les événements, y compris ceux supprimés. Les mouvements sont paginés par groupes de 100, du plus récent au plus ancien. Les actions antérieures à la mise en place du journal ne peuvent pas être reconstituées. Le journal est visible uniquement au bureau restreint. Il conserve le titre de l’événement, même après une désinscription ou une suppression d’événement. Le nom est lu depuis le profil actif et n’est pas recopié dans le journal; si le profil est supprimé, l’identifiant membre est anonymisé. Il ne contient ni email ni adresse IP. La liste affiche les membres, leur date d'inscription, une recherche par nom et une pagination. Chaque ligne indique **Gratuit** ou **Paiement à vérifier · montant**, selon les conditions enregistrées lors de l’inscription. Ce badge n’atteste jamais d’un paiement : le contrôle se fait dans HelloAsso.
 
 Le lien vers `/equipe/[id]` est proposé seulement lorsque le profil est public (`is_visible = true`). Un membre ayant choisi de masquer son nom de famille reste protégé sur cette page publique ; l'administration peut consulter son identité complète pour organiser l'événement.
 

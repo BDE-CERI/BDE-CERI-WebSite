@@ -9,6 +9,7 @@ type Stats = {
   activeWindowMinutes: number;
   deviceTotals: { device_type: string; visit_count: number }[];
   consentedOnly?: boolean;
+  recordingConfigured?: boolean;
 };
 
 function isStats(value: unknown): value is Stats {
@@ -26,6 +27,7 @@ export default function VisitorStats({ english = false }: { english?: boolean })
   const titleId = useId();
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState(false);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -46,15 +48,23 @@ export default function VisitorStats({ english = false }: { english?: boolean })
       setRefreshing(true);
       try {
         const response = await fetch("/api/visitor/stats", { cache: "no-store", signal: currentController.signal });
-        if (!response.ok) throw new Error("Stats unavailable");
+        if (!response.ok) {
+          const failure: unknown = await response.json().catch(() => null);
+          const code = failure && typeof failure === "object" && "code" in failure && typeof failure.code === "string" ? failure.code : "";
+          throw new Error(code || "stats_unavailable");
+        }
         const data: unknown = await response.json();
         if (!isStats(data)) throw new Error("Unexpected stats response");
         if (!mounted || request !== sequence || currentController.signal.aborted) return;
         setStats(data);
         setError(false);
+        setErrorCode(null);
         setUpdatedAt(Date.now());
       } catch {
-        if (mounted && request === sequence && !currentController.signal.aborted) setError(true);
+        if (mounted && request === sequence && !currentController.signal.aborted) {
+          setError(true);
+          setErrorCode(error instanceof Error ? error.message : "stats_unavailable");
+        }
       } finally {
         if (mounted && request === sequence && !currentController.signal.aborted) setRefreshing(false);
       }
@@ -111,7 +121,11 @@ export default function VisitorStats({ english = false }: { english?: boolean })
         </button>
       </header>
 
-      {error && <div role="alert" className="rounded-xl border border-error/25 bg-error/10 p-4 text-sm leading-6 text-error">{stats ? l("L'actualisation a échoué. Les derniers chiffres disponibles restent affichés ; vous pouvez réessayer.", "The refresh failed. The latest available figures are still shown; you can try again.") : l("Les statistiques sont indisponibles pour le moment. Réessayez dans quelques instants.", "Statistics are currently unavailable. Try again in a moment.")}</div>}
+      {error && <div role="alert" className="rounded-xl border border-error/25 bg-error/10 p-4 text-sm leading-6 text-error">{errorCode === "stats_not_configured"
+        ? l("Configuration manquante : ajoutez SUPABASE_SERVICE_ROLE_KEY (ou SUPABASE_SECRET_KEY) dans les variables d’environnement du serveur, puis redéployez.", "Configuration missing: add SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_SECRET_KEY) to the server environment and redeploy.")
+        : stats ? l("L'actualisation a échoué. Les derniers chiffres disponibles restent affichés ; vous pouvez réessayer.", "The refresh failed. The latest available figures are still shown; you can try again.")
+          : l("Les statistiques sont indisponibles pour le moment. Vérifiez la clé serveur Supabase, VISITOR_HASH_SECRET et les migrations de statistiques, puis réessayez.", "Statistics are unavailable. Check the Supabase server key, VISITOR_HASH_SECRET, and analytics migrations, then retry.")}</div>}
+      {stats && stats.recordingConfigured === false && <div role="status" className="rounded-xl border border-tertiary/25 bg-tertiary/5 p-4 text-sm leading-6 text-on-surface-variant">{l("Les chiffres existants sont consultables, mais la collecte est arrêtée : définissez VISITOR_HASH_SECRET côté serveur puis redéployez.", "Existing figures are available, but tracking is paused: set VISITOR_HASH_SECRET on the server and redeploy.")}</div>}
 
       {loading ? <div>
         <p role="status" className="sr-only">{l("Chargement des statistiques…", "Loading visitor statistics…")}</p>

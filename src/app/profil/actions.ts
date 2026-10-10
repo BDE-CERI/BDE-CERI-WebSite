@@ -4,16 +4,17 @@ import { randomUUID } from "node:crypto";
 import { createClient } from "@/utils/supabase/server";
 import { parseParisDateTimeLocal } from "@/utils/paris-time";
 import { normalizeHelloAssoCheckoutUrl } from "@/utils/event-payment";
+import { STUDY_LEVEL_VALUES } from "./study-levels";
+import { hasSiteAdminAccess, isMemberPoleVicePresident, isRestrictedBoardMember } from "@/utils/member-roles";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 type ActionResult = { success: true } | { error: string };
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 type Permission = "member" | "board" | "news";
-type MemberAccess = { id: string; category: string | null; role: string | null; pole_id: string | null };
+type MemberAccess = { id: string; category: string | null; role: string | null; pole_id: string | null; is_dev: boolean | null };
 type UploadedImage = { bucket: string; path: string; publicUrl: string; uploadedAt: number };
 
-const boardRoles = ["president", "tresorier", "secretaire", "vp_general"];
 const newsAuthorCategories = ["bureau_restreint", "bureau"];
 const brandingCategories = ["vetement", "accessoire", "goodies"];
 const productCategories = ["boisson", "snack", ...brandingCategories];
@@ -111,13 +112,17 @@ async function access(permission: Permission) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) throw new ActionError("Votre session a expiré. Reconnectez-vous avant de modifier ces informations.");
-  const { data, error } = await supabase.from("members").select("id, category, role, pole_id").eq("auth_user_id", user.id).maybeSingle();
+  const { data, error } = await supabase.from("members").select("id, category, role, pole_id, is_dev").eq("auth_user_id", user.id).maybeSingle();
   if (error) throw new ActionError("Impossible de vérifier les droits de votre profil. Réessayez.");
   if (!data) throw new ActionError("Votre compte n’est pas associé à un membre du BDE.");
   const member = data as MemberAccess;
-  const isBoard = member.category === "bureau_restreint" || boardRoles.includes(member.role ?? "");
-  if (permission === "board" && !isBoard) throw new ActionError("Cette modification est réservée au bureau restreint.");
-  if (permission === "news" && !isBoard) {
+  const isAdmin = hasSiteAdminAccess(member.category, member.role, member.is_dev);
+  if (permission === "board" && !isAdmin) throw new ActionError("Cette modification est réservée aux administrateurs du site.");
+  if (isAdmin) {
+    const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (assuranceError || assurance?.currentLevel !== "aal2") throw new ActionError("Un administrateur doit confirmer le code de son application d’authentification avant cette modification.");
+  }
+  if (permission === "news" && !isAdmin) {
     const { data: assignments, error: assignmentError } = await supabase.from("member_assignments").select("pole_id").eq("member_id", member.id);
     if (assignmentError) throw new ActionError("Impossible de vérifier votre accès aux actualités. Réessayez.");
     const poleIds = [...new Set([member.pole_id, ...(assignments ?? []).map(assignment => assignment.pole_id)].filter((id): id is string => typeof id === "string" && id.length > 0))];
@@ -127,7 +132,7 @@ async function access(permission: Permission) {
     const isCommunication = poles?.some(pole => typeof pole.name === "string" && /(?:communication|\bcom\b)/i.test(pole.name));
     if (!isCommunication) throw new ActionError("La gestion des actualités est réservée au bureau restreint et au pôle Communication.");
   }
-  return { supabase, member, isBoard };
+  return { supabase, member, isAdmin };
 }
 
 function databaseError(error: { message: string } | null) {
@@ -195,18 +200,19 @@ export async function signOut() {
 
 export async function updateProfile(formData: FormData): Promise<ActionResult> {
   return perform("updateProfile", async () => {
-    const { supabase, member, isBoard } = await access("member");
+    const { supabase, member, isAdmin } = await access("member");
     const targetValue = text(formData, "target_member_id", "Le membre", 128);
     const targetId = targetValue ? identifier(targetValue, "Identifiant du membre") : member.id;
-    if (targetId !== member.id && !isBoard) throw new ActionError("Vous pouvez uniquement modifier votre propre profil.");
+    if (targetId !== member.id && !isAdmin) throw new ActionError("Vous pouvez uniquement modifier votre propre profil.");
     const rankValue = text(formData, "rank", "L’ordre d’affichage", 12);
-    if (rankValue && !isBoard) throw new ActionError("Seul le bureau restreint peut modifier l’ordre d’affichage des membres.");
+    if (rankValue && !isAdmin) throw new ActionError("Seuls les administrateurs du site peuvent modifier l’ordre d’affichage des membres.");
+    const requestedStudyLevel = text(formData, "study_level", "Le niveau d’étude", 100, true);
     const payload: Record<string, string | number | boolean | null> = {
       first_name: text(formData, "first_name", "Le prénom", 100, true),
       last_name: text(formData, "last_name", "Le nom", 100, true),
       hide_last_name: hideLastName(formData),
       bio: text(formData, "bio", "La présentation", 10000),
-      study_level: text(formData, "study_level", "Le niveau d’étude", 100),
+      study_level: requestedStudyLevel,
       responsibilities: text(formData, "responsibilities", "Les responsabilités", 10000),
       academic_journey: text(formData, "academic_journey", "Le parcours", 10000),
       discord: text(formData, "discord", "Le pseudo Discord", 200),
@@ -214,10 +220,35 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
       updated_at: new Date().toISOString(),
     };
     if (rankValue) payload.rank = integer(formData, "rank", "L’ordre d’affichage");
+    if (formData.has("membership_paid")) {
+      if (!isAdmin) throw new ActionError("Seuls les administrateurs du site peuvent modifier le statut de cotisation.");
+      payload.membership_paid = boolean(formData, "membership_paid");
+    }
+    const requestedKeyholder = formData.has("is_keyholder") ? boolean(formData, "is_keyholder") : null;
+    if (requestedKeyholder !== null) {
+      if (!isAdmin) throw new ActionError("Seuls les administrateurs du site peuvent attribuer la responsabilité des clés.");
+      const { data: keyholderTarget, error: categoryError } = await supabase.from("members").select("category, role, pole_id").eq("id", targetId).maybeSingle();
+      databaseError(categoryError);
+      if (!keyholderTarget) throw new ActionError("Le profil membre n’a pas pu être vérifié.");
+      const restrictedBoardMember = isRestrictedBoardMember(keyholderTarget.category, keyholderTarget.role);
+      if (restrictedBoardMember) {
+        throw new ActionError("La responsabilité des clés du bureau restreint ne peut être modifiée que directement dans la base de données.");
+      }
+      if (requestedKeyholder) {
+        if (keyholderTarget.category !== "bureau") throw new ActionError("La responsabilité des clés est réservée aux VP de pôles.");
+        const { data: vicePresident, error: assignmentError } = await supabase.from("member_assignments").select("id").eq("member_id", targetId).eq("is_vp", true).limit(1).maybeSingle();
+        databaseError(assignmentError);
+        if (!vicePresident && !isMemberPoleVicePresident(keyholderTarget.role, keyholderTarget.pole_id)) throw new ActionError("Seuls les VP de pôles peuvent recevoir la responsabilité des clés.");
+      }
+      payload.is_keyholder = requestedKeyholder;
+    }
     const { data: target, error: targetError } = await supabase.from("members").select("id, photo_url, hide_last_name").eq("id", targetId).maybeSingle();
     // Verify the privacy column before uploading a replacement portrait.
     profilePrivacyDatabaseError(targetError);
     if (!target) throw new ActionError("Le profil à modifier n’est plus disponible.");
+    if (!STUDY_LEVEL_VALUES.has(requestedStudyLevel)) {
+      throw new ActionError("Choisissez un niveau d’études dans la liste proposée.");
+    }
     payload.photo_url = await image(supabase, formData, "photo", "member-profiles", target.photo_url);
     const { error } = await supabase.from("members").update(payload).eq("id", targetId).select("id").single();
     profilePrivacyDatabaseError(error);
@@ -228,7 +259,8 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
 }
 
 function eventFields(formData: FormData) {
-  const registrationEnabled = boolean(formData, "registration_enabled");
+  const dateIsTbd = boolean(formData, "date_is_tbd");
+  const registrationEnabled = !dateIsTbd && boolean(formData, "registration_enabled");
   const paid = registrationEnabled && boolean(formData, "registration_is_paid");
   const registrationPrice = paid ? priceInCents(formData, "registration_price", "Le tarif d’inscription") : null;
   if (registrationPrice !== null && registrationPrice < 1) throw new ActionError("Une inscription payante doit avoir un tarif supérieur à zéro.");
@@ -238,7 +270,8 @@ function eventFields(formData: FormData) {
     title: text(formData, "title", "Le titre", 200, true),
     description: text(formData, "description", "La description", 10000, true),
     full_content: text(formData, "full_content", "Le contenu détaillé", 150000),
-    date_start: dateStart(formData),
+    date_start: dateIsTbd ? null : dateStart(formData),
+    date_is_tbd: dateIsTbd,
     location: text(formData, "location", "Le lieu", 500, true),
     precise_location: text(formData, "precise_location", "L’adresse précise", 1000),
     max_capacity: integer(formData, "max_capacity", "La capacité"),
@@ -251,14 +284,14 @@ function eventFields(formData: FormData) {
 
 function eventDatabaseError(error: { message: string; code?: string; details?: string } | null) {
   if (error && (error.code === "42703" || error.code === "PGRST204")
-    && /registration_enabled|registration_is_paid|registration_price_cents|helloasso_checkout_url/i.test(error.message + " " + (error.details ?? ""))) {
-    throw new ActionError("Les options d’inscription nécessitent une mise à jour de Supabase. Appliquez les migrations 202610090007_paid_event_registrations.sql et 202610090008_event_logs_and_informative_events.sql, puis réessayez. Votre saisie reste dans ce formulaire.");
+    && /registration_enabled|registration_is_paid|registration_price_cents|helloasso_checkout_url|date_is_tbd/i.test(error.message + " " + (error.details ?? ""))) {
+    throw new ActionError("Le schéma des événements dans Supabase n’est pas à jour. Exécutez une seule fois le script supabase/migrations/202610100001_event_system_setup.sql dans l’éditeur SQL de Supabase, puis réessayez. Votre saisie reste dans ce formulaire.");
   }
   databaseError(error);
 }
 
 async function checkEventPaymentSchema(supabase: Supabase) {
-  const { error } = await supabase.from("events").select("registration_enabled, registration_is_paid, registration_price_cents, helloasso_checkout_url").limit(0);
+  const { error } = await supabase.from("events").select("registration_enabled, registration_is_paid, registration_price_cents, helloasso_checkout_url, date_is_tbd").limit(0);
   eventDatabaseError(error);
 }
 
@@ -502,6 +535,41 @@ function refreshPoles(id: string) {
   revalidatePath("/equipe/[id]", "page");
 }
 
+export async function addMemberBadges(formData: FormData): Promise<ActionResult> {
+  return perform("addMemberBadges", async () => {
+    const { supabase } = await access("board");
+    const memberIds = formData.getAll("member_ids");
+    if (memberIds.length < 1 || memberIds.length > 4 || memberIds.some(value => typeof value !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value))) {
+      throw new ActionError("Sélectionnez entre un et quatre membres pour l’équipe.");
+    }
+    const uniqueIds = [...new Set(memberIds as string[])];
+    if (uniqueIds.length !== memberIds.length) throw new ActionError("Un même membre ne peut pas être sélectionné plusieurs fois.");
+    const award = text(formData, "award", "Le prix", 30, true);
+    if (!["first", "second", "third", "jury_choice"].includes(award)) throw new ActionError("Le prix sélectionné est invalide.");
+    const teamName = text(formData, "team_name", "Le nom de l’équipe", 120, true);
+    const year = text(formData, "academic_year", "L’année universitaire", 9, true);
+    if (!/^20\d{2}-20\d{2}$/.test(year) || Number(year.slice(5)) !== Number(year.slice(0, 4)) + 1) throw new ActionError("L’année universitaire doit être au format 20xx-20yy.");
+    const eventName = text(formData, "event_name", "Le nom de l’événement", 120, true);
+    const { error } = await supabase.rpc("bde_admin_add_member_badges", {
+      p_member_ids: uniqueIds, p_award: award, p_team_name: teamName, p_academic_year: year, p_event_name: eventName,
+    });
+    databaseError(error);
+    refresh(["/equipe", ...uniqueIds.map(id => "/equipe/" + id)]);
+  });
+}
+
+export async function deleteMemberBadge(id: string): Promise<ActionResult> {
+  return perform("deleteMemberBadge", async () => {
+    const { supabase } = await access("board");
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw new ActionError("Identifiant de badge invalide.");
+    const { data: badge, error: badgeError } = await supabase.from("member_badges").select("member_id").eq("id", id).maybeSingle();
+    databaseError(badgeError);
+    const { error } = await supabase.rpc("bde_admin_delete_member_badge", { p_id: id });
+    databaseError(error);
+    refresh(["/equipe", ...(badge?.member_id ? ["/equipe/" + badge.member_id] : [])]);
+  });
+}
+
 export async function addPole(formData: FormData): Promise<ActionResult> {
   return perform("addPole", async () => {
     const { supabase } = await access("board");
@@ -559,8 +627,10 @@ export async function addAssignment(formData: FormData): Promise<ActionResult> {
     const { supabase } = await access("board");
     const memberId = identifier(formData.get("member_id"), "Identifiant du membre");
     const poleId = identifier(formData.get("pole_id"), "Identifiant du pôle");
-    const role = text(formData, "role", "L’intitulé de la mission", 200, true);
     const isVp = boolean(formData, "is_vp");
+    const role = isVp ? "" : text(formData, "role", "L’intitulé de la mission", 200, true);
+    const roleLabel = text(formData, "role_label", "Le libellé du rôle", 120);
+    const roleDescription = text(formData, "role_description", "La description du rôle", 1000);
     const [{ data: member, error: memberError }, { data: pole, error: poleError }] = await Promise.all([
       supabase.from("members").select("id").eq("id", memberId).maybeSingle(),
       supabase.from("poles").select("id").eq("id", poleId).maybeSingle(),
@@ -571,8 +641,31 @@ export async function addAssignment(formData: FormData): Promise<ActionResult> {
     const { data: duplicate, error: duplicateError } = await supabase.from("member_assignments").select("id").eq("member_id", memberId).eq("pole_id", poleId).limit(1).maybeSingle();
     databaseError(duplicateError);
     if (duplicate) throw new ActionError("Ce membre possède déjà une affectation dans ce pôle. Retirez l’affectation existante avant de la remplacer.");
-    const { error } = await supabase.from("member_assignments").insert({ member_id: memberId, pole_id: poleId, role, is_vp: isVp }).select("id").single();
+    if (isVp) {
+      const { data: currentVp, error: vpError } = await supabase.from("member_assignments").select("id").eq("pole_id", poleId).eq("is_vp", true).limit(1).maybeSingle();
+      databaseError(vpError);
+      if (currentVp) throw new ActionError("Ce pôle a déjà un vice-président. Retirez d’abord sa vice-présidence avant d’en désigner un autre.");
+      const { data: primaryVp, error: primaryVpError } = await supabase.from("members").select("id").eq("pole_id", poleId).eq("role", "vice_president_pole").limit(1).maybeSingle();
+      databaseError(primaryVpError);
+      if (primaryVp) throw new ActionError("Ce pôle a déjà un vice-président. Retirez d’abord sa vice-présidence avant d’en désigner un autre.");
+    }
+    const { data: assignmentId, error } = await supabase.rpc("bde_admin_add_member_assignment", {
+      p_member_id: memberId,
+      p_pole_id: poleId,
+      p_role: role,
+      p_is_vp: isVp,
+      p_role_label: roleLabel,
+      p_role_description: roleDescription,
+    });
+    if (error?.code === "23505") {
+      if (/vice president/i.test(error.message)) throw new ActionError("Ce pôle a déjà un vice-président. Rechargez la page avant de réessayer.");
+      throw new ActionError("Ce membre possède déjà une affectation dans ce pôle. Rechargez la page avant de réessayer.");
+    }
+    if (error && (error.code === "PGRST202" || /function .*bde_admin_add_member_assignment|schema cache/i.test(error.message))) {
+      throw new ActionError("La gestion des rôles multiples nécessite la migration 202610100008_multi_role_assignments.sql dans Supabase. Appliquez-la puis réessayez.");
+    }
     databaseError(error);
+    if (typeof assignmentId !== "string") throw new ActionError("L’affectation n’a pas pu être confirmée. Rechargez la page avant de réessayer.");
     refresh(["/equipe", "/equipe/" + memberId, "/poles", "/"]);
     revalidatePath("/poles/[id]", "page");
   });
@@ -582,10 +675,47 @@ export async function deleteAssignment(id: string): Promise<ActionResult> {
   return perform("deleteAssignment", async () => {
     const { supabase } = await access("board");
     identifier(id);
-    const { data, error } = await supabase.from("member_assignments").delete().eq("id", id).select("member_id").single();
+    const { data: memberId, error } = await supabase.rpc("bde_admin_delete_member_assignment", { p_id: id });
+    if (error && (error.code === "PGRST202" || /function .*bde_admin_delete_member_assignment|schema cache/i.test(error.message))) {
+      throw new ActionError("Le retrait et la réinitialisation des rôles nécessitent la migration 202610100008_multi_role_assignments.sql dans Supabase. Appliquez-la puis réessayez.");
+    }
     databaseError(error);
     refresh(["/equipe", "/poles", "/"]);
-    if (data?.member_id) revalidatePath("/equipe/" + data.member_id);
+    if (typeof memberId === "string") revalidatePath("/equipe/" + memberId);
+    revalidatePath("/poles/[id]", "page");
+  });
+}
+
+export async function updateAssignment(formData: FormData): Promise<ActionResult> {
+  return perform("updateAssignment", async () => {
+    const { supabase } = await access("board");
+    const id = identifier(formData.get("id"), "Identifiant de l’affectation");
+    const isVp = boolean(formData, "is_vp");
+    const role = isVp ? "" : text(formData, "role", "L’intitulé de la mission", 200, true);
+    const roleLabel = text(formData, "role_label", "Le libellé du rôle", 120, true);
+    const roleDescription = text(formData, "role_description", "La description du rôle", 1000);
+    const { data: current, error: currentError } = await supabase.from("member_assignments")
+      .select("member_id, pole_id").eq("id", id).maybeSingle();
+    databaseError(currentError);
+    if (!current) throw new ActionError("Cette affectation n’est plus disponible. Rechargez la page.");
+
+    const { data: updatedId, error } = await supabase.rpc("bde_admin_update_member_assignment", {
+      p_id: id,
+      p_role: role,
+      p_is_vp: isVp,
+      p_role_label: roleLabel,
+      p_role_description: roleDescription,
+    });
+    if (error?.code === "23505") {
+      if (/vice president/i.test(error.message)) throw new ActionError("Ce pôle a déjà un vice-président. Rechargez la page et vérifiez l’affectation avant de réessayer.");
+      throw new ActionError("Cette affectation entre en conflit avec un rôle existant. Rechargez la page puis réessayez.");
+    }
+    if (error && (error.code === "PGRST202" || /function .*bde_admin_update_member_assignment|schema cache/i.test(error.message))) {
+      throw new ActionError("La modification des affectations nécessite la migration 202610100003_edit_member_assignments.sql dans Supabase. Appliquez-la puis réessayez.");
+    }
+    databaseError(error);
+    if (typeof updatedId !== "string") throw new ActionError("La modification n’a pas pu être confirmée. Rechargez la page avant de réessayer.");
+    refresh(["/equipe", "/equipe/" + current.member_id, "/poles", "/"]);
     revalidatePath("/poles/[id]", "page");
   });
 }

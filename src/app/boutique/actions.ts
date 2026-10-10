@@ -2,8 +2,13 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getLocalOfficeData, getLocalOfficeStatus } from "@/utils/local-office";
 
-export async function buyItem(id: string, isTaverne: boolean) {
+export async function buyItem(id: string, isTaverne: boolean, english = false) {
+  if (isTaverne) {
+    const localStatus = getLocalOfficeStatus(await getLocalOfficeData(), new Date(), english);
+    if (!localStatus.isOpen) return { error: localStatus.message };
+  }
   const supabase = await createClient();
   const table = isTaverne ? "taverne_items" : "products";
 

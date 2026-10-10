@@ -10,6 +10,12 @@ import type { getDictionary } from "@/locales/dictionaries";
 
 type Dictionary = Awaited<ReturnType<typeof getDictionary>>;
 
+const partners = [
+  { name: "LDLC", href: "https://www.ldlc.com/", logo: "/logos/ldlc-logo.jpg" },
+  { name: "Quadient", href: "https://www.quadient.com/fr/page-d-accueil", logo: "/logos/quadient-logo.png" },
+  { name: "CBA", href: "https://www.cbainfo.fr/", logo: "/logos/cba-logo.jpg" },
+];
+
 interface NewsItem {
   id: string;
   title: string;
@@ -46,8 +52,8 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
   const [bootState, setBootState] = useState<"off" | "booting" | "desktop" | "app-open">("off");
   const [selectedId, setSelectedId] = useState(news[0]?.id);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [showChauffleetModal, setShowChauffleetModal] = useState(false);
-  const [dontShowChauffleetAgain, setDontShowChauffleetAgain] = useState(false);
+  const [externalTarget, setExternalTarget] = useState<{ name: string; href: string } | null>(null);
+  const [dontShowExternalAgain, setDontShowExternalAgain] = useState(false);
 
   const selectedNews = news?.find((n) => n.id === selectedId) || news?.[0];
 
@@ -72,21 +78,25 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
     }
   };
 
-  const handleChauffleetClick = () => {
-    const skip = localStorage.getItem("skipChauffleetWarning") === "true";
+  const handleExternalLinkClick = (name: string, href: string) => {
+    const domain = new URL(href).hostname.replace(/^www\./, "");
+    const skip = localStorage.getItem(`skipExternalWarning:${domain}`) === "true";
     if (skip) {
-      window.open("https://chauffleet.com", "_blank");
+      window.open(href, "_blank", "noopener,noreferrer");
     } else {
-      setShowChauffleetModal(true);
+      setDontShowExternalAgain(false);
+      setExternalTarget({ name, href });
     }
   };
 
-  const confirmChauffleet = () => {
-    if (dontShowChauffleetAgain) {
-      localStorage.setItem("skipChauffleetWarning", "true");
+  const confirmExternalLink = () => {
+    if (!externalTarget) return;
+    const domain = new URL(externalTarget.href).hostname.replace(/^www\./, "");
+    if (dontShowExternalAgain) {
+      localStorage.setItem(`skipExternalWarning:${domain}`, "true");
     }
-    window.open("https://chauffleet.com", "_blank");
-    setShowChauffleetModal(false);
+    window.open(externalTarget.href, "_blank", "noopener,noreferrer");
+    setExternalTarget(null);
   };
 
   return (
@@ -100,9 +110,9 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
         </header>
 
         {/* The Monitor Simulation */}
-        <div className="relative mx-auto flex flex-col items-center group w-full">
+        <div className="relative isolate mx-auto flex flex-col items-center group w-full">
           {/* Bezel */}
-          <div className="relative bg-[#1a1a1a] p-1.5 md:p-3 rounded-[1.5rem] shadow-[0_50px_100px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.05)] border border-white/5 w-full max-w-7xl aspect-[4/5] sm:aspect-[4/3] md:aspect-[16/9] flex flex-col scale-[1.02] overflow-hidden">
+          <div className="relative z-10 bg-[#1a1a1a] p-1.5 md:p-3 rounded-[1.5rem] shadow-[0_50px_100px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.05)] border border-white/5 w-full max-w-7xl aspect-[4/5] sm:aspect-[4/3] md:aspect-[16/9] flex flex-col scale-[1.02] overflow-hidden">
 
             {/* ROG Style Gravure (Behind the screen container) */}
             <div className="absolute inset-0 pointer-events-none opacity-5 select-none overflow-hidden">
@@ -181,7 +191,7 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                       }}
                     >
                       {/* Desktop Icons */}
-                      <div className="p-4 md:p-8 grid grid-cols-3 md:grid-cols-1 gap-3 md:gap-12 content-start w-full md:w-32">
+                      <div className="p-4 md:p-6 grid grid-cols-3 md:grid-cols-2 gap-3 md:gap-x-8 md:gap-y-4 content-start w-full md:w-56">
                         <button
                           onClick={() => setBootState("app-open")}
                           className="flex flex-col items-center gap-2 group"
@@ -193,7 +203,7 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                         </button>
 
                         <button
-                          onClick={handleChauffleetClick}
+                          onClick={() => handleExternalLinkClick("Chauffleet", "https://chauffleet.com")}
                           className="flex flex-col items-center gap-2 group"
                         >
                           <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden group-hover:bg-white/10 transition-all shadow-lg group-hover:scale-110 relative">
@@ -201,6 +211,20 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                           </div>
                           <span className="text-[10px] font-bold text-white/70 tracking-wide text-shadow-sm group-hover:text-white">Chauffleet</span>
                         </button>
+
+                        {partners.map((partner) => (
+                          <button
+                            key={partner.name}
+                            onClick={() => handleExternalLinkClick(partner.name, partner.href)}
+                            aria-label={(locale === "en-GB" ? "Visit " : "Visiter le site de ") + partner.name}
+                            className="flex flex-col items-center gap-2 group"
+                          >
+                            <div className="relative w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden group-hover:bg-white/10 transition-all shadow-lg group-hover:scale-110">
+                              <Image src={partner.logo} alt="" fill className="object-contain p-2" sizes="48px" />
+                            </div>
+                            <span className="text-[10px] font-bold text-white/70 tracking-wide text-shadow-sm group-hover:text-white">{partner.name}</span>
+                          </button>
+                        ))}
 
                         <div className="flex flex-col items-center gap-2 opacity-50 cursor-not-allowed filter grayscale">
                           <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40">
@@ -399,22 +423,28 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                 </AnimatePresence>
                 {/* EXTERNAL LINK MODAL (Simulated OS Dialog) */}
                 <AnimatePresence>
-                  {showChauffleetModal && (
+                  {externalTarget && (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.9, y: 20 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.9, y: 20 }}
                       className="absolute inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-6"
+                      role="dialog"
+                      aria-modal="true"
+                      aria-labelledby="external-link-title"
                     >
                       <div className="w-full max-w-[320px] bg-surface-container-high rounded-xl border border-white/10 shadow-2xl p-6 overflow-hidden">
                         <div className="flex items-center gap-3 mb-4">
                           <div className="w-10 h-10 rounded-full bg-warning-container/20 flex items-center justify-center text-warning">
                             <span className="material-symbols-outlined">warning</span>
                           </div>
-                          <h4 className="text-sm font-bold text-on-surface">{dict.news.external_link}</h4>
+                          <h4 id="external-link-title" className="text-sm font-bold text-on-surface">{dict.news.external_link}</h4>
                         </div>
 
-                        <p className="text-xs text-on-surface-variant leading-relaxed mb-6" dangerouslySetInnerHTML={{ __html: dict.news.external_warning }}>
+                        <p className="text-xs text-on-surface-variant leading-relaxed mb-6">
+                          {dict.news.external_warning.split("{domain}")[0]}
+                          <strong className="text-on-surface">{new URL(externalTarget.href).hostname.replace(/^www\./, "")}</strong>
+                          {dict.news.external_warning.split("{domain}")[1]}
                         </p>
 
                         <div className="space-y-4">
@@ -422,8 +452,8 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
                             <div className="relative flex items-center">
                               <input
                                 type="checkbox"
-                                checked={dontShowChauffleetAgain}
-                                onChange={(e) => setDontShowChauffleetAgain(e.target.checked)}
+                                checked={dontShowExternalAgain}
+                                onChange={(e) => setDontShowExternalAgain(e.target.checked)}
                                 className="peer h-4 w-4 appearance-none rounded border border-outline-variant bg-surface-container transition-all checked:bg-tertiary checked:border-tertiary"
                               />
                               <span className="material-symbols-outlined absolute left-0 text-on-tertiary text-[12px] opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none">check</span>
@@ -435,13 +465,13 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
 
                           <div className="flex gap-3">
                             <button
-                              onClick={() => setShowChauffleetModal(false)}
+                              onClick={() => setExternalTarget(null)}
                               className="flex-1 py-2 rounded-lg bg-surface-container-highest text-on-surface text-[11px] font-bold hover:bg-surface-variant transition-colors"
                             >
                               {dict.news.cancel}
                             </button>
                             <button
-                              onClick={confirmChauffleet}
+                              onClick={confirmExternalLink}
                               className="flex-1 py-2 rounded-lg bg-tertiary text-on-tertiary text-[11px] font-bold shadow-lg shadow-tertiary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
                             >
                               {dict.news.ok}

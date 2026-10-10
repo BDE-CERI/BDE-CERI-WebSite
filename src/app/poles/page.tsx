@@ -5,6 +5,7 @@ import SharkWallpaper from "@/components/SharkWallpaper";
 import PolesTree from "@/components/PolesTree";
 import { createSeoMetadata } from "@/utils/seo";
 import { getPublicMemberLastName } from "@/utils/member-display";
+import { isPoleVicePresidentRole } from "@/utils/member-roles";
 import type { ComponentProps } from "react";
 
 type PoleRow = {
@@ -30,6 +31,7 @@ type PrimaryMember = MemberSummary & {
 
 type AssignmentRow = {
   role: string | null;
+  role_label?: string | null;
   is_vp: boolean | null;
   pole_id: string | null;
   members: (MemberSummary & { is_visible: boolean | null }) | (MemberSummary & { is_visible: boolean | null })[] | null;
@@ -77,7 +79,7 @@ export default async function Poles() {
         .returns<PrimaryMember[]>(),
       supabase
         .from("member_assignments")
-        .select("role, is_vp, pole_id, members(*)")
+        .select("role, role_label, is_vp, pole_id, created_at, members(*)")
         .returns<AssignmentRow[]>(),
     ]);
     unavailable = !!membersResult.error || !!assignmentsResult.error;
@@ -101,11 +103,11 @@ export default async function Poles() {
         hide_last_name: member.hide_last_name !== false,
         photo_url: member.photo_url,
         role_label: member.role_label || l("Membre du pôle", "Team member"),
-        is_vp: member.role === "vice_president_pole",
+        is_vp: isPoleVicePresidentRole(member.role),
       });
     });
 
-    assignments.filter(assignment => assignment.pole_id === pole.id).forEach(assignment => {
+    assignments.filter(assignment => assignment.pole_id === pole.id).sort((a, b) => Number(b.is_vp) - Number(a.is_vp)).forEach(assignment => {
       const member = assignment.member;
       const existing = memberMap.get(member.id);
       if (!existing || assignment.is_vp) {
@@ -115,7 +117,7 @@ export default async function Poles() {
           last_name: getPublicMemberLastName(member),
           hide_last_name: member.hide_last_name !== false,
           photo_url: member.photo_url,
-          role_label: assignment.role || member.role_label || l("Membre du pôle", "Team member"),
+          role_label: assignment.role_label || assignment.role || member.role_label || l("Membre du pôle", "Team member"),
           is_vp: assignment.is_vp || false,
         });
       }

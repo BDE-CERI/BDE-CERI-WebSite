@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 64" role="img" aria-labelledby="title">
+  <title id="title">CBA</title>
+  <rect width="180" height="64" rx="10" fill="#fff"/>
+  <path d="M24 18a15 15 0 1 0 0 28h10V34H22v-5h19v22H24a18 18 0 1 1 0-36h15v7z" fill="#54369b"/>
+  <text x="54" y="46" fill="#54369b" font-family="Arial, Helvetica, sans-serif" font-size="39" font-weight="800" letter-spacing="-2">CBA</text>
+  <circle cx="147" cy="19" r="5" fill="#f5a623"/>
+  <circle cx="158" cy="19" r="5" fill="#e75b79"/>
+  <circle cx="169" cy="19" r="5" fill="#61b6a2"/>
+</svg>

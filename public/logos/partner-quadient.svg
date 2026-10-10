@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 64" role="img" aria-labelledby="title">
+  <title id="title">Quadient</title>
+  <rect width="230" height="64" rx="10" fill="#fff"/>
+  <text x="13" y="44" fill="#171717" font-family="Arial, Helvetica, sans-serif" font-size="35" font-weight="600" letter-spacing="-1.6">quadient</text>
+  <path d="M105 13h9v7h-9z" fill="#f47721"/>
+</svg>

@@ -3,10 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import type { AccountActionResult } from "@/types/account-settings";
+import { hasSiteAdminAccess } from "@/utils/member-roles";
 
 type Language = "fr" | "en";
 type DatabaseError = { message: string; code?: string; details?: string } | null;
-const boardRoles = ["president", "tresorier", "secretaire", "vp_general"];
 
 class AccountActionError extends Error {}
 
@@ -38,11 +38,17 @@ async function accountAccess(lang: Language, boardOnly = false) {
     throw new AccountActionError(message(lang, "Votre session a expiré. Reconnectez-vous avant de poursuivre.", "Your session has expired. Sign in again to continue."));
   }
   const { data: member, error } = await supabase.from("members")
-    .select("id, category, role").eq("auth_user_id", user.id).maybeSingle();
+    .select("id, category, role, is_dev").eq("auth_user_id", user.id).maybeSingle();
   if (error) throw new AccountActionError(message(lang, "Impossible de vérifier votre compte BDE. Réessayez.", "Your BDE account could not be verified. Try again."));
   if (!member) throw new AccountActionError(message(lang, "Votre compte n’est pas lié à un membre du BDE. Contactez le bureau restreint.", "Your account is not linked to a BDE member. Contact the executive board."));
-  if (boardOnly && member.category !== "bureau_restreint" && !boardRoles.includes(member.role ?? "")) {
-    throw new AccountActionError(message(lang, "Le traitement des demandes est réservé au bureau restreint.", "Only the executive board can review requests."));
+  if (boardOnly && !hasSiteAdminAccess(member.category, member.role, member.is_dev)) {
+    throw new AccountActionError(message(lang, "Le traitement des demandes est réservé aux administrateurs du site.", "Only site administrators can review requests."));
+  }
+  if (boardOnly) {
+    const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (assuranceError || assurance?.currentLevel !== "aal2") {
+      throw new AccountActionError(message(lang, "Confirmez votre authentification à deux facteurs pour traiter cette demande.", "Confirm your two-factor authentication to review this request."));
+    }
   }
   return supabase;
 }

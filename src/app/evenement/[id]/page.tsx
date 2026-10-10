@@ -38,7 +38,7 @@ async function readEventDetail(id: string) {
     .single();
 
   if (!event) return null;
-  const eventStatus = event.status === "past" || new Date(event.date_start).getTime() < Date.now()
+  const eventStatus = !event.date_is_tbd && (event.status === "past" || (event.date_start && new Date(event.date_start).getTime() < Date.now()))
     ? "https://schema.org/EventCompleted"
     : "https://schema.org/EventScheduled";
   return { event, eventStatus };
@@ -54,7 +54,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   const { event, eventStatus } = eventDetail;
   const supabase = await createClient();
   const [registration, { data: { user } }] = await Promise.all([
-    getEventRegistrationStatus(id),
+    event.date_is_tbd ? Promise.resolve(null) : getEventRegistrationStatus(id),
     supabase.auth.getUser(),
   ]);
   const detailedContent = typeof event.full_content === "string" ? event.full_content.trim() : "";
@@ -66,7 +66,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     "@type": "Event",
     name: event.title,
     description: event.description,
-    startDate: event.date_start,
+    startDate: event.date_start || undefined,
     offers: eventPrice !== null && paymentUrl ? {
       "@type": "Offer",
       price: (eventPrice / 100).toFixed(2),
@@ -84,7 +84,8 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     organizer: { "@type": "Organization", name: "BDE CERI Avignon", url: "https://bdeceri.fr" },
   };
 
-  const formatDate = (isoStr: string) => {
+  const formatDate = (isoStr: string | null) => {
+    if (event.date_is_tbd || !isoStr) return dict.events.coming_soon;
     return formatParisDateTime(isoStr, {
       weekday: 'long',
       month: 'long', 
@@ -207,13 +208,13 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{dict.common.schedule}</p>
                   <p className="mt-1 text-xs text-on-surface-variant">{lang === "en" ? "Paris time" : "Heure de Paris"}</p>
-                  <p className="font-body text-sm">{dict.common.starts} : {formatParisDateTime(event.date_start, { hour: '2-digit', minute: '2-digit' }, dateLocale)}</p>
-                  {event.date_end && <p className="font-body text-sm">{dict.common.ends} : {formatParisDateTime(event.date_end, { hour: '2-digit', minute: '2-digit' }, dateLocale)}</p>}
+                  <p className="font-body text-sm">{dict.common.starts} : {event.date_is_tbd || !event.date_start ? dict.events.coming_soon : formatParisDateTime(event.date_start, { hour: '2-digit', minute: '2-digit' }, dateLocale)}</p>
+                  {!event.date_is_tbd && event.date_end && <p className="font-body text-sm">{dict.common.ends} : {formatParisDateTime(event.date_end, { hour: '2-digit', minute: '2-digit' }, dateLocale)}</p>}
                 </div>
               </div>
             </div>
 
-            {event.registration_enabled !== false
+            {registration && !event.date_is_tbd && event.registration_enabled !== false
               ? <EventRegistration
                   key={id + ":" + JSON.stringify(registration.status) + ":" + !!user}
                   eventId={id}
@@ -221,9 +222,9 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
                   signedIn={!!user}
                   english={lang === "en"}
                 />
-              : registration.status?.registered
+              : registration?.status?.registered
                 ? <EventRegistration key={id + ":existing:" + !!user} eventId={id} initialStatus={registration.status} signedIn={!!user} english={lang === "en"} />
-                : <p className="rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-3 text-sm leading-6 text-on-surface-variant">{lang === "en" ? "Informational event — registration is not required." : "Événement informatif — aucune inscription n’est requise."}</p>}
+                : <p className="rounded-xl border border-outline-variant/20 bg-surface-container-low px-4 py-3 text-sm leading-6 text-on-surface-variant">{event.date_is_tbd ? lang === "en" ? "The date will be announced soon. Registration is not open yet." : "La date sera annoncée prochainement. Les inscriptions ne sont pas encore ouvertes." : lang === "en" ? "Informational event — registration is not required." : "Événement informatif — aucune inscription n’est requise."}</p>}
           </div>
 
           <div className="p-8 border border-outline-variant/20 rounded-3xl bg-surface-container-lowest/30 backdrop-blur-sm">

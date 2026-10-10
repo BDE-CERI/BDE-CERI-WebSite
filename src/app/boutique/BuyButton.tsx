@@ -7,16 +7,20 @@ interface BuyButtonProps {
   productId: string;
   stock: number | undefined;
   paymentLink?: string;
+  isTaverne?: boolean;
+  isOpen?: boolean;
+  closedMessage?: string;
+  english?: boolean;
 }
 
-export default function BuyButton({ productId, stock, paymentLink }: BuyButtonProps) {
+export default function BuyButton({ productId, stock, paymentLink, isTaverne = false, isOpen = true, closedMessage, english = false }: BuyButtonProps) {
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
   const handleBuy = () => {
     startTransition(async () => {
       setMessage(null);
-      const res = await buyItem(productId, false);
+      const res = await buyItem(productId, isTaverne, english);
       if (res.error) {
         setMessage({ type: 'error', text: res.error });
       } else {
@@ -46,10 +50,10 @@ export default function BuyButton({ productId, stock, paymentLink }: BuyButtonPr
       
       <button 
         onClick={handleBuy}
-        disabled={isPending || stock === 0}
+        disabled={isPending || stock === 0 || !isOpen}
         className="w-full bg-tertiary text-on-tertiary font-bold py-5 rounded-3xl shadow-xl shadow-tertiary/20 flex items-center justify-center gap-2 hover:scale-105 transition-all disabled:opacity-30 disabled:hover:scale-100 disabled:grayscale"
       >
-        {isPending ? (
+        {!isOpen ? (english ? "Local closed — purchases are paused" : "Local fermé — achats suspendus") : isPending ? (
            <span className="material-symbols-outlined animate-spin">sync</span>
         ) : (
           <>
@@ -58,6 +62,7 @@ export default function BuyButton({ productId, stock, paymentLink }: BuyButtonPr
           </>
         )}
       </button>
+      {!isOpen && closedMessage && <p role="status" className="text-center text-sm leading-6 text-on-surface-variant">{closedMessage}</p>}
     </div>
   );
 }

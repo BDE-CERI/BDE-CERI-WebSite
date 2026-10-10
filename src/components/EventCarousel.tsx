@@ -16,6 +16,7 @@ interface CarouselEvent {
   short_description?: string | null;
   image_url?: string | null;
   date_start?: string | null;
+  date_is_tbd?: boolean;
   location?: string | null;
 }
 
@@ -55,15 +56,15 @@ export default function EventCarousel({ events, dict }: { events: CarouselEvent[
       
       <div className="relative z-10 animate-slide-up" key={mainEvent.id}>
         <div className="inline-flex bg-tertiary text-on-tertiary text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wider mb-4">
-          {mainEvent.category || "Event"}
+          {mainEvent.date_is_tbd ? dict.events.coming_soon : mainEvent.category || dict.events.event_fallback}
         </div>
         <h4 className="text-3xl font-headline font-bold text-on-surface mb-2">{mainEvent.title}</h4>
-        <p className="text-on-surface-variant font-body mb-6 max-w-lg">{mainEvent.short_description || mainEvent.description}</p>
+        <p className="text-on-surface-variant font-body mb-6 max-w-lg whitespace-pre-line break-words line-clamp-5">{mainEvent.short_description || mainEvent.description}</p>
         <div className="flex items-center justify-between border-t border-outline-variant/15 pt-4">
           <div className="flex items-center space-x-4">
             <div className="flex items-center text-sm text-on-surface-variant space-x-1">
               <span className="material-symbols-outlined text-[16px]">calendar_month</span>
-              <span>{formatDate(mainEvent.date_start)}</span>
+              <span>{mainEvent.date_is_tbd ? dict.events.coming_soon : formatDate(mainEvent.date_start)}</span>
             </div>
             <div className="flex items-center text-sm text-on-surface-variant space-x-1">
               <span className="material-symbols-outlined text-[16px]">location_on</span>

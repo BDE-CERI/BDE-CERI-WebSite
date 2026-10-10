@@ -1,9 +1,12 @@
-import { getDictionary } from "@/locales/dictionaries";
+import { getDictionary, getLang } from "@/locales/dictionaries";
 import { createClient } from "@/utils/supabase/server";
 import LazyInteractiveMap from "@/components/LazyInteractiveMap";
 import Link from "next/link";
 import SharkWallpaper from "@/components/SharkWallpaper";
+import RecruitmentCampaign from "@/components/RecruitmentCampaign";
 import { createSeoMetadata } from "@/utils/seo";
+import { getLocalOfficeData } from "@/utils/local-office";
+import { hasSiteAdminAccess } from "@/utils/member-roles";
 
 export const metadata = createSeoMetadata({
   path: "/contact",
@@ -12,7 +15,7 @@ export const metadata = createSeoMetadata({
 });
 
 export default async function Contact() {
-  const [dict, supabase] = await Promise.all([getDictionary(), createClient()]);
+  const [dict, lang, supabase, localOffice] = await Promise.all([getDictionary(), getLang(), createClient(), getLocalOfficeData()]);
 
   // Fetch dynamic site settings for address, social links, helloasso url
   const { data: settings } = await supabase
@@ -25,13 +28,31 @@ export default async function Contact() {
 
   const helloassoUrl = getSetting("helloasso_url", "https://www.helloasso.com");
   const instagramUrl = getSetting("instagram_url", "#");
-  const address = getSetting("address", "339 Chemin des Meinajaries, 84000 Avignon");
+  const parseCoordinate = (value: string, fallback: number, min: number, max: number) => {
+    const coordinate = Number(value);
+    return Number.isFinite(coordinate) && coordinate >= min && coordinate <= max ? coordinate : fallback;
+  };
+  const mapPosition: [number, number] = [
+    parseCoordinate(getSetting("contact_map_latitude"), 43.9100, -90, 90),
+    parseCoordinate(getSetting("contact_map_longitude"), 4.8877, -180, 180),
+  ];
+  const recruitmentFormSetting = getSetting("recruitment_form_url").trim();
+  const recruitmentFormUrl = /^https:\/\/(?:forms\.gle\/|docs\.google\.com\/forms\/)/i.test(recruitmentFormSetting) ? recruitmentFormSetting : "";
+  let canEditMap = false;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const { data: member } = await supabase.from("members").select("category, role, is_dev").eq("auth_user_id", user.id).maybeSingle();
+    if (member && hasSiteAdminAccess(member.category, member.role, member.is_dev)) {
+      const { data: assurance } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      canEditMap = assurance?.currentLevel === "aal2";
+    }
+  }
 
   return (
     <div className="bg-surface min-h-screen relative overflow-hidden">
       <SharkWallpaper />
       {/* Background Decor */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none"></div>
+      <div className="absolute top-0 right-0 w-125 h-125 bg-primary/5 blur-[120px] rounded-full pointer-events-none"></div>
       
       <div className="max-w-7xl mx-auto px-6 py-24">
         
@@ -54,9 +75,9 @@ export default async function Contact() {
           <div className="lg:col-span-8 space-y-12">
             
             {/* Interactive Map */}
-            <div className="reveal-card h-[400px] rounded-3xl relative overflow-hidden group">
-               <LazyInteractiveMap />
-               <div className="absolute top-6 left-6 z-[1000] p-4 glass-panel rounded-2xl border border-tertiary/20 shadow-2xl max-w-xs group-hover:-translate-y-1 transition-transform">
+            <div className="reveal-card h-100 rounded-3xl relative overflow-hidden group">
+               <LazyInteractiveMap position={mapPosition} canEdit={canEditMap} english={lang === "en"} />
+               <div className="absolute top-6 left-6 z-1000 p-4 glass-panel rounded-2xl border border-tertiary/20 shadow-2xl max-w-xs group-hover:-translate-y-1 transition-transform">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-8 h-8 rounded-lg bg-tertiary flex items-center justify-center text-on-tertiary">
                       <span className="material-symbols-outlined text-sm">location_on</span>
@@ -118,7 +139,7 @@ export default async function Contact() {
                      href={instagramUrl} 
                      target="_blank" 
                      rel="noopener noreferrer"
-                     className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gradient-to-tr from-primary via-tertiary to-secondary text-on-tertiary font-bold hover:shadow-[0_0_15px_rgba(123,208,255,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
+                      className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-linear-to-tr from-primary via-tertiary to-secondary text-on-tertiary font-bold hover:shadow-[0_0_15px_rgba(123,208,255,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
                    >
                       <span>{dict.contact.instagram_button}</span>
                      <span className="material-symbols-outlined text-sm">north_east</span>
@@ -169,6 +190,20 @@ export default async function Contact() {
                  </div>
                </div>
             </div>
+
+            <RecruitmentCampaign
+              english={lang === "en"}
+              formUrl={recruitmentFormUrl}
+              copy={{
+                title: dict.contact.recruitment.title,
+                description: dict.contact.recruitment.description,
+                informationTitle: dict.contact.recruitment.information_title,
+                information: dict.contact.recruitment.information,
+                consent: dict.contact.recruitment.consent,
+                openForm: dict.contact.recruitment.open_form,
+                formUnavailable: dict.contact.recruitment.form_unavailable,
+              }}
+            />
           </div>
 
           {/* Right Column: Cards */}
@@ -182,7 +217,7 @@ export default async function Contact() {
                    {dict.contact.quick_help}
                </h2>
                <div className="space-y-4">
-                  <Link href="/faq" className="flex items-center justify-between p-4 rounded-xl bg-surface-container-high/40 hover:bg-surface-container-high transition-colors">
+                  <Link href="#contact-faq" className="flex items-center justify-between p-4 rounded-xl bg-surface-container-high/40 hover:bg-surface-container-high transition-colors">
                       <span className="text-sm">{dict.contact.faq_link}</span>
                      <span className="material-symbols-outlined text-sm">north_east</span>
                   </Link>
@@ -194,7 +229,7 @@ export default async function Contact() {
             </div>
 
             {/* Local / Horaires Card */}
-            <div className="glass-panel p-8 rounded-3xl border border-outline-variant/10 shadow-xl">
+            <div id="horaires-local" className="scroll-mt-24 glass-panel p-8 rounded-3xl border border-outline-variant/10 shadow-xl">
                <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                   <span className="material-symbols-outlined text-tertiary">schedule</span>
                    {dict.contact.local_hours}
@@ -202,20 +237,40 @@ export default async function Contact() {
                <ul className="space-y-4">
                   <li className="flex justify-between text-xs">
                       <span className="text-on-surface-variant font-medium">{dict.contact.weekdays}</span>
-                     <span className="text-on-surface font-bold text-success">12:30 — 13:45</span>
+                     <span className="text-on-surface font-bold text-success">{localOffice.settings.opens_at.slice(0, 5)} – {localOffice.settings.closes_at.slice(0, 5)}</span>
                   </li>
                   <li className="flex justify-between text-xs">
-                      <span className="text-on-surface-variant font-medium">{dict.contact.lunch_break}</span>
-                      <span className="text-on-surface font-bold">{dict.contact.open}</span>
+                      <span className="text-on-surface-variant font-medium">{dict.contact.local_presence}</span>
+                      <span className="text-on-surface font-bold">{dict.contact.local_possible}</span>
                   </li>
                </ul>
                <p className="mt-6 text-[10px] text-on-surface-variant leading-relaxed italic border-t border-outline-variant/10 pt-4">
-                   * {dict.contact.hours_note}
+                   * {dict.contact.local_closed_possible} {dict.contact.hours_note}
                </p>
             </div>
 
           </div>
         </div>
+
+        <section id="contact-faq" className="mt-16 scroll-mt-24 rounded-3xl border border-outline-variant/15 bg-surface-container-low/70 p-6 sm:p-9" aria-labelledby="contact-faq-title">
+          <div className="mb-6 max-w-2xl">
+            <h2 id="contact-faq-title" className="font-headline text-2xl font-bold text-on-surface">{dict.contact.recruitment.faq_title}</h2>
+            <p className="mt-2 text-sm leading-6 text-on-surface-variant">{dict.contact.recruitment.faq_description}</p>
+          </div>
+          <div className="divide-y divide-outline-variant/15">
+            {dict.contact.recruitment.faqs.map((item, index) => (
+              <details key={item.question} className="group py-4" open={index === 0}>
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-on-surface marker:hidden [&::-webkit-details-marker]:hidden">
+                  <span>{item.question}</span>
+                  <span aria-hidden="true" className="material-symbols-outlined shrink-0 text-tertiary transition-transform group-open:rotate-180">expand_more</span>
+                </summary>
+                <p className="max-w-3xl pt-3 pr-8 text-sm leading-6 text-on-surface-variant">
+                  {item.answer}{item.href && <> <Link href={item.href} className="font-semibold text-tertiary underline underline-offset-4 hover:text-on-surface">{item.link_label}</Link>.</>}
+                </p>
+              </details>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );

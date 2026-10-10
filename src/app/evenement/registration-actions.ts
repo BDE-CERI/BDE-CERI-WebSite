@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
+import { hasSiteAdminAccess } from "@/utils/member-roles";
 import {
   isEventRegistrationId,
   parseEventRegistrationStatus,
@@ -15,8 +16,7 @@ import type {
   RegistrationActionResult,
 } from "@/types/event-registrations";
 
-const boardRoles = ["president", "tresorier", "secretaire", "vp_general"];
-const migration = "202610090008_event_logs_and_informative_events.sql";
+const migration = "202610100001_event_system_setup.sql";
 
 const messages: Record<EventRegistrationErrorCode, { fr: string; en: string }> = {
   AUTH_REQUIRED: {
@@ -44,8 +44,8 @@ const messages: Record<EventRegistrationErrorCode, { fr: string; en: string }> =
     en: "This request is invalid. Reload the page and try again.",
   },
   FORBIDDEN: {
-    fr: "La liste des inscrits est réservée au bureau restreint.",
-    en: "The attendee list is restricted to the executive board.",
+    fr: "La liste des inscrits est réservée aux administrateurs du site.",
+    en: "The attendee list is restricted to site administrators.",
   },
   CONFIGURATION_REQUIRED: {
     fr: "Les inscriptions ne sont pas encore disponibles. Contactez le bureau.",
@@ -146,14 +146,16 @@ export async function listEventRegistrations(
 
     const { data: member, error: memberError } = await supabase
       .from("members")
-      .select("id, category, role")
+      .select("id, category, role, is_dev")
       .eq("auth_user_id", user.id)
       .maybeSingle();
 
     if (memberError) return { success: false, error: failure("UNAVAILABLE", isEnglish).error };
-    if (!member || (member.category !== "bureau_restreint" && !boardRoles.includes(typeof member.role === "string" ? member.role : ""))) {
+    if (!member || !hasSiteAdminAccess(member.category, typeof member.role === "string" ? member.role : null, member.is_dev)) {
       return { success: false, error: failure("FORBIDDEN", isEnglish).error };
     }
+    const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (assuranceError || assurance?.currentLevel !== "aal2") return { success: false, error: failure("FORBIDDEN", isEnglish).error };
 
     // SQL checks the same administrator rights again; the application guard is not
     // used as a replacement for database permissions.
@@ -198,11 +200,13 @@ export async function listEventRegistrationLogs(eventId: string | null, offset =
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return { success: false, error: failure("AUTH_REQUIRED", isEnglish).error };
-    const { data: member, error: memberError } = await supabase.from("members").select("id, category, role").eq("auth_user_id", user.id).maybeSingle();
+    const { data: member, error: memberError } = await supabase.from("members").select("id, category, role, is_dev").eq("auth_user_id", user.id).maybeSingle();
     if (memberError) return { success: false, error: failure("UNAVAILABLE", isEnglish).error };
-    if (!member || (member.category !== "bureau_restreint" && !boardRoles.includes(typeof member.role === "string" ? member.role : ""))) {
+    if (!member || !hasSiteAdminAccess(member.category, typeof member.role === "string" ? member.role : null, member.is_dev)) {
       return { success: false, error: failure("FORBIDDEN", isEnglish).error };
     }
+    const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (assuranceError || assurance?.currentLevel !== "aal2") return { success: false, error: failure("FORBIDDEN", isEnglish).error };
     const { data, error } = await supabase.rpc("bde_admin_list_event_registration_logs", {
       p_event_id: eventId, p_offset: offset, p_limit: 100,
     });
