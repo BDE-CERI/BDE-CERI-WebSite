@@ -185,6 +185,8 @@ export const en = {
     instagram_button: "Follow @bde_ceri",
     association_email_title: "Association email",
     association_email_description: "For official requests, partnership proposals, or any other questions.",
+    phone_title: "BDE phone",
+    phone_description: "Call us to get in touch with the BDE team directly.",
     linkedin_title: "BDE on LinkedIn",
     linkedin_description: "Connect with CERI alumni and discover our professional partners.",
     linkedin_button: "View our profile",

@@ -15,7 +15,7 @@ const buttonClass = "inline-flex min-h-11 items-center justify-center gap-2 roun
 type EventSummary = {
   id: string;
   title: string;
-  date_start: string;
+  date_start: string | null;
   location: string;
   max_capacity?: number;
   registration_is_paid?: boolean;

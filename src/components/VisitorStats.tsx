@@ -60,10 +60,10 @@ export default function VisitorStats({ english = false }: { english?: boolean })
         setError(false);
         setErrorCode(null);
         setUpdatedAt(Date.now());
-      } catch {
+      } catch (failure: unknown) {
         if (mounted && request === sequence && !currentController.signal.aborted) {
           setError(true);
-          setErrorCode(error instanceof Error ? error.message : "stats_unavailable");
+          setErrorCode(failure instanceof Error ? failure.message : "stats_unavailable");
         }
       } finally {
         if (mounted && request === sequence && !currentController.signal.aborted) setRefreshing(false);

@@ -166,6 +166,26 @@ export default async function Contact() {
                    </a>
                  </div>
 
+                 {/* Phone Card */}
+                 <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-low hover:bg-surface-container-high transition-all flex flex-col justify-between group/card relative overflow-hidden">
+                   <div>
+                     <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center text-success mb-4">
+                       <span className="material-symbols-outlined text-2xl font-bold">call</span>
+                     </div>
+                     <h3 className="text-lg font-headline font-bold mb-2 text-on-surface">{dict.contact.phone_title}</h3>
+                     <p className="text-xs text-on-surface-variant leading-relaxed mb-6">
+                       {dict.contact.phone_description}
+                     </p>
+                   </div>
+                   <a
+                     href="tel:+33490843533"
+                     className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant/10 text-on-surface font-bold hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
+                   >
+                     <span>04 90 84 35 33</span>
+                     <span className="material-symbols-outlined shrink-0 text-sm">call</span>
+                   </a>
+                 </div>
+
                  {/* LinkedIn Card */}
                  <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-low hover:bg-surface-container-high transition-all flex flex-col justify-between group/card relative overflow-hidden">
                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover/card:bg-primary/10 transition-all"></div>

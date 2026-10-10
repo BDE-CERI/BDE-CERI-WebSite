@@ -112,7 +112,7 @@ export default function NewsSection({ news, dict, isAdmin }: { news: NewsItem[],
         {/* The Monitor Simulation */}
         <div className="relative isolate mx-auto flex flex-col items-center group w-full">
           {/* Bezel */}
-          <div className="relative z-10 bg-[#1a1a1a] p-1.5 md:p-3 rounded-[1.5rem] shadow-[0_50px_100px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.05)] border border-white/5 w-full max-w-7xl aspect-[4/5] sm:aspect-[4/3] md:aspect-[16/9] flex flex-col scale-[1.02] overflow-hidden">
+          <div className="relative z-20 bg-[#1a1a1a] p-1.5 md:p-3 rounded-[1.5rem] shadow-[0_50px_100px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.05)] border border-white/5 w-full max-w-7xl aspect-[4/5] sm:aspect-[4/3] md:aspect-[16/9] flex flex-col scale-[1.02] overflow-hidden">
 
             {/* ROG Style Gravure (Behind the screen container) */}
             <div className="absolute inset-0 pointer-events-none opacity-5 select-none overflow-hidden">
