@@ -5,6 +5,7 @@ import { getLocalOfficeData, getLocalOfficeStatus } from "@/utils/local-office";
 import { createClient } from "@/utils/supabase/server";
 import { getShopMembershipAccess } from "@/utils/shop-membership";
 import MembershipGate from "@/components/MembershipGate";
+import Image from "next/image";
 
 export const metadata = createSeoMetadata({
   path: "/boutique",
@@ -28,7 +29,7 @@ export default async function Boutique() {
       <header className="pt-24 pb-12 px-6 max-w-7xl mx-auto text-center relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[300px] bg-tertiary/5 blur-[120px] pointer-events-none" />
         <div className="inline-flex items-center gap-2 rounded-full border border-[#C67A40]/30 bg-[#C67A40]/10 px-4 py-2 text-[#C67A40] text-[10px] font-bold uppercase tracking-[0.2em] mb-6">
-          <span aria-hidden="true" className="material-symbols-outlined text-base">local_cafe</span>{dict.boutique.badge}
+          <Image src="/logos/taverne-icon.png" alt="" width={32} height={27} className="size-7 object-contain" />{dict.boutique.badge}
         </div>
         <h1 className="text-5xl md:text-7xl font-headline font-bold text-on-surface mb-3 tracking-tight">
           {dict.boutique.shop_name}
@@ -44,7 +45,7 @@ export default async function Boutique() {
           <div className="rounded-3xl border border-tertiary/25 bg-gradient-to-br from-tertiary/15 via-surface-container-low to-primary/10 p-3 shadow-2xl shadow-tertiary/10 sm:p-5">
             <div className="flex flex-col items-center gap-3 px-2 pb-4 sm:px-3">
               <div className="flex items-center justify-center gap-3 text-center">
-                <span className="material-symbols-outlined flex h-10 w-10 items-center justify-center rounded-full bg-tertiary/15 text-[1.55rem] leading-none text-tertiary" aria-hidden="true">storefront</span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-tertiary/15"><Image src="/logos/taverne-icon.png" alt="" width={40} height={34} className="size-10 object-contain" /></span>
                 <div>
                   <p className="text-sm font-bold text-on-surface">{dict.boutique.shop_name}</p>
                   <p className="text-xs text-on-surface-variant">{dict.boutique.secure_checkout}</p>

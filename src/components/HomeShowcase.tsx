@@ -37,6 +37,7 @@ export default async function HomeShowcase({ dict, lang }: { dict: Dictionary; l
         - (b.date_start ? new Date(b.date_start).getTime() : Number.MAX_SAFE_INTEGER))
     .slice(0, 5);
   const isBoard = hasSiteAdminAccess(member?.category, member?.role, member?.is_dev);
+  const membershipPaid = member?.membership_paid === true;
   const isCOMMember = member?.member_assignments?.some(assignment => { const pole = Array.isArray(assignment.poles) ? assignment.poles[0] : assignment.poles; return typeof pole?.name === "string" && /(?:communication|\bcom\b)/i.test(pole.name); });
   const news = (newsData ?? []).map(item => {
     const author = Array.isArray(item.members) ? item.members[0] : item.members;
@@ -54,6 +55,15 @@ export default async function HomeShowcase({ dict, lang }: { dict: Dictionary; l
         </div>}
       </div>
     </section>
-    <div className="relative z-10 bg-surface py-8 sm:py-12"><ShopAdBanner images={shopImages} eyebrow={dict.home.shop_promo_eyebrow} title={dict.home.shop_promo_title} description={dict.home.shop_promo_desc} action={dict.home.shop_promo_action} english={lang === "en"} /></div>
+    <div className="relative z-10 bg-surface py-8 sm:py-12"><ShopAdBanner
+      images={membershipPaid ? shopImages : []}
+      eyebrow={membershipPaid ? dict.home.shop_promo_eyebrow : lang === "en" ? "Join the crew" : "Rejoins l’équipage"}
+      title={membershipPaid ? dict.home.shop_promo_title : lang === "en" ? "Annual BDE membership" : "L’adhésion annuelle au BDE"}
+      description={membershipPaid ? dict.home.shop_promo_desc : lang === "en" ? "For €5 a year, support student life and unlock access to the BDE shop. Set sail with us!" : "Pour 5 € par an, soutiens la vie étudiante et débloque l’accès à la boutique du BDE. Embarque avec nous !"}
+      action={membershipPaid ? dict.home.shop_promo_action : lang === "en" ? "Pay my membership" : "Régler mon adhésion"}
+      destination={membershipPaid ? "/boutique" : "/adhesion"}
+      membershipPromo={!membershipPaid}
+      english={lang === "en"}
+    /></div>
   </>;
 }

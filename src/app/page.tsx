@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Suspense } from "react";
 import HomeShowcase from "@/components/HomeShowcase";
 import { getDictionary, getLang } from "@/locales/dictionaries";
@@ -114,7 +115,7 @@ export default async function Home() {
                 
                 <div className="absolute -right-6 top-5 z-20 w-72 translate-x-4 transform rounded-xl border border-[#C67A40]/30 bg-surface-container-low/95 p-5 shadow-[0_20px_40px_rgba(7,13,31,0.5)] backdrop-blur-xl transition-transform duration-500 hover:translate-x-0">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#C67A40]/15 text-[#C67A40]"><span aria-hidden="true" className="material-symbols-outlined">local_cafe</span></div>
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#C67A40]/15"><Image src="/logos/taverne-icon.png" alt="" width={40} height={34} className="size-10 object-contain" /></div>
                     <div className="min-w-0">
                       <p className="truncate text-[10px] font-bold uppercase tracking-[.15em] text-on-surface-variant">{dict.boutique.shop_name}</p>
                       <p className="text-sm font-headline font-bold text-on-surface">{dict.boutique.store_descriptor}</p>
