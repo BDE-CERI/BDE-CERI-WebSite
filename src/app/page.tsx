@@ -6,6 +6,7 @@ import { getDictionary, getLang } from "@/locales/dictionaries";
 import InteractiveBackground from "@/components/InteractiveBackground";
 import { createSeoMetadata } from "@/utils/seo";
 import { createClient } from "@/utils/supabase/server";
+import { getCurrentUserContext } from "@/utils/supabase/current-user";
 import { getPublicMemberName } from "@/utils/member-display";
 import { isMemberPoleVicePresident } from "@/utils/member-roles";
 import HomeMemberCarousel, { type HomeMember } from "@/components/HomeMemberCarousel";
@@ -35,7 +36,8 @@ export const metadata = createSeoMetadata({
 });
 
 export default async function Home() {
-  const [dict, lang, supabase] = await Promise.all([getDictionary(), getLang(), createClient()]);
+  const [dict, lang, supabase, userContext] = await Promise.all([getDictionary(), getLang(), createClient(), getCurrentUserContext()]);
+  const membershipPaid = userContext.member?.membership_paid === true;
   const [{ data: memberRows }, { data: poles }] = await Promise.all([
     supabase
       .from("members")
@@ -78,13 +80,13 @@ export default async function Home() {
 
   return (
     <>
-      <section className="relative min-h-[calc(100svh-5rem)] md:min-h-[921px] flex items-center justify-center overflow-hidden bg-surface">
+      <section className="relative min-h-[calc(100svh-5rem)] md:min-h-230.25 flex items-center justify-center overflow-hidden bg-surface">
         <div className="absolute inset-0 z-0">
           <InteractiveBackground />
           <div className="absolute top-1/4 left-1/4 hidden md:block w-96 h-96 bg-primary-container rounded-full mix-blend-screen filter blur-[100px] opacity-50 animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 hidden md:block w-[30rem] h-[30rem] bg-tertiary-container rounded-full mix-blend-screen filter blur-[120px] opacity-40"></div>
+          <div className="absolute bottom-1/4 right-1/4 hidden md:block w-120 h-120 bg-tertiary-container rounded-full mix-blend-screen filter blur-[120px] opacity-40"></div>
         </div>
-        <div className="relative z-10 max-w-7xl mx-auto px-6 w-full flex flex-col md:flex-row items-center justify-between gap-16">
+        <div className="relative z-10 max-w-7xl mx-auto px-6 w-full flex flex-col md:flex-row items-center justify-between gap-16 -translate-y-24 md:-translate-y-30">
           <div className="w-full md:w-1/2 flex flex-col items-start space-y-8">
             <div className="inline-flex items-center space-x-2 bg-surface-container-lowest px-4 py-2 rounded-full ghost-border-bottom">
               <span className="w-2 h-2 rounded-full bg-tertiary animate-ping"></span>
@@ -103,7 +105,7 @@ export default async function Home() {
               </Link>
             </div>
           </div>
-          <div className="w-full md:w-1/2 relative h-[500px] hidden md:block">
+          <div className="w-full md:w-1/2 relative h-125 hidden md:block">
             <div className="absolute right-0 bottom-0 w-full h-full z-0 pointer-events-none">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-radial-gradient from-tertiary/10 to-transparent opacity-50 blur-3xl"></div>
             </div>
@@ -115,14 +117,14 @@ export default async function Home() {
                 
                 <div className="absolute -right-6 top-5 z-20 w-72 translate-x-4 transform rounded-xl border border-[#C67A40]/30 bg-surface-container-low/95 p-5 shadow-[0_20px_40px_rgba(7,13,31,0.5)] backdrop-blur-xl transition-transform duration-500 hover:translate-x-0">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#C67A40]/15"><Image src="/logos/taverne-icon.png" alt="" width={40} height={34} className="size-10 object-contain" /></div>
+                    <div className={`flex size-10 shrink-0 items-center justify-center rounded-full ${membershipPaid ? "bg-[#C67A40]/15" : "bg-tertiary/15"}`}>{membershipPaid ? <Image src="/logos/taverne-icon.png" alt="" width={40} height={34} className="size-10 object-contain" /> : <span aria-hidden="true" className="material-symbols-outlined text-xl text-tertiary">card_membership</span>}</div>
                     <div className="min-w-0">
-                      <p className="truncate text-[10px] font-bold uppercase tracking-[.15em] text-on-surface-variant">{dict.boutique.shop_name}</p>
-                      <p className="text-sm font-headline font-bold text-on-surface">{dict.boutique.store_descriptor}</p>
+                      <p className="truncate text-[10px] font-bold uppercase tracking-[.15em] text-on-surface-variant">{membershipPaid ? dict.boutique.shop_name : lang === "en" ? "Join the crew" : "Rejoins l’équipage"}</p>
+                      <p className="text-sm font-headline font-bold text-on-surface">{membershipPaid ? dict.boutique.store_descriptor : lang === "en" ? "Annual membership · €5" : "Adhésion annuelle · 5 €"}</p>
                     </div>
                   </div>
-                  <p className="mb-3 text-xs leading-5 text-on-surface-variant">{dict.home.shop_promo_desc}</p>
-                  <Link href="/boutique" className="inline-flex items-center gap-1 text-xs font-bold text-[#C67A40] hover:underline">{dict.boutique.enter_tavern}<span aria-hidden="true" className="material-symbols-outlined text-sm">arrow_forward</span></Link>
+                  <p className="mb-3 text-xs leading-5 text-on-surface-variant">{membershipPaid ? dict.home.shop_promo_desc : lang === "en" ? "Support student life and unlock access to the BDE shop for the year." : "Soutiens la vie étudiante et débloque l’accès à la boutique du BDE pour toute l’année."}</p>
+                  <Link href={membershipPaid ? "/boutique" : "/adhesion"} className={`inline-flex items-center gap-1 text-xs font-bold hover:underline ${membershipPaid ? "text-[#C67A40]" : "text-tertiary"}`}>{membershipPaid ? dict.boutique.enter_tavern : lang === "en" ? "Pay my membership" : "Payer mon adhésion"}<span aria-hidden="true" className="material-symbols-outlined text-sm">arrow_forward</span></Link>
                 </div>
             </div>
           </div>
@@ -149,7 +151,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <Suspense fallback={<section aria-hidden="true" className="min-h-[28rem] bg-surface-container-lowest px-4 py-16 sm:px-6"><div className="mx-auto max-w-7xl"><div className="mx-auto mb-10 h-8 w-56 animate-pulse rounded-lg bg-surface-container-high"/><div className="h-72 animate-pulse rounded-2xl bg-surface-container-high sm:h-96"/></div></section>}>
+      <Suspense fallback={<section aria-hidden="true" className="min-h-112 bg-surface-container-lowest px-4 py-16 sm:px-6"><div className="mx-auto max-w-7xl"><div className="mx-auto mb-10 h-8 w-56 animate-pulse rounded-lg bg-surface-container-high"/><div className="h-72 animate-pulse rounded-2xl bg-surface-container-high sm:h-96"/></div></section>}>
         <HomeShowcase dict={dict} lang={lang} />
       </Suspense>
       <section className="relative z-10 bg-surface px-4 py-16 sm:px-6 sm:py-20">
