@@ -199,7 +199,7 @@ export default async function Contact() {
                      </p>
                    </div>
                    <a 
-                     href="https://linkedin.com/company/bde-ceri" 
+                     href="https://linkedin.com/company/bdeceri" 
                      target="_blank" 
                      rel="noopener noreferrer"
                      className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-surface-container-high hover:bg-surface-container-highest border border-outline-variant/10 text-on-surface font-bold hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"

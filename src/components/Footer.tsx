@@ -25,18 +25,24 @@ export default function Footer({ dict }: { dict: typeof fr }) {
         </div>
         <div className="flex flex-col space-y-3">
           <span className="text-xs font-label uppercase tracking-widest text-[#dce1fb]/40 mb-2">{dict.footer.connect}</span>
-          <Link
-            href="#"
+          <a
+            href="https://www.instagram.com/bde_ceri/"
+            target="_blank"
+            rel="noopener noreferrer"
             className="font-body text-xs tracking-wide text-[#dce1fb]/60 opacity-80 hover:opacity-100 hover:text-white transition-colors"
           >
             Instagram
-          </Link>
-          <Link
-            href="#"
+            <span className="sr-only"> (ouvre un nouvel onglet)</span>
+          </a>
+          <a
+            href="https://www.linkedin.com/company/bdeceri/"
+            target="_blank"
+            rel="noopener noreferrer"
             className="font-body text-xs tracking-wide text-[#dce1fb]/60 opacity-80 hover:opacity-100 hover:text-white transition-colors"
           >
             LinkedIn
-          </Link>
+            <span className="sr-only"> (ouvre un nouvel onglet)</span>
+          </a>
         </div>
         <div className="flex flex-col space-y-3">
           <span className="text-xs font-label uppercase tracking-widest text-[#dce1fb]/40 mb-2">{dict.footer.join}</span>
