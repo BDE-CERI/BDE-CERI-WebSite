@@ -31,7 +31,7 @@ export default async function Contact() {
     <div className="bg-surface min-h-screen relative overflow-hidden">
       <SharkWallpaper />
       {/* Background Decor */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none"></div>
+      <div className="absolute top-0 right-0 w-125 h-125 bg-primary/5 blur-[120px] rounded-full pointer-events-none"></div>
       
       <div className="max-w-7xl mx-auto px-6 py-24">
         
@@ -54,9 +54,9 @@ export default async function Contact() {
           <div className="lg:col-span-8 space-y-12">
             
             {/* Interactive Map */}
-            <div className="reveal-card h-[400px] rounded-3xl relative overflow-hidden group">
+            <div className="reveal-card h-100 rounded-3xl relative overflow-hidden group">
                <LazyInteractiveMap />
-               <div className="absolute top-6 left-6 z-[1000] p-4 glass-panel rounded-2xl border border-tertiary/20 shadow-2xl max-w-xs group-hover:-translate-y-1 transition-transform">
+               <div className="absolute top-6 left-6 z-1000 p-4 glass-panel rounded-2xl border border-tertiary/20 shadow-2xl max-w-xs group-hover:-translate-y-1 transition-transform">
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-8 h-8 rounded-lg bg-tertiary flex items-center justify-center text-on-tertiary">
                       <span className="material-symbols-outlined text-sm">location_on</span>
@@ -118,7 +118,7 @@ export default async function Contact() {
                      href={instagramUrl} 
                      target="_blank" 
                      rel="noopener noreferrer"
-                     className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gradient-to-tr from-primary via-tertiary to-secondary text-on-tertiary font-bold hover:shadow-[0_0_15px_rgba(123,208,255,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
+                     className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-linear-to-tr from-primary via-tertiary to-secondary text-on-tertiary font-bold hover:shadow-[0_0_15px_rgba(123,208,255,0.4)] hover:scale-[1.02] active:scale-[0.98] transition-all text-xs"
                    >
                       <span>{dict.contact.instagram_button}</span>
                      <span className="material-symbols-outlined text-sm">north_east</span>
