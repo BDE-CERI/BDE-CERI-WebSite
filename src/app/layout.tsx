@@ -7,7 +7,9 @@ import RootHeader from "@/components/RootHeader";
 import RootFooter from "@/components/RootFooter";
 import StructuredData from "@/components/StructuredData";
 import CookieConsent from "@/components/CookieConsent";
+import MediaPreloadPrompt from "@/components/MediaPreloadPrompt";
 import { Manrope, Space_Grotesk } from "next/font/google";
+import { getLang } from "@/locales/dictionaries";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space-grotesk", display: "swap" });
@@ -67,6 +69,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const english = (await getLang()) === "en";
   return (
     <html lang="fr" className="dark" suppressHydrationWarning>
       <head>
@@ -104,7 +107,8 @@ export default async function RootLayout({
             <Suspense fallback={<div aria-hidden="true" className="fixed inset-x-0 top-0 z-50 h-20 border-b border-outline-variant/10 bg-surface/70 backdrop-blur-xl" />}>
               <RootHeader />
             </Suspense>
-            <CookieConsent />
+            <CookieConsent english={english} />
+            <MediaPreloadPrompt english={english} />
             <main className="flex-grow pt-20">
               {children}
             </main>

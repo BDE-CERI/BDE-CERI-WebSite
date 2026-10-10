@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 type Choice = "accepted" | "rejected" | null;
@@ -19,22 +19,21 @@ function BrookieIcon() {
   );
 }
 
-export default function CookieConsent() {
+export default function CookieConsent({ english: isEnglish = false }: { english?: boolean }) {
   const pathname = usePathname();
   const [choice, setChoice] = useState<Choice>(null);
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [donationUrl, setDonationUrl] = useState("");
-  const [isEnglish, setIsEnglish] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const bannerRef = useRef<HTMLElement>(null);
+  const donationUrl = process.env.NEXT_PUBLIC_HELLOASSO_DONATION_URL ?? "";
 
   useEffect(() => {
-    setIsEnglish(document.documentElement.lang.startsWith("en"));
     fetch("/api/cookie-consent", { cache: "no-store" })
       .then((response) => response.json())
       .then((data: { choice?: Choice }) => setChoice(data.choice ?? null))
       .catch(() => setChoice(null))
       .finally(() => setReady(true));
-    setDonationUrl(process.env.NEXT_PUBLIC_HELLOASSO_DONATION_URL ?? "");
   }, []);
 
   useEffect(() => {
@@ -46,22 +45,46 @@ export default function CookieConsent() {
   useEffect(() => {
     if (choice !== "accepted") return;
     const record = () => {
-      void fetch("/api/visitor/record", { method: "POST", credentials: "same-origin" });
+      void fetch("/api/visitor/record", { method: "POST", credentials: "same-origin" }).catch(() => undefined);
     };
     record();
     const interval = window.setInterval(record, 60_000);
     return () => window.clearInterval(interval);
   }, [choice, pathname]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const banner = ready && choice === null ? bannerRef.current : null;
+    if (!banner) {
+      root.style.setProperty("--brookie-banner-height", "0px");
+      return;
+    }
+
+    const updateHeight = () => root.style.setProperty("--brookie-banner-height", `${banner.getBoundingClientRect().height}px`);
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(banner);
+    return () => {
+      observer.disconnect();
+      root.style.setProperty("--brookie-banner-height", "0px");
+    };
+  }, [choice, ready]);
+
   async function saveChoice(nextChoice: "accepted" | "rejected") {
     setSaving(true);
+    setSaveError(false);
     try {
       const response = await fetch("/api/cookie-consent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ choice: nextChoice }),
       });
-      if (response.ok) setChoice(nextChoice);
+      if (response.ok) {
+        setChoice(nextChoice);
+        window.dispatchEvent(new Event("bde:cookie-consent-saved"));
+      } else setSaveError(true);
+    } catch {
+      setSaveError(true);
     } finally {
       setSaving(false);
     }
@@ -71,6 +94,7 @@ export default function CookieConsent() {
 
   return (
     <aside
+      ref={bannerRef}
       aria-label={isEnglish ? "Brookie preferences" : "Préférences de brookies"}
       className="fixed inset-x-3 bottom-3 z-[100] mx-auto max-w-3xl rounded-2xl border border-outline-variant/30 bg-surface-container-high p-4 shadow-2xl md:inset-x-6 md:bottom-5 md:p-5"
     >
@@ -116,6 +140,8 @@ export default function CookieConsent() {
           </button>
         </div>
       </div>
+
+      {saveError && <p role="alert" className="mt-3 text-xs text-error">{isEnglish ? "Your choice could not be saved. Check your connection and try again." : "Votre choix n’a pas pu être enregistré. Vérifiez votre connexion puis réessayez."}</p>}
 
       {donationUrl && (
         <p className="mt-2 text-[11px] text-on-surface-variant">
