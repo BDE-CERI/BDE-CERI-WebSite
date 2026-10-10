@@ -126,7 +126,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           
           <div className="space-y-4">
             <span className="bg-tertiary/20 text-tertiary px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase backdrop-blur-md border border-tertiary/30">
-              {event.category || dict.events.event_fallback}
+              {event.category || dict.events.event_fallback}{event.is_esport && <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-[#9146FF]/15 px-2.5 py-1 align-middle text-xs font-bold text-[#D1B4FF]"><span aria-hidden="true" className="material-symbols-outlined text-sm">sports_esports</span>eSport</span>}
             </span>
             <h1 className="headline-display break-words text-4xl sm:text-5xl md:text-7xl font-bold text-on-surface tracking-tighter">
               {event.title}

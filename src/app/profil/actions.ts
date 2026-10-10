@@ -268,6 +268,7 @@ function eventFields(formData: FormData) {
   if (paid && !checkoutUrl) throw new ActionError("Renseignez un lien HTTPS vers une page de paiement helloasso.com ou www.helloasso.com.");
   return {
     title: text(formData, "title", "Le titre", 200, true),
+    is_esport: boolean(formData, "is_esport"),
     description: text(formData, "description", "La description", 10000, true),
     full_content: text(formData, "full_content", "Le contenu détaillé", 150000),
     date_start: dateIsTbd ? null : dateStart(formData),
@@ -283,15 +284,19 @@ function eventFields(formData: FormData) {
 }
 
 function eventDatabaseError(error: { message: string; code?: string; details?: string } | null) {
+  const missingField = error?.message + " " + (error?.details ?? "");
+  if (error && (error.code === "42703" || error.code === "PGRST204") && /is_esport/i.test(missingField)) {
+    throw new ActionError("Le schéma des événements dans Supabase n’est pas à jour. Exécutez le script supabase/migrations/202610100004_esport_events.sql dans l’éditeur SQL de Supabase, puis réessayez. Votre saisie reste dans ce formulaire.");
+  }
   if (error && (error.code === "42703" || error.code === "PGRST204")
-    && /registration_enabled|registration_is_paid|registration_price_cents|helloasso_checkout_url|date_is_tbd/i.test(error.message + " " + (error.details ?? ""))) {
-    throw new ActionError("Le schéma des événements dans Supabase n’est pas à jour. Exécutez une seule fois le script supabase/migrations/202610100001_event_system_setup.sql dans l’éditeur SQL de Supabase, puis réessayez. Votre saisie reste dans ce formulaire.");
+    && /registration_enabled|registration_is_paid|registration_price_cents|helloasso_checkout_url|date_is_tbd/i.test(missingField)) {
+    throw new ActionError("Les options d’inscription nécessitent une mise à jour de Supabase. Appliquez la migration du système d’événements et d’inscriptions, puis réessayez. Votre saisie reste dans ce formulaire.");
   }
   databaseError(error);
 }
 
 async function checkEventPaymentSchema(supabase: Supabase) {
-  const { error } = await supabase.from("events").select("registration_enabled, registration_is_paid, registration_price_cents, helloasso_checkout_url, date_is_tbd").limit(0);
+  const { error } = await supabase.from("events").select("registration_enabled, registration_is_paid, registration_price_cents, helloasso_checkout_url, date_is_tbd, is_esport").limit(0);
   eventDatabaseError(error);
 }
 
@@ -303,7 +308,7 @@ export async function addEvent(formData: FormData): Promise<ActionResult> {
     const imageUrl = await image(supabase, formData, "image", "event-images");
     const { error } = await supabase.from("events").insert({ ...fields, image_url: imageUrl, status: "upcoming" }).select("id").single();
     eventDatabaseError(error);
-    refresh(["/evenement", "/"]);
+    refresh(["/evenement", "/esport", "/esport/archives", "/"]);
   });
 }
 
@@ -317,7 +322,7 @@ export async function updateEvent(formData: FormData): Promise<ActionResult> {
     const imageUrl = await image(supabase, formData, "image", "event-images", current.image_url);
     const { error } = await supabase.from("events").update({ ...fields, image_url: imageUrl, updated_at: new Date().toISOString() }).eq("id", id).select("id").single();
     eventDatabaseError(error);
-    refresh(["/evenement", "/evenement/" + id, "/"]);
+    refresh(["/evenement", "/evenement/" + id, "/esport", "/esport/archives", "/"]);
   });
 }
 
@@ -327,7 +332,7 @@ export async function deleteEvent(id: string): Promise<ActionResult> {
     identifier(id);
     const { error } = await supabase.from("events").delete().eq("id", id).select("id").single();
     databaseError(error);
-    refresh(["/evenement", "/evenement/" + id, "/"]);
+    refresh(["/evenement", "/evenement/" + id, "/esport", "/esport/archives", "/"]);
   });
 }
 

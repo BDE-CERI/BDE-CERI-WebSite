@@ -27,6 +27,7 @@ interface EventItem {
   max_capacity?: number;
   image_url?: string;
   status: string;
+  is_esport?: boolean;
   registration_enabled?: boolean;
   registration_is_paid?: boolean;
   registration_price_cents?: number | null;
@@ -82,6 +83,10 @@ function EventEditor({ event, dict, onCancel, onSuccess }: { event?: EventItem; 
           </fieldset>
           <fieldset className="min-w-0 space-y-4">
             <legend className="mb-4 font-headline text-base font-bold">{l("Organisation et visuel", "Logistics and image")}</legend>
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#9146FF]/25 bg-[#9146FF]/5 p-3">
+              <input name="is_esport" type="checkbox" value="true" defaultChecked={event?.is_esport === true} className="mt-1 size-4 shrink-0 accent-[#9146FF]" />
+              <span><span className="flex items-center gap-2 text-sm font-semibold"><svg aria-hidden="true" viewBox="0 0 24 24" className="size-4 fill-[#9146FF]"><path d="M4 3h16v13l-5 5h-4l-3 3v-3H4V3zm3 3v12h3v2l2-2h3l2-2V6H7zm4 2h2v5h-2V8zm4 0h2v5h-2V8z" /></svg>{l("Événement eSport", "eSports event")}</span><span className="mt-1 block text-xs leading-5 text-on-surface-variant">{l("Affiche aussi cet événement dans la page eSport et ses archives.", "Also show this event on the eSports page and in its archive.")}</span></span>
+            </label>
             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-outline-variant/20 bg-surface-container-high/40 p-3">
               <input name="date_is_tbd" type="checkbox" value="true" checked={dateIsTbd} onChange={change => setDateIsTbd(change.target.checked)} className="mt-1 size-4 shrink-0 accent-tertiary" />
               <span><span className="block text-sm font-semibold">{l("Prochainement — date à préciser", "Coming soon — date to be announced")}</span><span className="mt-1 block text-xs leading-5 text-on-surface-variant">{l("L’événement sera publié sans date ni heure précises. Les inscriptions resteront fermées.", "The event will be published without a specific date or time. Registration will stay closed.")}</span></span>
@@ -209,6 +214,7 @@ export default function EventManager({ dict, initialEvents, embedded = false }: 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant/15 pt-3">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-secondary/10 px-2.5 py-1 text-xs font-semibold text-secondary">{event.date_is_tbd ? l("Prochainement", "Coming soon") : event.date_start && new Date(event.date_start).getTime() >= now ? l("À venir", "Upcoming") : l("Passé", "Past")}</span>
+                {event.is_esport && <span className="inline-flex items-center gap-1 rounded-full bg-[#9146FF]/10 px-2.5 py-1 text-xs font-semibold text-[#B98BFF]"><span aria-hidden="true" className="material-symbols-outlined text-sm">sports_esports</span>eSport</span>}
                 <span className={"inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold " + (event.registration_enabled === false ? "bg-surface-container-high text-on-surface-variant" : event.registration_is_paid ? "bg-tertiary/10 text-tertiary" : "bg-surface-container-high text-on-surface-variant")}><span aria-hidden="true" className="material-symbols-outlined text-sm">{event.registration_enabled === false ? "event_note" : event.registration_is_paid ? "confirmation_number" : "check_circle"}</span>{event.registration_enabled === false ? l("Informatif", "Informational") : event.registration_is_paid ? event.registration_price_cents != null ? formatEventPrice(event.registration_price_cents, en) : l("Payant", "Paid") : l("Gratuit", "Free")}</span>
               </div>
               <div className="flex flex-wrap items-center gap-2">

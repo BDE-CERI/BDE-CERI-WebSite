@@ -86,7 +86,7 @@ export default async function Evenements() {
                 <div className="absolute inset-0 bg-gradient-to-t from-surface-container-highest via-surface-container-high/80 to-transparent rounded-xl"></div>
                 <div className="mysterious-card-content relative z-10">
                   <div className="flex items-center gap-3 mb-4">
-                    <span className="bg-tertiary/20 text-tertiary px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">{event.category || "Event"}</span>
+                    <div className="flex flex-wrap items-center gap-2"><span className="bg-tertiary/20 text-tertiary px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">{event.category || "Event"}</span>{event.is_esport && <span className="inline-flex items-center gap-1 rounded-full bg-[#9146FF]/15 px-2.5 py-1 text-xs font-bold text-[#D1B4FF]"><span aria-hidden="true" className="material-symbols-outlined text-sm">sports_esports</span>eSport</span>}</div>
                     <span className="text-on-surface-variant text-sm font-label flex items-center gap-1">
                       <span className="material-symbols-outlined text-[16px]">calendar_month</span> {displayDate}
                     </span>
@@ -108,7 +108,7 @@ export default async function Evenements() {
               <Link key={event.id} href={`/evenement/${event.id}`} className={style.colSpan}>
                 <article className="mysterious-card bg-surface-container-low rounded-xl p-8 flex flex-col min-h-[350px] border-b border-outline-variant/15 relative cursor-pointer h-full">
                   <div className="flex justify-between items-start mb-auto mysterious-card-content">
-                    <span className="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">{event.category || "Event"}</span>
+                    <div className="flex flex-wrap items-center gap-2"><span className="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">{event.category || "Event"}</span>{event.is_esport && <span className="inline-flex items-center gap-1 rounded-full bg-[#9146FF]/15 px-2.5 py-1 text-xs font-bold text-[#D1B4FF]"><span aria-hidden="true" className="material-symbols-outlined text-sm">sports_esports</span>eSport</span>}</div>
                     <span className="material-symbols-outlined text-outline">{style.icon}</span>
                   </div>
                   <div className="mysterious-card-content mt-8">
@@ -133,7 +133,7 @@ export default async function Evenements() {
                   <div className="absolute inset-0 bg-gradient-to-t from-surface-container-highest to-transparent rounded-xl"></div>
                   <div className="mysterious-card-content relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
                     <div>
-                      <span className="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase mb-4 inline-block">{event.category || "Event"}</span>
+                      <div className="mb-4 flex flex-wrap items-center gap-2"><span className="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">{event.category || "Event"}</span>{event.is_esport && <span className="inline-flex items-center gap-1 rounded-full bg-[#9146FF]/15 px-2.5 py-1 text-xs font-bold text-[#D1B4FF]"><span aria-hidden="true" className="material-symbols-outlined text-sm">sports_esports</span>eSport</span>}</div>
                       <h3 className="headline-display text-2xl md:text-3xl font-bold text-on-surface mb-2">{event.title}</h3>
                       <p className="font-body text-on-surface-variant max-w-md whitespace-pre-line break-words line-clamp-5">{event.description}</p>
                     </div>
