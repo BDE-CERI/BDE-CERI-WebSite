@@ -3,13 +3,16 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { getLocalOfficeData, getLocalOfficeStatus } from "@/utils/local-office";
+import { getShopMembershipAccess } from "@/utils/shop-membership";
 
 export async function buyItem(id: string, isTaverne: boolean, english = false) {
+  const supabase = await createClient();
+  const membership = await getShopMembershipAccess(supabase);
+  if (!membership.membershipPaid) return { error: english ? "A paid BDE membership is required to access the shop." : "Une adhésion annuelle au BDE validée est nécessaire pour accéder à la boutique." };
   if (isTaverne) {
     const localStatus = getLocalOfficeStatus(await getLocalOfficeData(), new Date(), english);
     if (!localStatus.isOpen) return { error: localStatus.message };
   }
-  const supabase = await createClient();
   const table = isTaverne ? "taverne_items" : "products";
 
   // Get current stock

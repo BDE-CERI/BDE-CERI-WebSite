@@ -2,6 +2,9 @@ import { getDictionary, getLang } from "@/locales/dictionaries";
 import SharkWallpaper from "@/components/SharkWallpaper";
 import { createSeoMetadata } from "@/utils/seo";
 import { getLocalOfficeData, getLocalOfficeStatus } from "@/utils/local-office";
+import { createClient } from "@/utils/supabase/server";
+import { getShopMembershipAccess } from "@/utils/shop-membership";
+import MembershipGate from "@/components/MembershipGate";
 
 export const metadata = createSeoMetadata({
   path: "/boutique",
@@ -14,7 +17,9 @@ const shopUrl =
 const shopWidgetUrl = shopUrl + "/widget";
 
 export default async function Boutique() {
-  const [dict, lang, localOffice] = await Promise.all([getDictionary(), getLang(), getLocalOfficeData()]);
+  const [dict, lang, localOffice, supabase] = await Promise.all([getDictionary(), getLang(), getLocalOfficeData(), createClient()]);
+  const membership = await getShopMembershipAccess(supabase);
+  if (!membership.membershipPaid) return <div className="relative min-h-screen overflow-hidden bg-surface"><SharkWallpaper /><MembershipGate english={lang === "en"} signedIn={membership.signedIn} memberProfileExists={membership.memberProfileExists} /></div>;
   const localStatus = getLocalOfficeStatus(localOffice, new Date(), lang === "en");
 
   return (

@@ -46,6 +46,7 @@ export const en = {
     crafted: "© 2026 BDE CERI. Made by the team.",
     connect: "Follow us",
     join: "Join us",
+    membership: "Annual membership",
     resources: "Useful links",
     download_app: "Our app",
     terms: "Terms of use",

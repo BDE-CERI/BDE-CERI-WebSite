@@ -46,6 +46,7 @@ export const fr = {
     crafted: "© 2026 BDE CERI. Conçu par l’équipe.",
     connect: "Nous suivre",
     join: "Nous rejoindre",
+    membership: "Adhésion annuelle",
     resources: "Liens utiles",
     download_app: "Notre application",
     terms: "Conditions d’utilisation",

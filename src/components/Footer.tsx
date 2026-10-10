@@ -48,6 +48,7 @@ export default function Footer({ dict }: { dict: typeof fr }) {
         </div>
         <div className="flex flex-col space-y-3 lg:items-end">
           <span className="text-xs font-label uppercase tracking-widest text-[#dce1fb]/40 mb-2 lg:text-right">{dict.footer.resources || "Liens utiles"}</span>
+          <Link href="/adhesion" className="font-body text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors">{dict.footer.membership}</Link>
           <Link href="/cgu" className="font-body text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors">{dict.footer.terms}</Link>
           <Link href="/cgv" className="font-body text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors">{dict.footer.sales}</Link>
           <Link href="/confidentialite" className="font-body text-xs tracking-wide text-[#dce1fb]/60 hover:text-white transition-colors">{dict.footer.privacy}</Link>

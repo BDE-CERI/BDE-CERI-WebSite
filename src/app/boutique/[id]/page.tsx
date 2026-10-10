@@ -8,6 +8,8 @@ import SizePicker from "./SizePicker";
 import BuyButton from "../BuyButton";
 import { createSeoMetadata } from "@/utils/seo";
 import { getLocalOfficeData, getLocalOfficeStatus } from "@/utils/local-office";
+import { getShopMembershipAccess } from "@/utils/shop-membership";
+import MembershipGate from "@/components/MembershipGate";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -38,10 +40,12 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
   const dict = await getDictionary();
   const [supabase, localOffice] = await Promise.all([createClient(), getLocalOfficeData()]);
   const english = dict.profil.title === "My Account";
+  const membership = await getShopMembershipAccess(supabase);
+  if (!membership.membershipPaid) return <MembershipGate english={english} signedIn={membership.signedIn} memberProfileExists={membership.memberProfileExists} />;
   const localStatus = getLocalOfficeStatus(localOffice, new Date(), english);
 
   // Try to find in branding products first
-  let { data: product, error } = await supabase
+  let { data: product } = await supabase
     .from("products")
     .select("*")
     .eq("id", id)
