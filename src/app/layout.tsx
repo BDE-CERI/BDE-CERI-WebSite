@@ -11,6 +11,7 @@ import CookieConsent from "@/components/CookieConsent";
 import MaterialSymbolsStylesheet from "@/components/MaterialSymbolsStylesheet";
 import LocalStatusWidgetServer from "@/components/LocalStatusWidgetServer";
 import { Manrope, Space_Grotesk } from "next/font/google";
+import { headers } from "next/headers";
 import { getLang } from "@/locales/dictionaries";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
@@ -77,14 +78,16 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const english = (await getLang()) === "en";
+  const [lang, requestHeaders] = await Promise.all([getLang(), headers()]);
+  const english = lang === "en";
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
   return (
     <html lang="fr" className="dark" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.lang = /(?:^|;\\s*)bde_lang=en(?:;|$)/.test(document.cookie) ? 'en' : 'fr';" }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: "document.documentElement.lang = /(?:^|;\\s*)bde_lang=en(?:;|$)/.test(document.cookie) ? 'en' : 'fr';" }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <script dangerouslySetInnerHTML={{
+        <script nonce={nonce} dangerouslySetInnerHTML={{
           __html: `
             if ('serviceWorker' in navigator && ${process.env.NODE_ENV === "production"}) {
               window.addEventListener('load', function() {
@@ -107,7 +110,7 @@ export default async function RootLayout({
       <body className={`${manrope.variable} ${spaceGrotesk.variable} antialiased min-h-dvh flex flex-col pb-[calc(6.25rem+env(safe-area-inset-bottom))] lg:pb-0 selection:bg-tertiary/30 selection:text-tertiary bg-surface text-on-surface`}>
         <ThemeProvider>
           <EditModeProvider>
-            <StructuredData />
+            <StructuredData nonce={nonce} />
             <Suspense fallback={<div aria-hidden="true" className="fixed inset-x-0 top-0 z-50 h-20 border-b border-outline-variant/10 bg-surface/70 backdrop-blur-xl" />}>
               <RootHeader />
             </Suspense>

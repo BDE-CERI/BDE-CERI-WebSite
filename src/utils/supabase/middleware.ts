@@ -1,8 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+export async function updateSession(request: NextRequest, requestHeaders: Headers = request.headers) {
+  const continueRequest = () => NextResponse.next({ request: { headers: requestHeaders } });
+  let supabaseResponse = continueRequest();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return supabaseResponse;
@@ -12,9 +13,12 @@ export async function updateSession(request: NextRequest) {
       getAll: () => request.cookies.getAll(),
       setAll(cookiesToSet, cacheHeaders) {
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        const cookieHeader = request.headers.get("cookie");
+        if (cookieHeader) requestHeaders.set("cookie", cookieHeader);
+        else requestHeaders.delete("cookie");
         const previousCookies = supabaseResponse.cookies.getAll();
         const previousHeaders = new Headers(supabaseResponse.headers);
-        supabaseResponse = NextResponse.next({ request });
+        supabaseResponse = continueRequest();
         previousCookies.forEach(cookie => supabaseResponse.cookies.set(cookie));
         cookiesToSet.forEach(({ name, value, options }) =>
           supabaseResponse.cookies.set(name, value, options));

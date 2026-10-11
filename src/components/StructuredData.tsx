@@ -1,3 +1,5 @@
+import { headers } from "next/headers";
+
 const organization = {
   "@context": "https://schema.org",
   "@type": "Organization",
@@ -15,11 +17,12 @@ const website = {
   inLanguage: ["fr-FR", "en"],
 };
 
-export default function StructuredData() {
-  return <JsonLd data={[organization, website]} />;
+export default function StructuredData({ nonce }: { nonce?: string }) {
+  return <JsonLd data={[organization, website]} nonce={nonce} />;
 }
 
-export function JsonLd({ data }: { data: unknown }) {
+export async function JsonLd({ data, nonce }: { data: unknown; nonce?: string }) {
   const jsonLd = JSON.stringify(data).replace(/</g, "\\u003c");
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />;
+  const scriptNonce = nonce ?? (await headers()).get("x-nonce") ?? undefined;
+  return <script nonce={scriptNonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />;
 }
