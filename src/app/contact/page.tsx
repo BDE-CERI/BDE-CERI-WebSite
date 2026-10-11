@@ -17,7 +17,7 @@ export const metadata = createSeoMetadata({
 export default async function Contact() {
   const [dict, lang, supabase, localOffice] = await Promise.all([getDictionary(), getLang(), createClient(), getLocalOfficeData()]);
 
-  // Fetch dynamic site settings for address, social links, helloasso url
+  // Fetch dynamic site settings for address and social links
   const { data: settings } = await supabase
     .from("site_settings")
     .select("key, value");
@@ -26,7 +26,6 @@ export default async function Contact() {
     return settings?.find(s => s.key === key)?.value ?? fallback;
   };
 
-  const helloassoUrl = getSetting("helloasso_url", "https://www.helloasso.com");
   const instagramUrl = getSetting("instagram_url", "#");
   const parseCoordinate = (value: string, fallback: number, min: number, max: number) => {
     const coordinate = Number(value);
@@ -75,7 +74,7 @@ export default async function Contact() {
           <div className="lg:col-span-8 space-y-12">
             
             {/* Interactive Map */}
-            <div className="reveal-card h-100 rounded-3xl relative overflow-hidden group">
+            <div className="reveal-card h-100 rounded-3xl relative z-0 isolate overflow-hidden group">
                <LazyInteractiveMap position={mapPosition} />
                <div className="absolute top-6 left-6 z-1000 p-4 glass-panel rounded-2xl border border-tertiary/20 shadow-2xl max-w-xs group-hover:-translate-y-1 transition-transform">
                   <div className="flex items-center gap-3 mb-2">
@@ -241,7 +240,7 @@ export default async function Contact() {
                       <span className="text-sm">{dict.contact.faq_link}</span>
                      <span className="material-symbols-outlined text-sm">north_east</span>
                   </Link>
-                  <a href={helloassoUrl} target="_blank" className="flex items-center justify-between p-4 rounded-xl bg-surface-container-high/40 hover:bg-surface-container-high transition-colors">
+                  <a href="https://www.helloasso.com/associations/bde-ceri-avignon/formulaires/1" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 rounded-xl bg-surface-container-high/40 hover:bg-surface-container-high transition-colors">
                       <span className="text-sm">{dict.contact.helloasso_donation}</span>
                      <span className="material-symbols-outlined text-sm">favorite</span>
                   </a>

@@ -16,8 +16,7 @@ export default function MembershipGate({ english, signedIn, memberProfileExists 
       <h1 className="mt-2 font-headline text-3xl font-bold text-on-surface">{title}</h1>
       <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-on-surface-variant">{description}</p>
       <div className="mt-7 flex flex-wrap justify-center gap-3">
-        <Link href="/adhesion" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-tertiary px-5 py-3 text-sm font-bold text-on-tertiary transition hover:-translate-y-0.5 hover:shadow-lg">{english ? "Membership information and payment" : "Adhésion et paiement"}<span aria-hidden="true" className="material-symbols-outlined text-lg">arrow_forward</span></Link>
-        {!signedIn && <Link href="/login" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-outline-variant/25 px-5 py-3 text-sm font-bold text-on-surface hover:bg-surface-container-high">{english ? "Sign in" : "Se connecter"}</Link>}
+        {signedIn && <Link href="/adhesion" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-tertiary px-5 py-3 text-sm font-bold text-on-tertiary transition hover:-translate-y-0.5 hover:shadow-lg">{english ? "Membership information and payment" : "Adhésion et paiement"}<span aria-hidden="true" className="material-symbols-outlined text-lg">arrow_forward</span></Link>}
         {signedIn && !memberProfileExists && <Link href="/contact" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-outline-variant/25 px-5 py-3 text-sm font-bold text-on-surface hover:bg-surface-container-high">{english ? "Contact the BDE" : "Contacter le BDE"}</Link>}
       </div>
     </section>
