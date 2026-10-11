@@ -21,6 +21,9 @@ const InteractiveBackground: React.FC = () => {
     let logicalWidth = 0;
     let logicalHeight = 0;
     let pixelRatio = 1;
+    let lastPointerMoveTime = 0;
+    let returningToBase = false;
+    const interactionFrameDuration = 180;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const mouse = { x: -1000, y: -1000, radius: 180 };
     const isDark = theme === "dark";
@@ -78,18 +81,22 @@ const InteractiveBackground: React.FC = () => {
           this.color = `rgba(${colorRGB}, ${alpha})`;
           this.size = particleBaseSize + (force * 1.5);
         } else {
-          // Smooth return
-          if (this.x !== this.baseX) {
+          if (Math.abs(this.x - this.baseX) > 0.5) {
             const dx = this.x - this.baseX;
             this.x -= dx / 15;
+          } else {
+            this.x = this.baseX;
           }
-          if (this.y !== this.baseY) {
+          if (Math.abs(this.y - this.baseY) > 0.5) {
             const dy = this.y - this.baseY;
             this.y -= dy / 15;
+          } else {
+            this.y = this.baseY;
           }
           this.color = `rgba(${colorRGB}, ${baseAlpha})`;
           this.size = particleBaseSize;
         }
+        return Math.abs(this.x - this.baseX) > 0.5 || Math.abs(this.y - this.baseY) > 0.5;
       }
     }
 
@@ -112,12 +119,16 @@ const InteractiveBackground: React.FC = () => {
       animationFrameId = 0;
       if (document.hidden || !isIntersecting || reducedMotion.matches) return;
 
+      let renderedFrame = false;
+      let particlesDisplaced = false;
       if (timestamp - lastFrameTime >= 1000 / 30) {
         lastFrameTime = timestamp;
+        renderedFrame = true;
         ctx.clearRect(0, 0, logicalWidth, logicalHeight);
         for (let i = 0; i < particles.length; i++) {
-          particles[i].update();
-          particles[i].draw();
+          const particle = particles[i];
+          if (particle.update()) particlesDisplaced = true;
+          particle.draw();
         }
       
       // Force Field Circle
@@ -135,7 +146,10 @@ const InteractiveBackground: React.FC = () => {
       }
       }
 
-      animationFrameId = requestAnimationFrame(animate);
+      if (renderedFrame && returningToBase && !particlesDisplaced) returningToBase = false;
+      if (timestamp - lastPointerMoveTime < interactionFrameDuration || returningToBase) {
+        animationFrameId = requestAnimationFrame(animate);
+      }
     };
 
     const startAnimation = () => {
@@ -161,11 +175,16 @@ const InteractiveBackground: React.FC = () => {
        const rect = canvas.getBoundingClientRect();
        mouse.x = e.clientX - rect.left;
        mouse.y = e.clientY - rect.top;
+       lastPointerMoveTime = performance.now();
+       returningToBase = false;
+       startAnimation();
     };
 
     const handleMouseLeave = () => {
       mouse.x = -1000;
       mouse.y = -1000;
+      returningToBase = true;
+      startAnimation();
     };
 
     const handleVisibilityChange = () => {

@@ -57,7 +57,6 @@ export default function MobileNavigation({
   const [changingLanguage, setChangingLanguage] = useState(false);
   const [languageError, setLanguageError] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const restoreFocusRef = useRef(true);
   const closingTimerRef = useRef<number | null>(null);
@@ -67,7 +66,6 @@ export default function MobileNavigation({
   const english = lang === "en";
   const copy = english ? {
     menu: "Menu",
-    open: "Open the menu",
     close: "Close the menu",
     navigation: "Main navigation",
     title: "Explore the CERI",
@@ -94,7 +92,6 @@ export default function MobileNavigation({
     shop: "Shop",
   } : {
     menu: "Menu",
-    open: "Ouvrir le menu",
     close: "Fermer le menu",
     navigation: "Navigation principale",
     title: "Explorez le CERI",
@@ -197,7 +194,7 @@ export default function MobileNavigation({
     if (dialogRef.current) delete dialogRef.current.dataset.closing;
     restorePage();
     setIsOpen(false);
-    const trigger = returnFocusRef.current || triggerRef.current;
+    const trigger = returnFocusRef.current;
     returnFocusRef.current = null;
     if (restoreFocusRef.current && trigger?.isConnected && trigger.getClientRects().length) trigger.focus({ preventScroll: true });
   }, [restorePage]);
@@ -258,20 +255,6 @@ export default function MobileNavigation({
 
   return (
     <>
-      <button
-        ref={triggerRef}
-        type="button"
-        className={styles.trigger}
-        aria-label={copy.open}
-        aria-haspopup="dialog"
-        aria-controls={menuId}
-        aria-expanded={isOpen}
-        onClick={(event) => openMenu(event.currentTarget)}
-      >
-        <Icon name="menu" />
-        <span>{copy.menu}</span>
-      </button>
-
       {mounted && createPortal(
         <>
           <nav className={styles.dock} data-theme={theme} aria-label={copy.navigation}>

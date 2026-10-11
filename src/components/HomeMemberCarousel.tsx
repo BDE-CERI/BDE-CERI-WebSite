@@ -22,7 +22,6 @@ export default function HomeMemberCarousel({ members, english = false }: { membe
   const transitionFrame = useRef<number | null>(null);
   const transitionTimeout = useRef<number | null>(null);
   const member = members[active];
-  const nextMember = members.length > 1 ? members[(active + 1) % members.length] : null;
   const previousMember = previous === null ? null : members[previous];
 
   useEffect(() => {
@@ -56,7 +55,6 @@ export default function HomeMemberCarousel({ members, english = false }: { membe
     <section aria-label={english ? "Meet the BDE team" : "Rencontrer les membres du BDE"} aria-roledescription="carousel"
       className="relative h-[400px] w-full overflow-hidden rounded-2xl border border-outline-variant/20 bg-surface-container-high shadow-2xl">
       {member?.photoUrl ? <Image key={`member-image-${member.id}`} src={member.photoUrl} alt="" fill sizes="(max-width: 768px) 100vw, 400px" loading="eager" className="object-cover" /> : <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-surface-container-high to-tertiary/30" />}
-      {nextMember?.photoUrl && <Image key={`next-image-${nextMember.id}`} src={nextMember.photoUrl} alt="" fill sizes="(max-width: 768px) 100vw, 400px" loading="eager" className="pointer-events-none absolute inset-0 opacity-0" />}
       {previousMember?.photoUrl && <Image key={`previous-image-${previousMember.id}`} src={previousMember.photoUrl} alt="" fill sizes="(max-width: 768px) 100vw, 400px" className={`absolute inset-0 object-cover transition-opacity ease-in-out ${transitioning ? "opacity-0" : "opacity-100"}`} style={{ transitionDuration: `${transitionDuration}ms` }} />}
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-black/40" />
 
@@ -74,7 +72,7 @@ export default function HomeMemberCarousel({ members, english = false }: { membe
           {member.studyLevel && <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-medium text-white backdrop-blur-sm"><span aria-hidden="true" className="material-symbols-outlined text-xs">school</span>{member.studyLevel}</span>}
         </div>
         <div className="mt-4 flex items-center justify-between border-t border-white/20 pt-3">
-          <Link href={`/equipe/${member.id}`} className="inline-flex items-center gap-1.5 text-xs font-bold text-white underline decoration-white/50 underline-offset-4 hover:decoration-white">
+          <Link href={`/equipe/${member.id}`} prefetch={false} className="inline-flex items-center gap-1.5 text-xs font-bold text-white underline decoration-white/50 underline-offset-4 hover:decoration-white">
             {english ? "View profile" : "Voir son profil"}<span aria-hidden="true" className="material-symbols-outlined text-sm">arrow_forward</span>
           </Link>
         </div>
