@@ -9,6 +9,10 @@ const messageKeys = ["open", "no_shift", "before_open", "after_close", "weekend"
 
 function field(form: FormData, key: string, max: number, required = true) {
   const value = form.get(key);
+  // Optional controls are not always serialized (for example `id` when a
+  // shift is created rather than edited). Treat an absent optional field as
+  // empty, while preserving strict validation for required controls and files.
+  if (value === null && !required) return "";
   if (typeof value !== "string") throw new Error("Champ invalide : " + key);
   const clean = value.trim();
   if (required && !clean) throw new Error("Le champ « " + key + " » est obligatoire.");
@@ -61,6 +65,9 @@ export async function saveLocalShift(form: FormData): Promise<Result> {
   try {
     const { supabase } = await authorizeLocalManagement();
     const id = field(form, "id", 36, false);
+    if (id && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+      throw new Error("Identifiant de permanence invalide.");
+    }
     const weekday = Number(field(form, "weekday", 1));
     const starts = field(form, "starts_at", 5), ends = field(form, "ends_at", 5);
     const keyholderId = field(form, "keyholder_member_id", 36);
