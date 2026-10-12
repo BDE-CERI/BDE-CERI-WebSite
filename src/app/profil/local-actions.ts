@@ -7,6 +7,13 @@ import { hasSiteAdminAccess, isMemberPoleVicePresident, isRestrictedBoardMember 
 type Result = { success: true } | { error: string };
 const messageKeys = ["open", "no_shift", "before_open", "after_close", "weekend", "holiday"] as const;
 
+function databaseErrorMessage(error: { code?: string; message: string }, fallback: string) {
+  if (error.code === "42501" || /row-level security/i.test(error.message)) {
+    return "Supabase refuse cette opération. Appliquez la migration 202610120001_local_hours_rls.sql, puis reconnectez-vous avant de réessayer.";
+  }
+  return error.message || fallback;
+}
+
 function field(form: FormData, key: string, max: number, required = true) {
   const value = form.get(key);
   // Optional controls are not always serialized (for example `id` when a
@@ -55,7 +62,7 @@ export async function updateLocalHours(form: FormData): Promise<Result> {
       messages[key] = { fr: field(form, "message_" + key + "_fr", 500), en: field(form, "message_" + key + "_en", 500) };
     }
     const { error } = await supabase.from("local_hours_settings").update({ opens_at: opens, closes_at: closes, messages, updated_at: new Date().toISOString() }).eq("id", true);
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(databaseErrorMessage(error, "Les horaires n’ont pas pu être enregistrés."));
     revalidateLocal();
     return { success: true };
   } catch (error) { return { error: error instanceof Error ? error.message : "Les horaires n’ont pas pu être enregistrés." }; }
@@ -92,7 +99,7 @@ export async function saveLocalShift(form: FormData): Promise<Result> {
     const result = id
       ? await supabase.from("local_opening_shifts").update(row).eq("id", id)
       : await supabase.from("local_opening_shifts").insert(row);
-    if (result.error) throw new Error(result.error.message);
+    if (result.error) throw new Error(databaseErrorMessage(result.error, "La permanence n’a pas pu être enregistrée."));
     revalidateLocal();
     return { success: true };
   } catch (error) { return { error: error instanceof Error ? error.message : "La permanence n’a pas pu être enregistrée." }; }
@@ -103,7 +110,7 @@ export async function deleteLocalShift(id: string): Promise<Result> {
     const { supabase } = await authorizeLocalManagement();
     if (!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(id)) throw new Error("Identifiant de permanence invalide.");
     const { error } = await supabase.from("local_opening_shifts").delete().eq("id", id);
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(databaseErrorMessage(error, "La permanence n’a pas pu être supprimée."));
     revalidateLocal();
     return { success: true };
   } catch (error) { return { error: error instanceof Error ? error.message : "La permanence n’a pas pu être supprimée." }; }

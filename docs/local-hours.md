@@ -2,7 +2,7 @@
 
 ## Supabase setup
 
-Apply `supabase/migrations/202610090011_local_hours_and_keyholders.sql` in the Supabase SQL editor (or through the project migration workflow). It adds `members.is_keyholder`, the editable hours and messages, and the weekday shift table with row-level security.
+The local-hours tables and `members.is_keyholder` must already exist in Supabase. Apply `supabase/migrations/202610120001_local_hours_rls.sql` in the Supabase SQL editor (or through the project migration workflow) to align row-level security with the current administration model. This migration recognizes restricted-board administrators and developers after MFA, as well as pole vice presidents explicitly marked as keyholders.
 
 After applying the migration, bureau members can mark keyholders under **Profil → Membres & rôles**. The restricted board can manage local hours after completing MFA. Keyholders in the bureau can also manage the shifts and messages from **Profil → Local**. Only members marked as keyholders can be assigned to a shift.
 
